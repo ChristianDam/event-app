@@ -155,15 +155,20 @@ teamInvitations: {
   - Team listing with member counts and user roles
   - Create new team dialog
   - Team navigation to dedicated pages
-- ✅ Custom routing implementation with Remix Router
-  - Manual route matching for `/team/:id` pages
-  - Browser history integration with `useRouter` hook
-  - Navigation between teams and main chat interface
+- ✅ File-based routing system in `src/router/` and `src/pages/`
+  - Next.js/Remix-style file-based routing with `[param]` syntax
+  - Route-level authentication settings
+  - Clean separation of concerns from App.tsx
+  - Support for nested routes and 404 handling
 
-### ❌ Phase 3: Invitation Links - NOT IMPLEMENTED
-- ❌ Link generation and sharing
-- ❌ Public invitation acceptance pages
-- ❌ Link expiration and management
+### ✅ Phase 3: Invitation Links - PARTIALLY COMPLETED
+- ✅ Public invitation acceptance pages implemented
+  - Unauthenticated users can view invitation details
+  - Seamless sign-in flow for invitation acceptance
+  - Token-based URL access (`/invite/[token]`)
+- ✅ Link generation via development logging (production ready)
+- ❌ Shareable link generation UI (admin can copy from logs)
+- ❌ Custom expiration settings UI
 
 ### ❌ Phase 4: Enhanced Team Management - NOT IMPLEMENTED
 - ❌ Team branding/customization
@@ -176,14 +181,63 @@ The implemented team management system provides:
 1. **Automatic Team Creation**: New users get a "My Team" created automatically
 2. **Role-Based Access Control**: Three-tier permission system (owner > admin > member)
 3. **Email Invitations**: Secure token-based invitations with email validation
-4. **Team Management UI**: Full-featured interface for managing teams and members
-5. **Permission Validation**: Server-side permission checks for all team operations
-6. **Custom Navigation**: Remix Router implementation for team page routing
+4. **Public Invitation Access**: Anyone can view invitation details before signing in
+5. **Team Management UI**: Full-featured interface for managing teams and members
+6. **Permission Validation**: Server-side permission checks for all team operations
+7. **File-Based Routing**: Scalable Next.js/Remix-style routing architecture
+8. **Development Mode**: Email fallback with console logging for testing
+
+## Missing Features Analysis
+
+### 🔍 **What's Missing from Original Specification:**
+
+1. **Shareable Link Generation UI** (Phase 3)
+   - Currently links are generated and logged to console
+   - Missing: Admin UI to copy/share invitation links
+   - **Effort**: Small - just UI for displaying/copying the token URL
+
+2. **Custom Link Expiration Settings** (Phase 3)
+   - Currently fixed at 7 days
+   - Missing: UI to set custom expiration (1 hour to 30 days)
+   - **Effort**: Medium - requires UI and backend updates
+
+3. **Rate Limiting** (Security)
+   - Specified: "max 10 per hour per team"
+   - Missing: Server-side rate limiting implementation
+   - **Effort**: Medium - requires tracking invitation counts
+
+4. **Team Branding/Customization** (Phase 4)
+   - Missing: Team logos, primary colors, custom branding
+   - **Effort**: Large - requires file upload, storage, and UI overhaul
+
+5. **Advanced Role Permissions** (Phase 4)
+   - Currently basic owner/admin/member roles
+   - Missing: Fine-grained permissions (who can invite, edit events, etc.)
+   - **Effort**: Large - requires permission matrix system
+
+6. **Team Analytics** (Phase 4)
+   - Missing: Member activity tracking, team statistics
+   - **Effort**: Large - requires analytics infrastructure
+
+### ✅ **What We Actually Exceeded:**
+
+1. **Public Invitation Pages** - Better UX than originally specified
+2. **File-Based Routing** - More scalable architecture than planned  
+3. **Development Mode** - Better testing workflow than specified
+4. **Type Safety** - Comprehensive TypeScript implementation
 
 ## Next Steps for Enhancement
 
-1. **Email Service Integration**: Connect invitation system to actual email delivery (Resend/Twilio ready)
-2. **Invitation Links**: Implement shareable team invitation links
-3. **Team Customization**: Add team logos and branding options
-4. **Advanced Permissions**: Fine-grained role permissions for specific actions
-5. **Team Analytics**: Member activity tracking and team statistics
+### **Quick Wins** (1-2 hours each):
+1. **Add Link Copy UI**: Display invitation URLs in team management interface
+2. **Improve Email Templates**: Add more professional styling and branding
+
+### **Medium Tasks** (1-2 days each):
+3. **Custom Expiration Settings**: Add UI for setting invitation expiration times
+4. **Rate Limiting**: Implement invitation rate limiting per team/user
+5. **Invitation Analytics**: Track invitation success rates and usage
+
+### **Large Features** (1+ weeks each):
+6. **Team Branding**: Logo uploads, color themes, custom styling
+7. **Advanced Permissions**: Granular role-based permission system
+8. **Team Analytics**: Comprehensive activity tracking and reporting

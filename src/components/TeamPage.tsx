@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { ColorPicker } from "@/components/ui/color-picker";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +25,7 @@ import {
   TrashIcon,
   GearIcon,
   ArrowLeftIcon,
+  ImageIcon,
 } from "@radix-ui/react-icons";
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
@@ -42,23 +44,30 @@ export function TeamPage({ teamId, navigate }: TeamPageProps) {
   
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showBrandingDialog, setShowBrandingDialog] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"admin" | "member">("member");
   const [isInviting, setIsInviting] = useState(false);
   const [teamName, setTeamName] = useState("");
   const [teamDescription, setTeamDescription] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
+  const [primaryColor, setPrimaryColor] = useState("");
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [isUploadingBranding, setIsUploadingBranding] = useState(false);
 
   const inviteByEmail = useMutation(api.teams.inviteByEmail);
   const removeMember = useMutation(api.teams.removeMember);
   const cancelInvitation = useMutation(api.teams.cancelInvitation);
   const updateTeam = useMutation(api.teams.updateTeam);
   const leaveTeam = useMutation(api.teams.leaveTeam);
+  const updateTeamBranding = useMutation(api.teams.updateTeamBranding);
+  const generateLogoUploadUrl = useMutation(api.teams.generateLogoUploadUrl);
 
   // Set form values when team data loads
-  if (team && !teamName && !showEditDialog) {
+  if (team && !teamName && !showEditDialog && !showBrandingDialog) {
     setTeamName(team.name);
     setTeamDescription(team.description || "");
+    setPrimaryColor(team.primaryColor || "#3b82f6");
   }
 
   const handleInvite = async (e: React.FormEvent) => {
@@ -127,6 +136,47 @@ export function TeamPage({ teamId, navigate }: TeamPageProps) {
     }
   };
 
+  const handleUpdateBranding = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUploadingBranding(true);
+
+    try {
+      let logoId: Id<"_storage"> | undefined = undefined;
+
+      // Upload logo if a file is selected
+      if (logoFile) {
+        const uploadUrl = await generateLogoUploadUrl({ teamId });
+        
+        const uploadResult = await fetch(uploadUrl, {
+          method: "POST",
+          headers: { "Content-Type": logoFile.type },
+          body: logoFile,
+        });
+        
+        if (!uploadResult.ok) {
+          throw new Error("Failed to upload logo");
+        }
+        
+        const { storageId } = await uploadResult.json();
+        logoId = storageId;
+      }
+
+      // Update branding
+      await updateTeamBranding({
+        teamId,
+        logo: logoId,
+        primaryColor: primaryColor || undefined,
+      });
+
+      setShowBrandingDialog(false);
+      setLogoFile(null);
+    } catch (error) {
+      console.error("Failed to update team branding:", error);
+    } finally {
+      setIsUploadingBranding(false);
+    }
+  };
+
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case "owner": return "bg-purple-100 text-purple-800";
@@ -173,8 +223,20 @@ export function TeamPage({ teamId, navigate }: TeamPageProps) {
           >
             <ArrowLeftIcon className="h-4 w-4" />
           </Button>
+          {team.logo && (
+            <img 
+              src={`${window.location.origin}/api/storage/${team.logo}`}
+              alt={`${team.name} logo`}
+              className="w-12 h-12 rounded-lg object-cover border"
+            />
+          )}
           <div>
-            <h1 className="text-3xl font-bold">{team.name}</h1>
+            <h1 
+              className="text-3xl font-bold"
+              style={{ color: team.primaryColor || undefined }}
+            >
+              {team.name}
+            </h1>
             {team.description && (
               <p className="text-muted-foreground mt-1">{team.description}</p>
             )}
@@ -185,13 +247,24 @@ export function TeamPage({ teamId, navigate }: TeamPageProps) {
             {team.userRole}
           </Badge>
           {canManageTeam && (
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={() => setShowEditDialog(true)}
-            >
-              <GearIcon className="h-4 w-4" />
-            </Button>
+            <>
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => setShowBrandingDialog(true)}
+                title="Team Branding"
+              >
+                <ImageIcon className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => setShowEditDialog(true)}
+                title="Team Settings"
+              >
+                <GearIcon className="h-4 w-4" />
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -440,6 +513,78 @@ export function TeamPage({ teamId, navigate }: TeamPageProps) {
                 </Button>
                 <Button type="submit" disabled={isUpdating || !teamName.trim()}>
                   {isUpdating ? "Updating..." : "Update Team"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Team Branding Dialog */}
+      {showBrandingDialog && (
+        <Dialog open onOpenChange={() => setShowBrandingDialog(false)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Team Branding</DialogTitle>
+              <DialogDescription>
+                Customize your team's logo and primary color
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={(e) => { void handleUpdateBranding(e); }}>
+              <div className="space-y-6">
+                <div>
+                  <label className="text-sm font-medium">Team Logo</label>
+                  <div className="mt-2 flex items-center gap-4">
+                    {team.logo ? (
+                      <img 
+                        src={`${window.location.origin}/api/storage/${team.logo}`}
+                        alt="Current team logo"
+                        className="w-16 h-16 rounded-lg object-cover border"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center border">
+                        <ImageIcon className="h-6 w-6 text-gray-400" />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setLogoFile(e.target.files?.[0] || null)}
+                        disabled={isUploadingBranding}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Upload a square image (PNG, JPG) up to 2MB
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Primary Color</label>
+                  <div className="mt-2">
+                    <ColorPicker
+                      value={primaryColor}
+                      onChange={setPrimaryColor}
+                      disabled={isUploadingBranding}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      This color will be used in team invitations and branding
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <DialogFooter className="mt-6">
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  onClick={() => setShowBrandingDialog(false)}
+                  disabled={isUploadingBranding}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isUploadingBranding}>
+                  {isUploadingBranding ? "Updating..." : "Update Branding"}
                 </Button>
               </DialogFooter>
             </form>

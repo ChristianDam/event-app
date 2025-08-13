@@ -27,6 +27,8 @@ export default defineSchema({
     description: v.optional(v.string()),
     ownerId: v.id("users"),
     createdAt: v.number(),
+    logo: v.optional(v.id("_storage")), // File ID for team logo/avatar
+    primaryColor: v.optional(v.string()), // Hex color code like "#3b82f6"
   })
     .index("by_owner", ["ownerId"])
     .index("by_slug", ["slug"]),

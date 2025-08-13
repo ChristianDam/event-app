@@ -76,11 +76,32 @@ export function UserMenu({
                 className="flex items-center justify-between cursor-pointer"
                 onClick={() => { void navigate(`/team/${team._id}`); }}
               >
-                <div className="flex flex-col">
-                  <span className="font-medium">{team.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {team.role} • {team.memberCount} member{team.memberCount !== 1 ? 's' : ''}
-                  </span>
+                <div className="flex items-center gap-3">
+                  {team.logo ? (
+                    <img 
+                      src={`${window.location.origin}/api/storage/${team.logo}`}
+                      alt={`${team.name} logo`}
+                      className="w-8 h-8 rounded object-cover border"
+                    />
+                  ) : (
+                    <div 
+                      className="w-8 h-8 rounded flex items-center justify-center text-white text-xs font-bold"
+                      style={{ backgroundColor: team.primaryColor || "#3b82f6" }}
+                    >
+                      {team.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="flex flex-col">
+                    <span 
+                      className="font-medium"
+                      style={{ color: team.primaryColor || undefined }}
+                    >
+                      {team.name}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {team.role} • {team.memberCount} member{team.memberCount !== 1 ? 's' : ''}
+                    </span>
+                  </div>
                 </div>
                 <Button variant="ghost" size="icon" className="h-6 w-6">
                   <GearIcon className="h-3 w-3" />

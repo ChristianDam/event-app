@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { mutation, query, internalQuery, internalMutation } from "./_generated/server";
 import { auth } from "./auth";
 import { internal } from "./_generated/api";
+import { Id } from "./_generated/dataModel";
 
 /**
  * Create a new team with the authenticated user as owner
@@ -116,6 +117,8 @@ export const getMyTeams = query({
     description: v.optional(v.string()),
     ownerId: v.id("users"),
     createdAt: v.number(),
+    logo: v.optional(v.id("_storage")),
+    primaryColor: v.optional(v.string()),
     role: v.union(v.literal("owner"), v.literal("admin"), v.literal("member")),
     memberCount: v.number(),
   })),
@@ -169,6 +172,8 @@ export const getTeam = query({
       description: v.optional(v.string()),
       ownerId: v.id("users"),
       createdAt: v.number(),
+      logo: v.optional(v.id("_storage")),
+      primaryColor: v.optional(v.string()),
       userRole: v.union(v.literal("owner"), v.literal("admin"), v.literal("member")),
     }),
     v.null()
@@ -264,6 +269,86 @@ export const updateTeam = mutation({
 
     await ctx.db.patch(args.teamId, updates);
     return null;
+  },
+});
+
+/**
+ * Update team branding (logo and primary color) - owner and admin only
+ */
+export const updateTeamBranding = mutation({
+  args: {
+    teamId: v.id("teams"),
+    logo: v.optional(v.id("_storage")),
+    primaryColor: v.optional(v.string()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const userId = await auth.getUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    // Check if user has permission to update team
+    const membership = await ctx.db
+      .query("teamMembers")
+      .withIndex("by_team_and_user", (q) => 
+        q.eq("teamId", args.teamId).eq("userId", userId)
+      )
+      .first();
+
+    if (!membership || (membership.role !== "owner" && membership.role !== "admin")) {
+      throw new Error("Insufficient permissions to update team branding");
+    }
+
+    const updates: Partial<{
+      logo: Id<"_storage">;
+      primaryColor: string;
+    }> = {};
+
+    if (args.logo !== undefined) {
+      updates.logo = args.logo;
+    }
+
+    if (args.primaryColor !== undefined) {
+      // Validate hex color format
+      if (args.primaryColor && !/^#[0-9A-Fa-f]{6}$/.test(args.primaryColor)) {
+        throw new Error("Primary color must be a valid hex color (e.g., #3b82f6)");
+      }
+      updates.primaryColor = args.primaryColor;
+    }
+
+    await ctx.db.patch(args.teamId, updates);
+    return null;
+  },
+});
+
+/**
+ * Generate upload URL for team logo
+ */
+export const generateLogoUploadUrl = mutation({
+  args: {
+    teamId: v.id("teams"),
+  },
+  returns: v.string(),
+  handler: async (ctx, args) => {
+    const userId = await auth.getUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    // Check if user has permission to update team
+    const membership = await ctx.db
+      .query("teamMembers")
+      .withIndex("by_team_and_user", (q) => 
+        q.eq("teamId", args.teamId).eq("userId", userId)
+      )
+      .first();
+
+    if (!membership || (membership.role !== "owner" && membership.role !== "admin")) {
+      throw new Error("Insufficient permissions to upload team logo");
+    }
+
+    return await ctx.storage.generateUploadUrl();
   },
 });
 
