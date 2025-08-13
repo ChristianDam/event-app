@@ -1,6 +1,7 @@
 import { v } from "convex/values";
-import { mutation, query, internalQuery, internalAction, internalMutation } from "./_generated/server";
+import { mutation, query, internalQuery, internalMutation } from "./_generated/server";
 import { auth } from "./auth";
+import { internal } from "./_generated/api";
 
 /**
  * Create a new team with the authenticated user as owner
@@ -515,40 +516,18 @@ export const inviteByEmail = mutation({
       createdAt: now,
     });
 
-    // Schedule email sending (temporarily disabled until API generation completes)
-    // await ctx.scheduler.runAfter(0, internal.teams.sendInvitationEmail, {
-    //   invitationId,
-    // });
+    // Schedule email sending
+    await ctx.scheduler.runAfter(0, internal.teamEmails.sendInvitationEmail, {
+      invitationId,
+    });
     
-    // For now, log the invitation details
-    console.log("📧 Team invitation created:", {
+    console.log("📧 Team invitation created and email scheduled:", {
       invitationId,
       email: args.email,
       role: args.role,
     });
 
     return invitationId;
-  },
-});
-
-/**
- * Send invitation email (internal action)
- */
-export const sendInvitationEmail = internalAction({
-  args: {
-    invitationId: v.id("teamInvitations"),
-  },
-  returns: v.null(),
-  handler: async (_ctx, args) => {
-    // For now, just log that we would send an email
-    // In the future, this will call the getInvitationDetails query and send actual emails
-    console.log("📧 Invitation email scheduled for invitationId:", args.invitationId);
-    
-    // TODO: Implement actual email sending
-    // const invitation = await ctx.runQuery(internal.teams.getInvitationDetails, { invitationId: args.invitationId });
-    // ... email sending logic ...
-    
-    return null;
   },
 });
 

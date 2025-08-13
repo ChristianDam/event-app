@@ -3,6 +3,7 @@ import { ChatHeader } from "@/Chat/ChatIntro";
 import { Layout } from "@/Layout";
 import { UserMenu } from "@/components/UserMenu";
 import { TeamPage } from "@/components/TeamPage";
+import { InvitePage } from "@/components/InvitePage";
 import { api } from "../convex/_generated/api";
 import { Authenticated, Unauthenticated, useQuery } from "convex/react";
 import { SignInFormEmailCode } from "./auth/SignInFormEmailCode";
@@ -66,6 +67,12 @@ function AppContent() {
     if (teamMatch) {
       const teamId = teamMatch[1];
       return <TeamPage teamId={teamId as Id<"teams">} navigate={navigate} />;
+    }
+    
+    const inviteMatch = location.pathname.match(/^\/invite\/(.+)$/);
+    if (inviteMatch) {
+      const token = inviteMatch[1];
+      return <InvitePage token={token} navigate={navigate} />;
     }
     
     return (
