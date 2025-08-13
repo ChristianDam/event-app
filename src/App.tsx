@@ -1,10 +1,10 @@
 import { Chat } from "@/Chat/Chat";
 import { ChatHeader } from "@/Chat/ChatIntro";
 import { Layout } from "@/Layout";
-import { SignInFormsShowcase } from "@/auth/SignInFormsShowcase";
 import { UserMenu } from "@/components/UserMenu";
 import { api } from "../convex/_generated/api";
 import { Authenticated, Unauthenticated, useQuery } from "convex/react";
+import { SignInFormEmailCode } from "./auth/SignInFormEmailCode";
 
 export default function App() {
   const user = useQuery(api.users.viewer);
@@ -28,7 +28,7 @@ export default function App() {
           <Chat viewer={user?._id!} />
         </Authenticated>
         <Unauthenticated>
-          <SignInFormsShowcase />
+          <SignInFormEmailCode />
         </Unauthenticated>
       </>
     </Layout>
