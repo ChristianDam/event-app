@@ -276,6 +276,7 @@ export const getTeamMembers = query({
   returns: v.array(v.object({
     _id: v.id("teamMembers"),
     _creationTime: v.number(),
+    teamId: v.id("teams"),
     userId: v.id("users"),
     role: v.union(v.literal("owner"), v.literal("admin"), v.literal("member")),
     joinedAt: v.number(),
