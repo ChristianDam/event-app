@@ -1,14 +1,10 @@
-import { Chat } from "@/Chat/Chat";
-import { ChatHeader } from "@/Chat/ChatIntro";
 import { Layout } from "@/Layout";
 import { UserMenu } from "@/components/UserMenu";
-import { TeamPage } from "@/components/TeamPage";
-import { InvitePage } from "@/components/InvitePage";
 import { api } from "../convex/_generated/api";
 import { Authenticated, Unauthenticated, useQuery } from "convex/react";
 import { SignInFormEmailCode } from "./auth/SignInFormEmailCode";
 import { useState, useEffect } from "react";
-import { Id } from "../convex/_generated/dataModel";
+import { router } from "./router/routes";
 
 // Router state hook
 function useRouter() {
@@ -52,37 +48,34 @@ function AppContent() {
   const user = useQuery(api.users.viewer);
   const { location, navigate } = useRouter();
   
+  // Match current route
+  const routeMatch = router.matchRoute(location.pathname);
+  
   const renderContent = () => {
-    if (location.pathname === '/') {
+    if (!routeMatch) {
+      // 404 page - could be moved to a separate component
       return (
-        <>
-          <ChatHeader />
-          {/* eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain */}
-          <Chat viewer={user?._id!} />
-        </>
+        <div className="container mx-auto px-4 py-8 text-center">
+          <h1 className="text-2xl font-bold mb-4">Page Not Found</h1>
+          <p className="text-muted-foreground mb-4">The page you're looking for doesn't exist.</p>
+          <button 
+            onClick={() => navigate('/')}
+            className="text-blue-600 hover:text-blue-700 underline"
+          >
+            Go Home
+          </button>
+        </div>
       );
     }
+
+    const { route, params } = routeMatch;
+    const PageComponent = route.component;
     
-    const teamMatch = location.pathname.match(/^\/team\/(.+)$/);
-    if (teamMatch) {
-      const teamId = teamMatch[1];
-      return <TeamPage teamId={teamId as Id<"teams">} navigate={navigate} />;
-    }
-    
-    const inviteMatch = location.pathname.match(/^\/invite\/(.+)$/);
-    if (inviteMatch) {
-      const token = inviteMatch[1];
-      return <InvitePage token={token} navigate={navigate} />;
-    }
-    
-    return (
-      <>
-        <ChatHeader />
-        {/* eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain */}
-        <Chat viewer={user?._id!} />
-      </>
-    );
+    return <PageComponent params={params} navigate={navigate} />;
   };
+
+  // Check if current route requires authentication
+  const requiresAuth = routeMatch?.route.authRequired ?? true;
 
   return (
     <Layout
@@ -98,12 +91,19 @@ function AppContent() {
       }
     >
       <>
-        <Authenticated>
-          {renderContent()}
-        </Authenticated>
-        <Unauthenticated>
-          <SignInFormEmailCode />
-        </Unauthenticated>
+        {!requiresAuth ? (
+          // Public pages (like invitations)
+          renderContent()
+        ) : (
+          <>
+            <Authenticated>
+              {renderContent()}
+            </Authenticated>
+            <Unauthenticated>
+              <SignInFormEmailCode />
+            </Unauthenticated>
+          </>
+        )}
       </>
     </Layout>
   );

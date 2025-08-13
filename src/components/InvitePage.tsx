@@ -2,8 +2,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PersonIcon, CheckIcon, CrossCircledIcon } from "@radix-ui/react-icons";
 import { useState } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, Authenticated, Unauthenticated } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import { SignInFormEmailCode } from "../auth/SignInFormEmailCode";
 
 interface InvitePageProps {
   token: string;
@@ -16,6 +17,7 @@ export function InvitePage({ token, navigate }: InvitePageProps) {
   const [isAccepting, setIsAccepting] = useState(false);
   const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSignIn, setShowSignIn] = useState(false);
 
   const handleAcceptInvitation = async () => {
     setIsAccepting(true);
@@ -39,6 +41,10 @@ export function InvitePage({ token, navigate }: InvitePageProps) {
     } finally {
       setIsAccepting(false);
     }
+  };
+
+  const handleSignInToAccept = () => {
+    setShowSignIn(true);
   };
 
   if (invitation === undefined) {
@@ -124,6 +130,34 @@ export function InvitePage({ token, navigate }: InvitePageProps) {
     );
   }
 
+  if (showSignIn) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-md">
+        <Card className="mb-4">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <PersonIcon className="h-5 w-5" />
+              Sign in to join {invitation?.teamName}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Please sign in or create an account to accept this team invitation.
+            </p>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowSignIn(false)}
+              className="w-full mb-4"
+            >
+              ← Back to Invitation
+            </Button>
+          </CardContent>
+        </Card>
+        <SignInFormEmailCode />
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-md">
       <Card>
@@ -180,13 +214,25 @@ export function InvitePage({ token, navigate }: InvitePageProps) {
               >
                 Cancel
               </Button>
-              <Button
-                onClick={() => void handleAcceptInvitation()}
-                disabled={isAccepting}
-                className="flex-1"
-              >
-                {isAccepting ? "Joining..." : "Accept Invitation"}
-              </Button>
+              
+              <Authenticated>
+                <Button
+                  onClick={() => void handleAcceptInvitation()}
+                  disabled={isAccepting}
+                  className="flex-1"
+                >
+                  {isAccepting ? "Joining..." : "Accept Invitation"}
+                </Button>
+              </Authenticated>
+              
+              <Unauthenticated>
+                <Button
+                  onClick={handleSignInToAccept}
+                  className="flex-1"
+                >
+                  Sign In to Accept
+                </Button>
+              </Unauthenticated>
             </div>
           </div>
         </CardContent>

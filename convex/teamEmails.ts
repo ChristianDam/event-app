@@ -22,9 +22,29 @@ export const sendInvitationEmail = internalAction({
       return null;
     }
 
+    const inviteUrl = `${process.env.SITE_URL || "http://localhost:3000"}/invite/${invitation.token}`;
+    
+    // Check if we're in development mode or if Resend domain is not configured
+    const isDevelopment = process.env.NODE_ENV !== "production";
+    const hasVerifiedDomain = process.env.AUTH_EMAIL && !process.env.AUTH_EMAIL.includes("resend.dev");
+    
+    if (isDevelopment && !hasVerifiedDomain) {
+      // Development mode: Log invitation details instead of sending actual email
+      console.log("🔧 DEVELOPMENT MODE - Email not sent, but invitation created:");
+      console.log("📧 Invitation Details:", {
+        email: invitation.email,
+        teamName: invitation.teamName,
+        inviterName: invitation.inviterName,
+        role: invitation.role,
+        inviteUrl,
+        token: invitation.token
+      });
+      console.log(`📧 To test the invitation, visit: ${inviteUrl}`);
+      console.log("📧 To enable actual email sending, verify a domain at resend.com/domains");
+      return null;
+    }
+
     try {
-      const inviteUrl = `${process.env.SITE_URL || "http://localhost:3000"}/invite/${invitation.token}`;
-      
       const { Resend } = await import("resend");
       const resend = new Resend(process.env.AUTH_RESEND_KEY);
       
