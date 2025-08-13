@@ -26,9 +26,11 @@ import { api } from "../../convex/_generated/api";
 export function UserMenu({
   favoriteColor,
   children,
+  navigate,
 }: {
   favoriteColor: string | undefined;
   children: ReactNode;
+  navigate: (to: string) => void;
 }) {
   const teams = useQuery(api.teams.getMyTeams);
   const [showCreateTeam, setShowCreateTeam] = useState(false);
@@ -69,7 +71,11 @@ export function UserMenu({
             <DropdownMenuItem disabled>No teams found</DropdownMenuItem>
           ) : (
             teams.map((team) => (
-              <DropdownMenuItem key={team._id} className="flex items-center justify-between">
+              <DropdownMenuItem 
+                key={team._id} 
+                className="flex items-center justify-between cursor-pointer"
+                onClick={() => { void navigate(`/team/${team._id}`); }}
+              >
                 <div className="flex flex-col">
                   <span className="font-medium">{team.name}</span>
                   <span className="text-xs text-muted-foreground">
