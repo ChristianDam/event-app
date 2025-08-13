@@ -8,8 +8,6 @@ import { Password } from "@convex-dev/auth/providers/Password";
 import { ConvexError } from "convex/values";
 import { convexAuth } from "@convex-dev/auth/server";
 import { ResendOTP } from "./otp/ResendOTP";
-import { TwilioOTP } from "./otp/TwilioOTP";
-import { TwilioVerify } from "./otp/TwilioVerify";
 import { ResendOTPPasswordReset } from "./passwordReset/ResendOTPPasswordReset";
 import { DataModel } from "./_generated/dataModel.js";
 
@@ -28,8 +26,6 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
       from: process.env.AUTH_EMAIL ?? "My App <onboarding@resend.dev>",
     }),
     ResendOTP,
-    TwilioVerify,
-    TwilioOTP,
     Password,
     // Sample password auth with a custom parameter provided during sign-up
     // flow and custom password validation requirements (at least six chars

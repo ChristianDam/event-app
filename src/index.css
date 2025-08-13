@@ -1,9 +1,18 @@
+ @font-face {
+    font-family: 'InterVariable';
+    src: url('./assets/fonts/InterVariable.woff2') format('woff2-variations');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+  }
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* To change the theme colors, change the values below
   or use the "Copy code" button at https://ui.shadcn.com/themes */
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -57,8 +66,12 @@
   }
   body {
     @apply bg-background text-foreground;
-  }
 
+  }
+  html {
+    font-feature-settings: 'cv11', 'zero' 1, 'dlig' 1;
+  }
+  
   form .react-colorful {
     @apply w-full
   }
