@@ -109,6 +109,7 @@ export const getMyTeams = query({
   args: {},
   returns: v.array(v.object({
     _id: v.id("teams"),
+    _creationTime: v.number(),
     name: v.string(),
     slug: v.string(),
     description: v.optional(v.string()),
@@ -161,6 +162,7 @@ export const getTeam = query({
   returns: v.union(
     v.object({
       _id: v.id("teams"),
+      _creationTime: v.number(),
       name: v.string(),
       slug: v.string(),
       description: v.optional(v.string()),
@@ -273,11 +275,13 @@ export const getTeamMembers = query({
   },
   returns: v.array(v.object({
     _id: v.id("teamMembers"),
+    _creationTime: v.number(),
     userId: v.id("users"),
     role: v.union(v.literal("owner"), v.literal("admin"), v.literal("member")),
     joinedAt: v.number(),
     user: v.object({
       _id: v.id("users"),
+      _creationTime: v.number(),
       name: v.optional(v.string()),
       email: v.optional(v.string()),
       image: v.optional(v.string()),
@@ -314,6 +318,7 @@ export const getTeamMembers = query({
           ...member,
           user: {
             _id: user._id,
+            _creationTime: user._creationTime,
             name: user.name,
             email: user.email,
             image: user.image,
@@ -704,10 +709,12 @@ export const getPendingInvitations = query({
   },
   returns: v.array(v.object({
     _id: v.id("teamInvitations"),
+    _creationTime: v.number(),
     email: v.string(),
     role: v.union(v.literal("admin"), v.literal("member")),
     invitedBy: v.object({
       _id: v.id("users"),
+      _creationTime: v.number(),
       name: v.optional(v.string()),
       email: v.optional(v.string()),
     }),
@@ -744,10 +751,12 @@ export const getPendingInvitations = query({
       if (inviter) {
         invitationsWithInviter.push({
           _id: invitation._id,
+          _creationTime: invitation._creationTime,
           email: invitation.email,
           role: invitation.role,
           invitedBy: {
             _id: inviter._id,
+            _creationTime: inviter._creationTime,
             name: inviter.name,
             email: inviter.email,
           },
@@ -811,6 +820,7 @@ export const getInvitationByToken = query({
   returns: v.union(
     v.object({
       _id: v.id("teamInvitations"),
+      _creationTime: v.number(),
       teamName: v.string(),
       teamDescription: v.optional(v.string()),
       inviterName: v.optional(v.string()),
@@ -845,6 +855,7 @@ export const getInvitationByToken = query({
 
     return {
       _id: invitation._id,
+      _creationTime: invitation._creationTime,
       teamName: team.name,
       teamDescription: team.description,
       inviterName: inviter?.name,
