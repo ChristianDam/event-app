@@ -234,27 +234,125 @@ Features:
 - **Caching Strategy**: Static event data with revalidation
 - **Database Optimization**: Proper indexing for event queries
 
-## Development Workflow
+## Development Workflow & PR Strategy
 
-### Week 1: Infrastructure
-1. **Day 1-2**: Database schema and core functions
-2. **Day 3-4**: Authentication integration and permissions  
-3. **Day 5**: Testing infrastructure and basic queries
+### PR Plan Overview
 
-### Week 2: Creation Interface  
-1. **Day 1-2**: Event creation form components
-2. **Day 3-4**: Team dashboard integration
-3. **Day 5**: Form validation and error handling
+We'll use a **hybrid approach** with 3 main feature PRs plus ongoing testing/utilities:
 
-### Week 3: Event Pages
-1. **Day 1-2**: Public event page layout and branding
-2. **Day 3-4**: Social sharing and SEO optimization
-3. **Day 5**: Mobile responsiveness and accessibility
+#### PR #1: Core Infrastructure 
+**Issues**: #6 (Database Schema) + #7 (Core Event Functions)
+- **Rationale**: Database and backend functions are tightly coupled and should be deployed together
+- **Branch**: `feature/event-core-infrastructure`
+- **Timeline**: Week 1
+- **Deliverables**: Complete backend foundation for event management
 
-### Week 4: Registration
-1. **Day 1-2**: Registration form and validation
-2. **Day 3-4**: Email system and confirmations
-3. **Day 5**: Organizer dashboard and testing
+#### PR #2: Event Creation Flow
+**Issues**: #8 (Event Creation Form) + #11 (Team Dashboard Integration)
+- **Rationale**: These work together to provide the complete event creation experience
+- **Branch**: `feature/event-creation-flow`
+- **Timeline**: Week 2
+- **Deliverables**: Full event creation workflow for team organizers
+
+#### PR #3: Public Experience
+**Issues**: #9 (Public Event Pages) + #10 (Registration System)
+- **Rationale**: The public event page and registration form are part of the same user journey
+- **Branch**: `feature/public-event-experience`
+- **Timeline**: Week 3-4
+- **Deliverables**: Complete public-facing event system
+
+#### Ongoing PRs (Independent)
+- **PR #4**: #12 (Image & Branding System) - Can be developed in parallel
+- **PR #5**: #13 (Testing & QA) - Continuous throughout development
+
+### Detailed Development Timeline
+
+#### Week 1: Core Infrastructure (PR #1)
+**Branch**: `feature/event-core-infrastructure`
+1. **Day 1-2**: Database schema design and implementation (#6)
+   - Add `events` and `eventRegistrations` tables
+   - Create proper indexes and validation
+   - Test schema migrations
+2. **Day 3-4**: Core backend functions (#7)
+   - Implement all CRUD operations for events
+   - Add authentication and permission checks
+   - Create slug generation and validation
+3. **Day 5**: Integration testing and PR preparation
+   - Test all functions with existing team system
+   - Ensure type safety and error handling
+   - **PR Review & Merge**
+
+#### Week 2: Event Creation Flow (PR #2)
+**Branch**: `feature/event-creation-flow`
+1. **Day 1-2**: Event creation form components (#8)
+   - Build beautiful form with team branding integration
+   - Add validation and error handling
+   - Implement image upload and preview
+2. **Day 3-4**: Team dashboard integration (#11)
+   - Add events section to existing TeamPage
+   - Create event management dashboard
+   - Add quick actions and statistics
+3. **Day 5**: Polish and testing
+   - Mobile responsiveness testing
+   - Form validation refinement
+   - **PR Review & Merge**
+
+#### Week 3: Public Event Pages (PR #3 - Part 1)
+**Branch**: `feature/public-event-experience`
+1. **Day 1-2**: Public event page layout (#9)
+   - Create stunning event display pages
+   - Implement team branding integration
+   - Add social sharing optimization
+2. **Day 3-4**: SEO and social optimization (#9)
+   - Open Graph meta tags
+   - Social media preview generation
+   - Mobile responsiveness
+
+#### Week 4: Registration System (PR #3 - Part 2)
+**Branch**: `feature/public-event-experience` (continued)
+1. **Day 1-2**: Registration form and validation (#10)
+   - Simple, branded registration form
+   - Real-time validation and error handling
+   - Success confirmation flow
+2. **Day 3-4**: Email system and confirmations (#10)
+   - Registration confirmation emails
+   - Calendar invite generation
+   - Organizer notification system
+3. **Day 5**: Final integration and testing
+   - End-to-end workflow testing
+   - Performance optimization
+   - **PR Review & Merge**
+
+### PR Dependencies & Deployment Strategy
+
+```
+PR #1 (Infrastructure) 
+├── Must merge first - foundation for all other work
+│
+├── PR #2 (Creation Flow)
+│   ├── Depends on: PR #1
+│   ├── Can develop: After PR #1 is merged
+│   
+├── PR #3 (Public Experience)
+│   ├── Depends on: PR #1 (partially PR #2 for testing)
+│   ├── Can develop: After PR #1, parallel with PR #2
+│   
+├── PR #4 (Image & Branding)
+│   ├── Independent - can develop anytime
+│   ├── Integrates with: All other PRs
+│   
+└── PR #5 (Testing & QA)
+    └── Continuous - applies to all PRs
+```
+
+### Benefits of This PR Strategy
+
+✅ **Manageable PR sizes** - Each PR is focused but complete  
+✅ **Logical deployment units** - Features can be deployed and tested together  
+✅ **Faster reviews** - Smaller than one massive PR but larger than micro-PRs  
+✅ **Rollback safety** - Can rollback individual features if needed  
+✅ **Parallel development** - Some PRs can be worked on simultaneously  
+✅ **Clear dependencies** - Obvious order of implementation and testing
 
 ## Risk Mitigation
 

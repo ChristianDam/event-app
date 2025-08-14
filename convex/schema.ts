@@ -55,4 +55,51 @@ export default defineSchema({
     .index("by_token", ["token"])
     .index("by_email", ["email"])
     .index("by_status", ["status"]),
+  events: defineTable({
+    title: v.string(),
+    slug: v.string(),
+    description: v.string(),
+    venue: v.string(),
+    startTime: v.number(), // Unix timestamp
+    endTime: v.number(), // Unix timestamp
+    timezone: v.string(), // IANA timezone identifier (default: "Europe/Copenhagen")
+    teamId: v.id("teams"),
+    organizerId: v.id("users"),
+    eventType: v.union(
+      v.literal("music"),
+      v.literal("art"),
+      v.literal("workshop"),
+      v.literal("performance"),
+      v.literal("exhibition"),
+      v.literal("other")
+    ),
+    maxCapacity: v.optional(v.number()),
+    registrationDeadline: v.optional(v.number()),
+    status: v.union(
+      v.literal("draft"),
+      v.literal("published"),
+      v.literal("cancelled")
+    ),
+    eventImageId: v.optional(v.id("_storage")),
+    socialImageId: v.optional(v.id("_storage")), // Optimized for social sharing
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_team", ["teamId"])
+    .index("by_organizer", ["organizerId"])
+    .index("by_slug", ["slug"])
+    .index("by_start_time", ["startTime"])
+    .index("by_status", ["status"])
+    .index("by_event_type", ["eventType"]),
+  eventRegistrations: defineTable({
+    eventId: v.id("events"),
+    attendeeName: v.string(),
+    attendeeEmail: v.string(),
+    attendeePhone: v.optional(v.string()),
+    registeredAt: v.number(),
+    confirmationSent: v.boolean(),
+  })
+    .index("by_event", ["eventId"])
+    .index("by_email", ["attendeeEmail"])
+    .index("by_registration_time", ["registeredAt"]),
 });

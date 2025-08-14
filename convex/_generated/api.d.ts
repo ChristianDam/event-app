@@ -15,6 +15,7 @@ import type {
 } from "convex/server";
 import type * as auth from "../auth.js";
 import type * as emails_TeamInvitationEmail from "../emails/TeamInvitationEmail.js";
+import type * as events from "../events.js";
 import type * as helpers from "../helpers.js";
 import type * as http from "../http.js";
 import type * as messages from "../messages.js";
@@ -35,6 +36,7 @@ import type * as users from "../users.js";
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   "emails/TeamInvitationEmail": typeof emails_TeamInvitationEmail;
+  events: typeof events;
   helpers: typeof helpers;
   http: typeof http;
   messages: typeof messages;
