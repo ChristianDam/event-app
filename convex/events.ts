@@ -5,6 +5,26 @@ import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 
 /**
+ * Validate email address using proper regex
+ */
+function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email.trim());
+}
+
+/**
+ * Validate timezone string against IANA timezone database
+ */
+function isValidTimezone(timezone: string): boolean {
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: timezone });
+    return true;
+  } catch (ex) {
+    return false;
+  }
+}
+
+/**
  * Generate a URL-friendly slug from event title
  */
 function generateSlug(title: string): string {
@@ -63,6 +83,61 @@ async function checkEventCreatePermission(ctx: any, userId: Id<"users">, teamId:
     throw new Error("You must be a team member to create events");
   }
   return membership;
+}
+
+/**
+ * Build standardized event response with team and organizer details
+ */
+async function buildEventResponse(ctx: any, event: any, userId?: Id<"users">) {
+  // Get team details
+  const team = await ctx.db.get(event.teamId);
+  if (!team) {
+    return null;
+  }
+
+  // Get organizer details
+  const organizer = await ctx.db.get(event.organizerId);
+  if (!organizer) {
+    return null;
+  }
+
+  // Count registrations
+  const registrationCount = await ctx.db
+    .query("eventRegistrations")
+    .withIndex("by_event", (q: any) => q.eq("eventId", event._id))
+    .collect()
+    .then((registrations: any) => registrations.length);
+
+  // Check if user can manage this event
+  let canManage = false;
+  if (userId) {
+    if (event.organizerId === userId) {
+      canManage = true;
+    } else {
+      const membership = await checkTeamMembership(ctx, userId, event.teamId);
+      if (membership && (membership.role === "admin" || membership.role === "owner")) {
+        canManage = true;
+      }
+    }
+  }
+
+  return {
+    ...event,
+    team: {
+      _id: team._id,
+      name: team.name,
+      slug: team.slug,
+      logo: team.logo,
+      primaryColor: team.primaryColor,
+    },
+    organizer: {
+      _id: organizer._id,
+      name: organizer.name,
+      email: organizer.email,
+    },
+    registrationCount,
+    canManage,
+  };
 }
 
 /**
@@ -138,6 +213,9 @@ export const createEvent = mutation({
     }
     if (args.maxCapacity && args.maxCapacity <= 0) {
       throw new Error("Maximum capacity must be a positive number");
+    }
+    if (args.timezone && !isValidTimezone(args.timezone)) {
+      throw new Error("Invalid timezone. Please use a valid IANA timezone identifier");
     }
 
     // Check permissions
@@ -255,6 +333,9 @@ export const updateEvent = mutation({
     }
 
     if (args.timezone !== undefined) {
+      if (!isValidTimezone(args.timezone)) {
+        throw new Error("Invalid timezone. Please use a valid IANA timezone identifier");
+      }
       updates.timezone = args.timezone;
     }
 
@@ -397,42 +478,8 @@ export const getEvent = query({
       return null;
     }
 
-    // Get team details
-    const team = await ctx.db.get(event.teamId);
-    if (!team) {
-      return null;
-    }
-
-    // Get organizer details
-    const organizer = await ctx.db.get(event.organizerId);
-    if (!organizer) {
-      return null;
-    }
-
-    // Count registrations
-    const registrationCount = await ctx.db
-      .query("eventRegistrations")
-      .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
-      .collect()
-      .then(registrations => registrations.length);
-
-    return {
-      ...event,
-      team: {
-        _id: team._id,
-        name: team.name,
-        slug: team.slug,
-        logo: team.logo,
-        primaryColor: team.primaryColor,
-      },
-      organizer: {
-        _id: organizer._id,
-        name: organizer.name,
-        email: organizer.email,
-      },
-      registrationCount,
-      canManage,
-    };
+    // Use the helper function to build the response
+    return await buildEventResponse(ctx, event, userId || undefined);
   },
 });
 
@@ -518,42 +565,8 @@ export const getEventBySlug = query({
       return null;
     }
 
-    // Get team details
-    const team = await ctx.db.get(event.teamId);
-    if (!team) {
-      return null;
-    }
-
-    // Get organizer details
-    const organizer = await ctx.db.get(event.organizerId);
-    if (!organizer) {
-      return null;
-    }
-
-    // Count registrations
-    const registrationCount = await ctx.db
-      .query("eventRegistrations")
-      .withIndex("by_event", (q: any) => q.eq("eventId", event._id))
-      .collect()
-      .then(registrations => registrations.length);
-
-    return {
-      ...event,
-      team: {
-        _id: team._id,
-        name: team.name,
-        slug: team.slug,
-        logo: team.logo,
-        primaryColor: team.primaryColor,
-      },
-      organizer: {
-        _id: organizer._id,
-        name: organizer.name,
-        email: organizer.email,
-      },
-      registrationCount,
-      canManage,
-    };
+    // Use the helper function to build the response
+    return await buildEventResponse(ctx, event, userId || undefined);
   },
 });
 
@@ -614,18 +627,31 @@ export const getTeamEvents = query({
       .order("desc") // Most recent first
       .collect();
 
-    const eventsWithDetails = [];
-    for (const event of events) {
-      // Get organizer details
-      const organizer = await ctx.db.get(event.organizerId);
-      if (!organizer) continue;
+    // Batch fetch all unique organizer IDs to avoid N+1 query problem
+    const organizerIds = [...new Set(events.map(event => event.organizerId))];
+    const organizersMap = new Map();
+    
+    for (const organizerId of organizerIds) {
+      const organizer = await ctx.db.get(organizerId);
+      if (organizer) {
+        organizersMap.set(organizerId, organizer);
+      }
+    }
 
-      // Count registrations
-      const registrationCount = await ctx.db
+    // Batch fetch registration counts for all events
+    const registrationCountsMap = new Map();
+    for (const event of events) {
+      const registrations = await ctx.db
         .query("eventRegistrations")
         .withIndex("by_event", (q) => q.eq("eventId", event._id))
-        .collect()
-        .then(registrations => registrations.length);
+        .collect();
+      registrationCountsMap.set(event._id, registrations.length);
+    }
+
+    const eventsWithDetails = [];
+    for (const event of events) {
+      const organizer = organizersMap.get(event.organizerId);
+      if (!organizer) continue;
 
       // Check if user can manage this event
       const canManage = event.organizerId === userId || 
@@ -654,7 +680,7 @@ export const getTeamEvents = query({
           name: organizer.name,
           email: organizer.email,
         },
-        registrationCount,
+        registrationCount: registrationCountsMap.get(event._id) || 0,
         canManage,
       });
     }
@@ -704,7 +730,7 @@ export const registerForEvent = mutation({
     if (args.attendeeName.trim().length < 2) {
       throw new Error("Name must be at least 2 characters long");
     }
-    if (!args.attendeeEmail.includes("@")) {
+    if (!isValidEmail(args.attendeeEmail)) {
       throw new Error("Please provide a valid email address");
     }
 
@@ -740,7 +766,9 @@ export const registerForEvent = mutation({
       throw new Error("This email address is already registered for this event");
     }
 
-    // Check capacity limit
+    const now = Date.now();
+
+    // Check capacity limit with atomic operation to prevent race condition
     if (event.maxCapacity) {
       const currentRegistrations = await ctx.db
         .query("eventRegistrations")
@@ -750,25 +778,53 @@ export const registerForEvent = mutation({
       if (currentRegistrations.length >= event.maxCapacity) {
         throw new Error("This event has reached maximum capacity");
       }
+
+      // Double-check capacity after creating registration to handle race conditions
+      try {
+        const registrationId = await ctx.db.insert("eventRegistrations", {
+          eventId: args.eventId,
+          attendeeName: args.attendeeName.trim(),
+          attendeeEmail: args.attendeeEmail.toLowerCase().trim(),
+          attendeePhone: args.attendeePhone?.trim(),
+          registeredAt: now,
+          confirmationSent: false,
+        });
+
+        // Verify capacity wasn't exceeded after insertion
+        const finalRegistrations = await ctx.db
+          .query("eventRegistrations")
+          .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
+          .collect();
+
+        if (finalRegistrations.length > event.maxCapacity) {
+          // If we exceeded capacity due to race condition, remove this registration
+          await ctx.db.delete(registrationId);
+          throw new Error("This event has reached maximum capacity");
+        }
+
+        return registrationId;
+      } catch (error) {
+        // If insertion failed, re-throw the original error
+        throw error;
+      }
+    } else {
+      // No capacity limit - proceed with normal insertion
+      const registrationId = await ctx.db.insert("eventRegistrations", {
+        eventId: args.eventId,
+        attendeeName: args.attendeeName.trim(),
+        attendeeEmail: args.attendeeEmail.toLowerCase().trim(),
+        attendeePhone: args.attendeePhone?.trim(),
+        registeredAt: now,
+        confirmationSent: false,
+      });
+
+      // TODO: Schedule confirmation email
+      // await ctx.scheduler.runAfter(0, internal.eventEmails.sendRegistrationConfirmation, {
+      //   registrationId,
+      // });
+
+      return registrationId;
     }
-
-    const now = Date.now();
-
-    const registrationId = await ctx.db.insert("eventRegistrations", {
-      eventId: args.eventId,
-      attendeeName: args.attendeeName.trim(),
-      attendeeEmail: args.attendeeEmail.toLowerCase().trim(),
-      attendeePhone: args.attendeePhone?.trim(),
-      registeredAt: now,
-      confirmationSent: false, // Will be updated when email is sent
-    });
-
-    // TODO: Schedule confirmation email
-    // await ctx.scheduler.runAfter(0, internal.eventEmails.sendRegistrationConfirmation, {
-    //   registrationId,
-    // });
-
-    return registrationId;
   },
 });
 
