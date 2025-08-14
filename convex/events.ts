@@ -1,7 +1,7 @@
 import { v } from "convex/values";
-import { mutation, query, internalQuery, internalMutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { auth } from "./auth";
-import { internal } from "./_generated/api";
+// import { internal } from "./_generated/api"; // Reserved for future use
 import { Id } from "./_generated/dataModel";
 
 /**
@@ -39,10 +39,11 @@ function generateSlug(title: string): string {
  * Generate a unique slug by appending numbers if needed
  */
 async function generateUniqueSlug(ctx: any, title: string, excludeEventId?: Id<"events">): Promise<string> {
-  let baseSlug = generateSlug(title);
+  const baseSlug = generateSlug(title);
   let slug = baseSlug;
   let counter = 1;
 
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     const existingEvent = await ctx.db
       .query("events")
@@ -803,9 +804,9 @@ export const registerForEvent = mutation({
         }
 
         return registrationId;
-      } catch (error) {
+      } catch {
         // If insertion failed, re-throw the original error
-        throw error;
+        throw new Error("Registration failed");
       }
     } else {
       // No capacity limit - proceed with normal insertion
