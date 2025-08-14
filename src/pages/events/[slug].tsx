@@ -124,7 +124,7 @@ const PublicEventPage: React.FC<PublicEventPageProps> = ({ params, navigate }) =
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted/50">
       {/* Hero Section */}
       <div className="relative">
         {/* Event Image Background */}
@@ -140,7 +140,12 @@ const PublicEventPage: React.FC<PublicEventPageProps> = ({ params, navigate }) =
         )}
         
         {/* Hero Content */}
-        <div className="relative z-10 bg-gradient-to-r from-var(--event-primary, #3b82f6) to-var(--event-secondary, #1e40af) text-white">
+        <div 
+          className="relative z-10 text-foreground"
+          style={{
+            background: `linear-gradient(to right, var(--event-primary, #3b82f6), var(--event-secondary, #1e40af))`
+          }}
+        >
           <div className="container mx-auto px-4 py-12 md:py-20">
             
             {/* Team Branding */}
@@ -153,7 +158,7 @@ const PublicEventPage: React.FC<PublicEventPageProps> = ({ params, navigate }) =
                 />
               )}
               <div>
-                <div className="text-white/80 text-sm font-medium">Organized by</div>
+                <div className="text-foreground/80 text-sm font-medium">Organized by</div>
                 <div className="text-xl font-bold">{event.team.name}</div>
               </div>
             </div>
@@ -179,19 +184,19 @@ const PublicEventPage: React.FC<PublicEventPageProps> = ({ params, navigate }) =
               </div>
               
               {eventIsUpcoming && (
-                <div className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                <div className="bg-green-600 text-white px-3 py-1 rounded-full text-sm font-medium">
                   Upcoming
                 </div>
               )}
               
               {eventIsPast && (
-                <div className="bg-gray-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                <div className="bg-muted text-muted-foreground px-3 py-1 rounded-full text-sm font-medium">
                   Past Event
                 </div>
               )}
               
               {isAtCapacity && (
-                <div className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                <div className="bg-destructive text-destructive-foreground px-3 py-1 rounded-full text-sm font-medium">
                   Sold Out
                 </div>
               )}
@@ -202,11 +207,12 @@ const PublicEventPage: React.FC<PublicEventPageProps> = ({ params, navigate }) =
               <div className="flex flex-col sm:flex-row gap-4 items-start">
                 <button
                   onClick={() => setShowRegistration(true)}
-                  className="bg-white text-var(--event-primary, #3b82f6) px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition-colors shadow-lg"
+                  className="bg-background border px-8 py-4 rounded-lg font-bold text-lg hover:bg-muted/50 transition-colors shadow-lg"
+                  style={{ color: 'var(--event-primary, #3b82f6)' }}
                 >
                   Register for Free
                 </button>
-                <div className="text-white/80">
+                <div className="text-foreground/80">
                   {event.maxCapacity && (
                     <div className="text-sm">
                       {registrationCount} of {event.maxCapacity} spots filled
@@ -233,43 +239,43 @@ const PublicEventPage: React.FC<PublicEventPageProps> = ({ params, navigate }) =
             <div className="lg:col-span-2 space-y-8">
               
               {/* Description */}
-              <section className="bg-white rounded-lg p-6 shadow-sm">
+              <section className="bg-background rounded-lg p-6 shadow-sm">
                 <h2 className="text-2xl font-bold mb-4">About This Event</h2>
                 <div className="prose prose-lg max-w-none">
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
                     {event.description}
                   </p>
                 </div>
               </section>
 
               {/* Date & Time Details */}
-              <section className="bg-white rounded-lg p-6 shadow-sm">
+              <section className="bg-background rounded-lg p-6 shadow-sm">
                 <h2 className="text-2xl font-bold mb-4">When & Where</h2>
                 <div className="space-y-4">
                   <div className="flex items-start gap-3">
-                    <svg className="w-6 h-6 text-blue-600 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6 text-primary mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                     <div>
-                      <div className="font-semibold text-gray-900">
+                      <div className="font-semibold text-foreground">
                         {formatDate(event.startTime)}
                       </div>
-                      <div className="text-gray-600">
+                      <div className="text-muted-foreground">
                         {formatTime(event.startTime)} - {formatTime(event.endTime)}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-muted-foreground/70">
                         {event.timezone}
                       </div>
                     </div>
                   </div>
                   
                   <div className="flex items-start gap-3">
-                    <svg className="w-6 h-6 text-blue-600 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6 text-primary mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                     <div>
-                      <div className="font-semibold text-gray-900">
+                      <div className="font-semibold text-foreground">
                         {event.venue}
                       </div>
                     </div>
@@ -278,7 +284,7 @@ const PublicEventPage: React.FC<PublicEventPageProps> = ({ params, navigate }) =
               </section>
 
               {/* Social Sharing */}
-              <section className="bg-white rounded-lg p-6 shadow-sm">
+              <section className="bg-background rounded-lg p-6 shadow-sm">
                 <h2 className="text-2xl font-bold mb-4">Share This Event</h2>
                 <div className="flex flex-wrap gap-3">
                   <SocialShareButton 
@@ -309,7 +315,7 @@ const PublicEventPage: React.FC<PublicEventPageProps> = ({ params, navigate }) =
             <div className="space-y-6">
               
               {/* Registration Card */}
-              <div className="bg-white rounded-lg p-6 shadow-sm border-l-4" 
+              <div className="bg-background rounded-lg p-6 shadow-sm border-l-4" 
                    style={{ borderLeftColor: event.team.primaryColor || '#3b82f6' }}>
                 <h3 className="text-xl font-bold mb-4">Event Registration</h3>
                 
@@ -319,18 +325,18 @@ const PublicEventPage: React.FC<PublicEventPageProps> = ({ params, navigate }) =
                       <div className="text-3xl font-bold text-green-600 mb-1">
                         FREE
                       </div>
-                      <div className="text-sm text-gray-600">Registration</div>
+                      <div className="text-sm text-muted-foreground">Registration</div>
                     </div>
                     
                     {event.maxCapacity && (
                       <div>
-                        <div className="flex justify-between text-sm text-gray-600 mb-1">
+                        <div className="flex justify-between text-sm text-muted-foreground mb-1">
                           <span>Spots Available</span>
                           <span>{event.maxCapacity - registrationCount} left</span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="w-full bg-muted rounded-full h-2">
                           <div 
-                            className="bg-blue-500 h-2 rounded-full transition-all"
+                            className="h-2 rounded-full transition-all"
                             style={{ 
                               width: `${Math.min((registrationCount / event.maxCapacity) * 100, 100)}%`,
                               backgroundColor: event.team.primaryColor || '#3b82f6'
@@ -351,35 +357,35 @@ const PublicEventPage: React.FC<PublicEventPageProps> = ({ params, navigate }) =
                 ) : (
                   <div className="text-center py-4">
                     {eventIsPast && (
-                      <div className="text-gray-600">
+                      <div className="text-muted-foreground">
                         This event has already ended
                       </div>
                     )}
                     {isAtCapacity && eventIsUpcoming && (
-                      <div className="text-red-600 font-semibold">
+                      <div className="text-destructive font-semibold">
                         Event is at full capacity
                       </div>
                     )}
                     {registrationDeadlinePassed && eventIsUpcoming && (
-                      <div className="text-red-600 font-semibold">
+                      <div className="text-destructive font-semibold">
                         Registration deadline has passed
                       </div>
                     )}
                     {event.status !== 'published' && (
-                      <div className="text-gray-600">
+                      <div className="text-muted-foreground">
                         Registration is not yet open
                       </div>
                     )}
                   </div>
                 )}
                 
-                <div className="mt-4 text-sm text-gray-600 text-center">
+                <div className="mt-4 text-sm text-muted-foreground text-center">
                   {registrationCount} people registered
                 </div>
               </div>
 
               {/* Organizer Info */}
-              <div className="bg-white rounded-lg p-6 shadow-sm">
+              <div className="bg-background rounded-lg p-6 shadow-sm">
                 <h3 className="text-xl font-bold mb-4">Organized by</h3>
                 <div className="flex items-center gap-3">
                   {event.team.logo && (
@@ -390,10 +396,10 @@ const PublicEventPage: React.FC<PublicEventPageProps> = ({ params, navigate }) =
                     />
                   )}
                   <div>
-                    <div className="font-semibold text-gray-900">
+                    <div className="font-semibold text-foreground">
                       {event.team.name}
                     </div>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-muted-foreground">
                       Event Organizer
                     </div>
                   </div>
@@ -514,7 +520,7 @@ const SocialShareButton: React.FC<{
   return (
     <button
       onClick={() => void handleShare()}
-      className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+      className="flex items-center gap-2 px-4 py-2 bg-muted hover:bg-muted/80 rounded-lg transition-colors"
     >
       <span className="text-lg">{getIcon()}</span>
       <span className="text-sm font-medium">{getLabel()}</span>
@@ -525,25 +531,25 @@ const SocialShareButton: React.FC<{
 // Loading skeleton component
 const PublicEventPageSkeleton: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gray-50 animate-pulse">
-      <div className="bg-gray-300 h-64 md:h-80" />
+    <div className="min-h-screen bg-muted/50 animate-pulse">
+      <div className="bg-muted h-64 md:h-80" />
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
-              <div className="bg-white rounded-lg p-6 shadow-sm">
-                <div className="h-8 bg-gray-200 rounded mb-4" />
+              <div className="bg-background rounded-lg p-6 shadow-sm">
+                <div className="h-8 bg-muted rounded mb-4" />
                 <div className="space-y-2">
-                  <div className="h-4 bg-gray-200 rounded" />
-                  <div className="h-4 bg-gray-200 rounded w-3/4" />
-                  <div className="h-4 bg-gray-200 rounded w-1/2" />
+                  <div className="h-4 bg-muted rounded" />
+                  <div className="h-4 bg-muted rounded w-3/4" />
+                  <div className="h-4 bg-muted rounded w-1/2" />
                 </div>
               </div>
             </div>
             <div className="space-y-6">
-              <div className="bg-white rounded-lg p-6 shadow-sm">
-                <div className="h-6 bg-gray-200 rounded mb-4" />
-                <div className="h-32 bg-gray-200 rounded" />
+              <div className="bg-background rounded-lg p-6 shadow-sm">
+                <div className="h-6 bg-muted rounded mb-4" />
+                <div className="h-32 bg-muted rounded" />
               </div>
             </div>
           </div>
@@ -556,16 +562,16 @@ const PublicEventPageSkeleton: React.FC = () => {
 // Event not found component
 const EventNotFound: React.FC<{ navigate: (to: string) => void }> = ({ navigate }) => {
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+    <div className="min-h-screen bg-muted/50 flex items-center justify-center">
       <div className="text-center">
         <div className="text-6xl mb-4">🎪</div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">Event Not Found</h1>
-        <p className="text-gray-600 mb-8">
+        <h1 className="text-3xl font-bold text-foreground mb-4">Event Not Found</h1>
+        <p className="text-muted-foreground mb-8">
           The event you're looking for doesn't exist or is no longer available.
         </p>
         <button
           onClick={() => navigate('/')}
-          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+          className="bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors"
         >
           Go to Homepage
         </button>
