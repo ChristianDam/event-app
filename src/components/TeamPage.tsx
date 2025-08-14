@@ -26,11 +26,15 @@ import {
   GearIcon,
   ArrowLeftIcon,
   ImageIcon,
+  CalendarIcon,
 } from "@radix-ui/react-icons";
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
+import { CreateEventDialog } from "./events/CreateEventDialog";
+import { EventList } from "./events/EventList";
+import { useTeamEvents } from "../hooks/useTeamEvents";
 
 interface TeamPageProps {
   teamId: Id<"teams">;
@@ -54,6 +58,8 @@ export function TeamPage({ teamId, navigate }: TeamPageProps) {
   const [primaryColor, setPrimaryColor] = useState("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isUploadingBranding, setIsUploadingBranding] = useState(false);
+  const [showCreateEventDialog, setShowCreateEventDialog] = useState(false);
+  const [showAllEvents, setShowAllEvents] = useState(false);
 
   const inviteByEmail = useMutation(api.teams.inviteByEmail);
   const removeMember = useMutation(api.teams.removeMember);
@@ -62,6 +68,9 @@ export function TeamPage({ teamId, navigate }: TeamPageProps) {
   const leaveTeam = useMutation(api.teams.leaveTeam);
   const updateTeamBranding = useMutation(api.teams.updateTeamBranding);
   const generateLogoUploadUrl = useMutation(api.teams.generateLogoUploadUrl);
+  
+  // Events data
+  const { events, upcomingEvents, totalRegistrations } = useTeamEvents(teamId);
 
   // Set form values when team data loads
   if (team && !teamName && !showEditDialog && !showBrandingDialog) {
@@ -269,9 +278,113 @@ export function TeamPage({ teamId, navigate }: TeamPageProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Team Members */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        {/* Events Overview */}
         <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <CalendarIcon className="h-5 w-5" />
+                Events ({events.length})
+              </CardTitle>
+              <Button 
+                size="sm"
+                onClick={() => setShowCreateEventDialog(true)}
+                style={{ backgroundColor: team.primaryColor || '#3b82f6' }}
+                className="text-white hover:opacity-90"
+              >
+                <PlusIcon className="h-4 w-4 mr-2" />
+                Create
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {/* Quick Stats */}
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <div className="text-2xl font-bold text-blue-600">{events.length}</div>
+                  <div className="text-xs text-muted-foreground">Total Events</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-green-600">{upcomingEvents.length}</div>
+                  <div className="text-xs text-muted-foreground">Upcoming</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-purple-600">{totalRegistrations}</div>
+                  <div className="text-xs text-muted-foreground">Registrations</div>
+                </div>
+              </div>
+              
+              {/* Recent Events Preview */}
+              {events.length > 0 ? (
+                <div>
+                  <div className="space-y-2">
+                    {events.slice(0, 3).map((event) => {
+                      const startDate = new Date(event.startTime);
+                      const isUpcoming = startDate.getTime() > Date.now();
+                      
+                      return (
+                        <div key={event._id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm truncate">{event.title}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {startDate.toLocaleDateString()} • {event.registrationCount} registered
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge 
+                              className={`text-xs ${
+                                event.status === 'published' ? 'bg-green-100 text-green-800' :
+                                event.status === 'draft' ? 'bg-gray-100 text-gray-800' :
+                                'bg-red-100 text-red-800'
+                              }`}
+                            >
+                              {event.status}
+                            </Badge>
+                            {isUpcoming && (
+                              <Badge className="text-xs bg-blue-100 text-blue-800">
+                                Upcoming
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  {events.length > 3 && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full mt-3"
+                      onClick={() => setShowAllEvents(true)}
+                    >
+                      View All Events ({events.length})
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <CalendarIcon className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground mb-3">
+                    No events yet. Create your first event to get started!
+                  </p>
+                  <Button 
+                    size="sm"
+                    onClick={() => setShowCreateEventDialog(true)}
+                    style={{ backgroundColor: team.primaryColor || '#3b82f6' }}
+                    className="text-white hover:opacity-90"
+                  >
+                    Create First Event
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        {/* Team Members */}
+        <Card className="xl:col-span-1">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
@@ -351,7 +464,7 @@ export function TeamPage({ teamId, navigate }: TeamPageProps) {
 
         {/* Pending Invitations */}
         {canManageTeam && (
-          <Card>
+          <Card className="xl:col-span-1">
             <CardHeader>
               <CardTitle>Pending Invitations ({pendingInvitations?.length || 0})</CardTitle>
             </CardHeader>
@@ -588,6 +701,69 @@ export function TeamPage({ teamId, navigate }: TeamPageProps) {
                 </Button>
               </DialogFooter>
             </form>
+          </DialogContent>
+        </Dialog>
+      )}
+      
+      {/* Create Event Dialog */}
+      {showCreateEventDialog && (
+        <CreateEventDialog
+          isOpen={showCreateEventDialog}
+          onClose={() => setShowCreateEventDialog(false)}
+          team={team}
+          onSuccess={(eventId) => {
+            console.log('Event created:', eventId);
+            // Could navigate to event page or show success message
+          }}
+        />
+      )}
+      
+      {/* All Events Dialog */}
+      {showAllEvents && (
+        <Dialog open onOpenChange={() => setShowAllEvents(false)}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+            <DialogHeader>
+              <DialogTitle>All Events - {team.name}</DialogTitle>
+              <DialogDescription>
+                Manage all events for your team
+              </DialogDescription>
+            </DialogHeader>
+            <div className="overflow-y-auto max-h-[70vh]">
+              <EventList
+                teamId={teamId}
+                view="list"
+                showFilters={true}
+                onEventEdit={(eventId) => {
+                  console.log('Edit event:', eventId);
+                  // Could navigate to edit page
+                }}
+                onEventView={(eventId) => {
+                  console.log('View event:', eventId);
+                  // Could navigate to event page
+                }}
+                onEventShare={(eventId) => {
+                  console.log('Share event:', eventId);
+                  // Could show share dialog
+                }}
+                onEventDuplicate={(eventId) => {
+                  console.log('Duplicate event:', eventId);
+                  // Could duplicate event
+                }}
+              />
+            </div>
+            <DialogFooter>
+              <Button 
+                onClick={() => setShowCreateEventDialog(true)}
+                style={{ backgroundColor: team.primaryColor || '#3b82f6' }}
+                className="text-white hover:opacity-90"
+              >
+                <PlusIcon className="h-4 w-4 mr-2" />
+                Create New Event
+              </Button>
+              <Button variant="outline" onClick={() => setShowAllEvents(false)}>
+                Close
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
