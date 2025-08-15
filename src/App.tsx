@@ -1,5 +1,6 @@
 import { Layout } from "@/Layout";
 import { UserMenu } from "@/components/UserMenu";
+import { LandingPage } from "@/components/LandingPage";
 import { api } from "../convex/_generated/api";
 import { Authenticated, Unauthenticated, useQuery } from "convex/react";
 import { SignInFormEmailCode } from "./auth/SignInFormEmailCode";
@@ -79,6 +80,7 @@ function AppContent() {
 
   return (
     <Layout
+      navigate={navigate}
       menu={
         <>
           <Authenticated>
@@ -100,7 +102,7 @@ function AppContent() {
               {renderContent()}
             </Authenticated>
             <Unauthenticated>
-              <SignInFormEmailCode />
+              {location.pathname === '/' ? <LandingPage /> : <SignInFormEmailCode />}
             </Unauthenticated>
           </>
         )}

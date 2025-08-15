@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ColorPicker } from "@/components/ui/color-picker";
@@ -11,20 +11,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   PersonIcon,
   PlusIcon,
   TrashIcon,
   GearIcon,
-  ArrowLeftIcon,
   ImageIcon,
   CalendarIcon,
 } from "@radix-ui/react-icons";
@@ -45,7 +37,6 @@ export default function TeamIdPage({ params, navigate }: TeamIdPageProps) {
   const teamId = params.id as Id<"teams">;
   const team = useQuery(api.teams.getTeam, { teamId });
   const teamMembers = useQuery(api.teams.getTeamMembers, { teamId });
-  const pendingInvitations = useQuery(api.teams.getPendingInvitations, { teamId });
   
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -64,14 +55,13 @@ export default function TeamIdPage({ params, navigate }: TeamIdPageProps) {
 
   const inviteByEmail = useMutation(api.teams.inviteByEmail);
   const removeMember = useMutation(api.teams.removeMember);
-  const cancelInvitation = useMutation(api.teams.cancelInvitation);
   const updateTeam = useMutation(api.teams.updateTeam);
   const leaveTeam = useMutation(api.teams.leaveTeam);
   const updateTeamBranding = useMutation(api.teams.updateTeamBranding);
   const generateLogoUploadUrl = useMutation(api.teams.generateLogoUploadUrl);
   
   // Events data
-  const { events, upcomingEvents, totalRegistrations } = useTeamEvents(teamId);
+  const { events, totalRegistrations } = useTeamEvents(teamId);
 
   // Set form values when team data loads
   if (team && !teamName && !showEditDialog && !showBrandingDialog) {
@@ -108,13 +98,6 @@ export default function TeamIdPage({ params, navigate }: TeamIdPageProps) {
     }
   };
 
-  const handleCancelInvitation = async (invitationId: Id<"teamInvitations">) => {
-    try {
-      await cancelInvitation({ invitationId });
-    } catch (error) {
-      console.error("Failed to cancel invitation:", error);
-    }
-  };
 
   const handleUpdateTeam = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,14 +105,26 @@ export default function TeamIdPage({ params, navigate }: TeamIdPageProps) {
 
     setIsUpdating(true);
     try {
+      // Update basic team info
       await updateTeam({
         teamId,
         name: teamName.trim(),
         description: teamDescription.trim() || undefined,
       });
-      setShowEditDialog(false);
+      
+      // Update branding if primary color changed
+      if (primaryColor !== team?.primaryColor) {
+        await updateTeamBranding({
+          teamId,
+          primaryColor: primaryColor || undefined,
+        });
+      }
+      
+      // Show success feedback
+      console.log("Team updated successfully");
     } catch (error) {
       console.error("Failed to update team:", error);
+      alert("Failed to update team. Please try again.");
     } finally {
       setIsUpdating(false);
     }
@@ -222,313 +217,201 @@ export default function TeamIdPage({ params, navigate }: TeamIdPageProps) {
   const isOwner = team.userRole === "owner";
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <Button 
-            variant="outline" 
-            size="icon"
-            onClick={() => { void navigate("/"); }}
-          >
-            <ArrowLeftIcon className="h-4 w-4" />
-          </Button>
-          {team.logo && (
-            <img 
-              src={`${window.location.origin}/api/storage/${team.logo}`}
-              alt={`${team.name} logo`}
-              className="w-12 h-12 rounded-lg object-cover border"
-            />
-          )}
-          <div>
-            <h1 
-              className="text-3xl font-bold"
-              style={{ color: team.primaryColor || undefined }}
-            >
-              {team.name}
-            </h1>
-            {team.description && (
-              <p className="text-muted-foreground mt-1">{team.description}</p>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge className={getRoleBadgeColor(team.userRole)}>
-            {team.userRole}
-          </Badge>
-          {canManageTeam && (
-            <>
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={() => setShowBrandingDialog(true)}
-                title="Team Branding"
-              >
-                <ImageIcon className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={() => setShowEditDialog(true)}
-                title="Team Settings"
-              >
-                <GearIcon className="h-4 w-4" />
-              </Button>
-            </>
-          )}
-        </div>
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">{team.name}</h1>
+        <p className="text-muted-foreground">
+          {team.description || "Manage your team settings, members, and permissions"}
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Events Overview */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <CalendarIcon className="h-5 w-5" />
-                Events ({events.length})
-              </CardTitle>
-              <Button 
-                size="sm"
-                onClick={() => setShowCreateEventDialog(true)}
-                style={{ backgroundColor: team.primaryColor || '#3b82f6' }}
-                className="text-white hover:opacity-90"
-              >
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Create
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Quick Stats */}
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <div className="text-2xl font-bold text-blue-600">{events.length}</div>
-                  <div className="text-xs text-muted-foreground">Total Events</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-green-600">{upcomingEvents.length}</div>
-                  <div className="text-xs text-muted-foreground">Upcoming</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-purple-600">{totalRegistrations}</div>
-                  <div className="text-xs text-muted-foreground">Registrations</div>
-                </div>
-              </div>
-              
-              {/* Recent Events Preview */}
-              {events.length > 0 ? (
-                <div>
-                  <div className="space-y-2">
-                    {events.slice(0, 3).map((event) => {
-                      const startDate = new Date(event.startTime);
-                      const isUpcoming = startDate.getTime() > Date.now();
-                      
-                      return (
-                        <div key={event._id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-sm truncate">{event.title}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {startDate.toLocaleDateString()} • {event.registrationCount} registered
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge 
-                              className={`text-xs ${
-                                event.status === 'published' ? 'bg-green-100 text-green-800' :
-                                event.status === 'draft' ? 'bg-gray-100 text-gray-800' :
-                                'bg-red-100 text-red-800'
-                              }`}
-                            >
-                              {event.status}
-                            </Badge>
-                            {isUpcoming && (
-                              <Badge className="text-xs bg-blue-100 text-blue-800">
-                                Upcoming
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  
-                  {events.length > 3 && (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="w-full mt-3"
-                      onClick={() => setShowAllEvents(true)}
-                    >
-                      View All Events ({events.length})
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center py-6">
-                  <CalendarIcon className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-sm text-muted-foreground mb-3">
-                    No events yet. Create your first event to get started!
-                  </p>
-                  <Button 
-                    size="sm"
-                    onClick={() => setShowCreateEventDialog(true)}
-                    style={{ backgroundColor: team.primaryColor || '#3b82f6' }}
-                    className="text-white hover:opacity-90"
-                  >
-                    Create First Event
+      <Tabs defaultValue="members" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="members">
+            <PersonIcon className="mr-2 h-4 w-4" />
+            Members
+          </TabsTrigger>
+          <TabsTrigger value="settings">
+            <GearIcon className="mr-2 h-4 w-4" />
+            Settings
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="members" className="space-y-6">
+          {/* Invite Member Card */}
+          {canManageTeam && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <PlusIcon className="h-5 w-5" />
+                  Invite New Member
+                </CardTitle>
+                <CardDescription>
+                  Send an invitation to add a new member to your team
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Enter email address"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleInvite(e as any)}
+                  />
+                  <Button onClick={(e) => handleInvite(e as any)} disabled={!inviteEmail}>
+                    Send Invite
                   </Button>
                 </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-        {/* Team Members */}
-        <Card className="xl:col-span-1">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <PersonIcon className="h-5 w-5" />
-                Team Members ({teamMembers?.length || 0})
-              </CardTitle>
-              {canManageTeam && (
-                <Button 
-                  size="sm"
-                  onClick={() => setShowInviteDialog(true)}
-                >
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  Invite
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {teamMembers === undefined ? (
-              <div className="text-center py-4">Loading members...</div>
-            ) : teamMembers.length === 0 ? (
-              <div className="text-center py-4 text-muted-foreground">
-                No members found
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Member</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Joined</TableHead>
-                    {canManageTeam && <TableHead>Actions</TableHead>}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {teamMembers.map((member) => (
-                    <TableRow key={member._id}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">
-                            {member.user.name || "Anonymous"}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {member.user.email}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={getRoleBadgeColor(member.role)}>
-                          {member.role}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {new Date(member.joinedAt).toLocaleDateString()}
-                      </TableCell>
-                      {canManageTeam && (
-                        <TableCell>
-                          {member.role !== "owner" && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => { void handleRemoveMember(member.userId); }}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <TrashIcon className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          )}
 
-        {/* Pending Invitations */}
-        {canManageTeam && (
-          <Card className="xl:col-span-1">
+          {/* Members List */}
+          <Card>
             <CardHeader>
-              <CardTitle>Pending Invitations ({pendingInvitations?.length || 0})</CardTitle>
+              <CardTitle>Team Members ({teamMembers?.length || 0})</CardTitle>
+              <CardDescription>
+                Manage your team members and their roles
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              {pendingInvitations === undefined ? (
-                <div className="text-center py-4">Loading invitations...</div>
-              ) : pendingInvitations.length === 0 ? (
-                <div className="text-center py-4 text-muted-foreground">
-                  No pending invitations
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Expires</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {pendingInvitations.map((invitation) => (
-                      <TableRow key={invitation._id}>
-                        <TableCell>{invitation.email}</TableCell>
-                        <TableCell>
-                          <Badge className={getRoleBadgeColor(invitation.role)}>
-                            {invitation.role}
+              <div className="space-y-4">
+                {teamMembers?.map((member) => (
+                  <div 
+                    key={member._id}
+                    className="flex items-center justify-between p-4 border rounded-lg"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-medium">
+                        {member.user.name?.split(" ").map(n => n[0]).join("") || "?"}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{member.user.name || "Anonymous"}</p>
+                          <Badge className={getRoleBadgeColor(member.role)}>
+                            {member.role}
                           </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {new Date(invitation.expiresAt).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => { void handleCancelInvitation(invitation._id); }}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">{member.user.email}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Joined {new Date(member.joinedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {canManageTeam && member.role !== "owner" && (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleRemoveMember(member.userId)}
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
-        )}
-      </div>
+        </TabsContent>
 
-      {/* Team Actions */}
-      <div className="mt-8 flex justify-end">
-        {!isOwner && (
-          <Button 
-            variant="destructive" 
-            onClick={() => { void handleLeaveTeam(); }}
-          >
-            Leave Team
-          </Button>
-        )}
-      </div>
+        <TabsContent value="settings" className="space-y-6">
+          {/* Team Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Team Settings</CardTitle>
+              <CardDescription>
+                Customize your team's appearance and information
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Team Name</label>
+                <Input 
+                  value={teamName} 
+                  onChange={(e) => setTeamName(e.target.value)}
+                  disabled={isUpdating}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Description</label>
+                <Input 
+                  value={teamDescription} 
+                  onChange={(e) => setTeamDescription(e.target.value)}
+                  disabled={isUpdating}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Primary Color</label>
+                <Input 
+                  type="color" 
+                  value={primaryColor} 
+                  onChange={(e) => setPrimaryColor(e.target.value)}
+                  className="w-20"
+                  disabled={isUpdating}
+                />
+              </div>
+              <Button 
+                onClick={(e) => handleUpdateTeam(e as any)} 
+                disabled={isUpdating || !teamName.trim()}
+              >
+                {isUpdating ? "Saving..." : "Save Changes"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Team Statistics */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Team Statistics</CardTitle>
+              <CardDescription>
+                Overview of your team's activity and growth
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center p-4 border rounded-lg">
+                  <PersonIcon className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                  <div className="text-2xl font-bold">{teamMembers?.length || 0}</div>
+                  <div className="text-sm text-muted-foreground">Total Members</div>
+                </div>
+                <div className="text-center p-4 border rounded-lg">
+                  <CalendarIcon className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                  <div className="text-2xl font-bold">{events.length}</div>
+                  <div className="text-sm text-muted-foreground">Total Events</div>
+                </div>
+                <div className="text-center p-4 border rounded-lg">
+                  <GearIcon className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                  <div className="text-2xl font-bold">{totalRegistrations}</div>
+                  <div className="text-sm text-muted-foreground">Total Registrations</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Team Actions */}
+          {!isOwner && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-red-600">Danger Zone</CardTitle>
+                <CardDescription>
+                  Irreversible actions for this team
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  variant="destructive" 
+                  onClick={() => { void handleLeaveTeam(); }}
+                >
+                  Leave Team
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* Invite Member Dialog */}
       {showInviteDialog && (
