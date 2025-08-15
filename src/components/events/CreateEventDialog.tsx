@@ -129,7 +129,7 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50">
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+        <div className="bg-secondary rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
           
           {/* Success State */}
           {showSuccess && (
@@ -153,7 +153,7 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                   <h1 className="text-2xl font-bold">Create New Event</h1>
                   <button
                     onClick={handleClose}
-                    className="text-white/80 hover:text-white transition-colors"
+                    className="text-foreground transition-colors"
                   >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -177,13 +177,12 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                         </div>
                         <div className="ml-2 text-left">
                           <div className="text-sm font-medium">{step.title}</div>
-                          <div className="text-xs text-white/70 hidden sm:block">{step.description}</div>
+                          <div className="text-xs text-foreground hidden sm:block">{step.description}</div>
                         </div>
                       </div>
                       {index < STEPS.length - 1 && (
                         <div className={`
                           flex-1 h-0.5 mx-4
-                          ${index < currentStepIndex ? 'bg-white' : 'bg-white/20'}
                         `} />
                       )}
                     </div>
@@ -199,7 +198,7 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                   {currentStep === 'basic' && (
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Event Title *
                         </label>
                         <input
@@ -216,7 +215,7 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Event Description *
                         </label>
                         <textarea
@@ -233,7 +232,7 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Venue *
                         </label>
                         <input
@@ -272,7 +271,7 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-foreground mb-2">
                             End Date & Time *
                           </label>
                           <input
@@ -289,7 +288,7 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Event Type *
                         </label>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -317,7 +316,7 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-foreground mb-2">
                             Maximum Capacity (Optional)
                           </label>
                           <input
@@ -335,7 +334,7 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-foreground mb-2">
                             Registration Deadline (Optional)
                           </label>
                           <input
@@ -483,7 +482,7 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
               </div>
 
               {/* Footer */}
-              <div className="bg-gray-50 px-6 py-4 flex justify-between items-center">
+              <div className="bg-secondary px-6 py-4 flex justify-between items-center">
                 <button
                   type="button"
                   onClick={handlePrevious}
@@ -499,7 +498,7 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                       type="button"
                       onClick={handleNext}
                       disabled={!canGoNext()}
-                      className="px-6 py-2 bg-var(--event-primary, #3b82f6) text-white rounded-lg hover:bg-var(--event-secondary, #1e40af) disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-6 py-2 bg-var(--event-primary, #3b82f6) text-foreground rounded-lg hover:bg-var(--event-secondary, #1e40af) disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       Next →
                     </button>
@@ -508,7 +507,7 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                       type="button"
                       onClick={() => void handleFinalSubmit()}
                       disabled={!isValid || isSubmitting}
-                      className="px-6 py-2 bg-var(--event-primary, #3b82f6) text-white rounded-lg hover:bg-var(--event-secondary, #1e40af) disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-6 py-2 bg-var(--event-primary, #3b82f6) text-foreground rounded-lg hover:bg-var(--event-secondary, #1e40af) disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       {isSubmitting ? 'Creating...' : 'Create Event'}
                     </button>
