@@ -17,10 +17,58 @@ export default defineSchema({
   })
     .index("email", ["email"])
     .index("phone", ["phone"]),
-  messages: defineTable({
+  threads: defineTable({
+    title: v.string(),
+    description: v.optional(v.string()),
+    threadType: v.union(
+      v.literal("team"), // Team-wide discussion
+      v.literal("event"), // Event-specific discussion
+      v.literal("ai") // AI agent thread
+    ),
+    // One of these will be set based on threadType
+    teamId: v.optional(v.id("teams")),
+    eventId: v.optional(v.id("events")),
+    aiAgentName: v.optional(v.string()), // For future AI integration
+    createdBy: v.id("users"),
+    createdAt: v.number(),
+    isArchived: v.optional(v.boolean()),
+    lastMessageAt: v.optional(v.number()),
+  })
+    .index("by_team", ["teamId"])
+    .index("by_event", ["eventId"])
+    .index("by_creator", ["createdBy"])
+    .index("by_type", ["threadType"])
+    .index("by_last_message", ["lastMessageAt"]),
+  threadParticipants: defineTable({
+    threadId: v.id("threads"),
     userId: v.id("users"),
-    body: v.string(),
-  }),
+    role: v.union(
+      v.literal("admin"), // Can manage thread settings
+      v.literal("participant") // Can send messages
+    ),
+    joinedAt: v.number(),
+    lastReadAt: v.optional(v.number()),
+  })
+    .index("by_thread", ["threadId"])
+    .index("by_user", ["userId"])
+    .index("by_thread_and_user", ["threadId", "userId"]),
+  threadMessages: defineTable({
+    threadId: v.id("threads"),
+    authorId: v.optional(v.id("users")), // null for AI messages
+    content: v.string(),
+    messageType: v.union(
+      v.literal("text"),
+      v.literal("system"), // System notifications
+      v.literal("ai") // AI agent messages
+    ),
+    replyToId: v.optional(v.id("threadMessages")), // For threaded replies
+    editedAt: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_thread", ["threadId"])
+    .index("by_author", ["authorId"])
+    .index("by_thread_and_created", ["threadId", "createdAt"])
+    .index("by_reply_to", ["replyToId"]),
   teams: defineTable({
     name: v.string(),
     slug: v.string(),
