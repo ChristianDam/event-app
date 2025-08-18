@@ -19,6 +19,7 @@ import {
   GearIcon,
   ImageIcon,
   CalendarIcon,
+  ChatBubbleIcon,
 } from "@radix-ui/react-icons";
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
@@ -26,6 +27,7 @@ import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { CreateEventDialog } from "@/components/events/CreateEventDialog";
 import { EventList } from "@/components/events/EventList";
+import { ThreadView } from "@/components/threads/ThreadView";
 import { useTeamEvents } from "@/hooks/useTeamEvents";
 
 interface TeamIdPageProps {
@@ -225,8 +227,12 @@ export default function TeamIdPage({ params, navigate }: TeamIdPageProps) {
         </p>
       </div>
 
-      <Tabs defaultValue="members" className="space-y-6">
+      <Tabs defaultValue="discussion" className="space-y-6">
         <TabsList>
+          <TabsTrigger value="discussion">
+            <ChatBubbleIcon className="mr-2 h-4 w-4" />
+            Discussion
+          </TabsTrigger>
           <TabsTrigger value="members">
             <PersonIcon className="mr-2 h-4 w-4" />
             Members
@@ -236,6 +242,10 @@ export default function TeamIdPage({ params, navigate }: TeamIdPageProps) {
             Settings
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="discussion" className="space-y-6">
+          <ThreadView teamId={teamId} />
+        </TabsContent>
 
         <TabsContent value="members" className="space-y-6">
           {/* Invite Member Card */}

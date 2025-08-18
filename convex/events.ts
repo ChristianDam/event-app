@@ -246,6 +246,51 @@ export const createEvent = mutation({
       updatedAt: now,
     });
 
+    // Create a default discussion thread for the event
+    const threadId = await ctx.db.insert("threads", {
+      title: "Event Discussion",
+      description: `Discussion thread for ${args.title.trim()}`,
+      threadType: "event",
+      eventId,
+      createdBy: userId,
+      createdAt: now,
+      isArchived: false,
+    });
+
+    // Add organizer as admin participant
+    await ctx.db.insert("threadParticipants", {
+      threadId,
+      userId,
+      role: "admin",
+      joinedAt: now,
+    });
+
+    // Add all team members as participants
+    const teamMembers = await ctx.db
+      .query("teamMembers")
+      .withIndex("by_team", (q) => q.eq("teamId", args.teamId))
+      .collect();
+
+    for (const member of teamMembers) {
+      if (member.userId !== userId) { // Skip organizer, already added
+        await ctx.db.insert("threadParticipants", {
+          threadId,
+          userId: member.userId,
+          role: "participant",
+          joinedAt: now,
+        });
+      }
+    }
+
+    // Send welcome message to the thread
+    await ctx.db.insert("threadMessages", {
+      threadId,
+      authorId: undefined,
+      content: `Welcome to the discussion thread for ${args.title.trim()}! Use this space to coordinate with attendees and organizers.`,
+      messageType: "system",
+      createdAt: now,
+    });
+
     return eventId;
   },
 });

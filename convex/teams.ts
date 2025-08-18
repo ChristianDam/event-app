@@ -53,6 +53,34 @@ export const createTeam = mutation({
       joinedAt: now,
     });
 
+    // Create a default general discussion thread for the team
+    const threadId = await ctx.db.insert("threads", {
+      title: "General Discussion",
+      description: "Team-wide discussions and announcements",
+      threadType: "team",
+      teamId,
+      createdBy: userId,
+      createdAt: now,
+      isArchived: false,
+    });
+
+    // Add creator as admin participant in the thread
+    await ctx.db.insert("threadParticipants", {
+      threadId,
+      userId,
+      role: "admin",
+      joinedAt: now,
+    });
+
+    // Send welcome message to the thread
+    await ctx.db.insert("threadMessages", {
+      threadId,
+      authorId: undefined,
+      content: `Welcome to ${args.name}! This is your team's general discussion thread.`,
+      messageType: "system",
+      createdAt: now,
+    });
+
     return teamId;
   },
 });
@@ -98,6 +126,34 @@ export const createDefaultTeam = internalMutation({
       userId: args.userId,
       role: "owner",
       joinedAt: now,
+    });
+
+    // Create a default general discussion thread for the team
+    const threadId = await ctx.db.insert("threads", {
+      title: "General Discussion",
+      description: "Team-wide discussions and announcements",
+      threadType: "team",
+      teamId,
+      createdBy: args.userId,
+      createdAt: now,
+      isArchived: false,
+    });
+
+    // Add creator as admin participant in the thread
+    await ctx.db.insert("threadParticipants", {
+      threadId,
+      userId: args.userId,
+      role: "admin",
+      joinedAt: now,
+    });
+
+    // Send welcome message to the thread
+    await ctx.db.insert("threadMessages", {
+      threadId,
+      authorId: undefined,
+      content: "Welcome to My Team! This is your team's general discussion thread.",
+      messageType: "system",
+      createdAt: now,
     });
 
     return teamId;
@@ -752,6 +808,22 @@ export const acceptInvitation = mutation({
       role: invitation.role,
       joinedAt: now,
     });
+
+    // Add user to all existing team threads as participant
+    const teamThreads = await ctx.db
+      .query("threads")
+      .withIndex("by_team", (q) => q.eq("teamId", invitation.teamId))
+      .filter((q) => q.eq(q.field("isArchived"), false))
+      .collect();
+
+    for (const thread of teamThreads) {
+      await ctx.db.insert("threadParticipants", {
+        threadId: thread._id,
+        userId,
+        role: "participant",
+        joinedAt: now,
+      });
+    }
 
     // Mark invitation as accepted
     await ctx.db.patch(invitation._id, { status: "accepted" });
