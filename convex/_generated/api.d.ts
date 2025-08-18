@@ -23,6 +23,7 @@ import type * as otp_ResendOTP from "../otp/ResendOTP.js";
 import type * as otp_VerificationCodeEmail from "../otp/VerificationCodeEmail.js";
 import type * as teamEmails from "../teamEmails.js";
 import type * as teams from "../teams.js";
+import type * as threads from "../threads.js";
 import type * as users from "../users.js";
 
 /**
@@ -44,6 +45,7 @@ declare const fullApi: ApiFromModules<{
   "otp/VerificationCodeEmail": typeof otp_VerificationCodeEmail;
   teamEmails: typeof teamEmails;
   teams: typeof teams;
+  threads: typeof threads;
   users: typeof users;
 }>;
 export declare const api: FilterApi<
