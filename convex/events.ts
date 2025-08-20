@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 // import { internal } from "./_generated/api"; // Reserved for future use
 import { Id } from "./_generated/dataModel";
-import { requireAuth, getCurrentUserWithTeamReadOnly, requireTeam, getCurrentUser } from "./lib/auth";
+import { requireAuth, requireTeam } from "./lib/auth";
 
 /**
  * Validate email address using proper regex
@@ -320,7 +320,7 @@ export const updateEvent = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
+    const user = await requireAuth(ctx);
     if (!user?._id) {
       throw new Error("Not authenticated");
     }
@@ -420,7 +420,7 @@ export const deleteEvent = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
+    const user = await requireAuth(ctx);
     if (!user?._id) {
       throw new Error("Not authenticated");
     }
@@ -502,7 +502,7 @@ export const getEvent = query({
       return null;
     }
 
-    const user = await getCurrentUserWithTeamReadOnly(ctx);
+    const user = await requireAuth(ctx);
     let canManage = false;
 
     if (user) {
@@ -651,7 +651,7 @@ export const getMyEvents = query({
     canManage: v.boolean(),
   })),
   handler: async (ctx) => {
-    const user = await getCurrentUserWithTeamReadOnly(ctx);
+    const user = await requireAuth(ctx);
     if (!user) return [];
 
     const events = await ctx.db
