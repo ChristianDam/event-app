@@ -36,6 +36,7 @@ export function UserMenu({
   const currentTeam = useQuery(api.users.getCurrentTeam);
   const setCurrentTeam = useMutation(api.users.setCurrentTeam);
   const [showCreateTeam, setShowCreateTeam] = useState(false);
+  const [isTeamSwitching, setIsTeamSwitching] = useState<string | null>(null);
 
   return (
     <div className="flex items-center gap-2 text-sm font-medium">
@@ -124,15 +125,24 @@ export function UserMenu({
               .map((team) => (
                 <DropdownMenuItem 
                   key={team._id} 
-                  className="flex items-center justify-between cursor-pointer"
+                  className={`flex items-center justify-between cursor-pointer ${
+                    isTeamSwitching === team._id ? 'opacity-50' : ''
+                  }`}
+                  disabled={isTeamSwitching === team._id}
                   onClick={async () => {
+                    if (isTeamSwitching) return; // Prevent multiple simultaneous switches
+                    
+                    setIsTeamSwitching(team._id);
                     try {
                       await setCurrentTeam({ teamId: team._id });
                       // Navigate to team page after selecting/switching
                       navigate(`/team/${team._id}`);
                     } catch (error) {
                       console.error("Failed to switch team:", error);
-                      // TODO: Show error toast
+                      // Show user-friendly error (would be better with toast notification)
+                      alert(`Failed to switch to ${team.name}. Please try again.`);
+                    } finally {
+                      setIsTeamSwitching(null);
                     }
                   }}
                 >
@@ -157,6 +167,9 @@ export function UserMenu({
                         style={{ color: team.primaryColor || undefined }}
                       >
                         {team.name}
+                        {isTeamSwitching === team._id && (
+                          <span className="ml-2 text-xs text-muted-foreground">Switching...</span>
+                        )}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         {team.role} • {team.memberCount} member{team.memberCount !== 1 ? 's' : ''}

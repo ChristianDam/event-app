@@ -193,7 +193,7 @@ export const getMyTeams = query({
 
     const teamMemberships = await ctx.db
       .query("teamMembers")
-      .withIndex("by_user", (q: any) => q.eq("userId", user._id))
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect();
 
     const teams = [];
@@ -204,7 +204,7 @@ export const getMyTeams = query({
       // Count team members
       const memberCount = await ctx.db
         .query("teamMembers")
-        .withIndex("by_team", (q: any) => q.eq("teamId", team._id))
+        .withIndex("by_team", (q) => q.eq("teamId", team._id))
         .collect()
         .then(members => members.length);
 
@@ -248,7 +248,7 @@ export const getTeam = query({
     // Check if user is a member of this team
     const membership = await ctx.db
       .query("teamMembers")
-      .withIndex("by_team_and_user", (q: any) => 
+      .withIndex("by_team_and_user", (q) => 
         q.eq("teamId", args.teamId).eq("userId", user._id)
       )
       .first();

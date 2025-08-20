@@ -2,7 +2,6 @@ import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { paginationOptsValidator } from "convex/server";
-import { Doc, Id } from "./_generated/dataModel";
 import { getCurrentUserWithTeamReadOnly, requireTeam } from "./lib/auth";
 
 // Thread Management Functions
@@ -42,7 +41,7 @@ export const createTeamThreadForCurrentTeam = mutation({
     // Add all team members as participants
     const teamMembers = await ctx.db
       .query("teamMembers")
-      .withIndex("by_team", (q: any) => q.eq("teamId", teamId))
+      .withIndex("by_team", (q) => q.eq("teamId", teamId))
       .collect();
 
     for (const member of teamMembers) {
@@ -95,7 +94,7 @@ export const getMyTeamThreads = query({
     // Verify user is team member (additional safety check)
     const membership = await ctx.db
       .query("teamMembers")
-      .withIndex("by_team_and_user", (q: any) => 
+      .withIndex("by_team_and_user", (q) => 
         q.eq("teamId", user.currentTeamId).eq("userId", user._id)
       )
       .first();
@@ -110,8 +109,8 @@ export const getMyTeamThreads = query({
 
     const result = await ctx.db
       .query("threads")
-      .withIndex("by_team", (q: any) => q.eq("teamId", user.currentTeamId))
-      .filter((q: any) => q.eq(q.field("isArchived"), false))
+      .withIndex("by_team", (q) => q.eq("teamId", user.currentTeamId))
+      .filter((q) => q.eq(q.field("isArchived"), false))
       .order("desc")
       .paginate(args.paginationOpts);
 
@@ -120,19 +119,19 @@ export const getMyTeamThreads = query({
         // Get message count
         const messages = await ctx.db
           .query("threadMessages")
-          .withIndex("by_thread", (q: any) => q.eq("threadId", thread._id))
+          .withIndex("by_thread", (q) => q.eq("threadId", thread._id))
           .collect();
 
         // Get user's last read timestamp
         const participation = await ctx.db
           .query("threadParticipants")
-          .withIndex("by_thread_and_user", (q: any) => 
+          .withIndex("by_thread_and_user", (q) => 
             q.eq("threadId", thread._id).eq("userId", user._id)
           )
           .first();
 
         const lastReadAt = participation?.lastReadAt || 0;
-        const unreadCount = messages.filter((msg: any) => msg.createdAt > lastReadAt).length;
+        const unreadCount = messages.filter((msg) => msg.createdAt > lastReadAt).length;
 
         return {
           _id: thread._id,
@@ -275,14 +274,8 @@ export const createEventThread = mutation({
       });
     }
 
-    // Add all event attendees as participants
-    const registrations = await ctx.db
-      .query("eventRegistrations")
-      .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
-      .collect();
-
-    // Note: Since registrations store email/name but not user IDs,
-    // we'll need to match registered users later or when they join
+    // Note: Event attendee participation will be handled when users
+    // register and join the platform with matching email addresses
     
     return threadId;
   },

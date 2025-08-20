@@ -25,7 +25,7 @@ export async function getCurrentUserWithTeam(ctx: MutationCtx): Promise<(Doc<"us
   // Verify user is still a member of their selected team
   const membership = await ctx.db
     .query("teamMembers")
-    .withIndex("by_team_and_user", (q: any) => 
+    .withIndex("by_team_and_user", (q) => 
       q.eq("teamId", user.currentTeamId!).eq("userId", user._id)
     )
     .first();
@@ -53,7 +53,7 @@ export async function getCurrentUserWithTeamReadOnly(ctx: DatabaseContext): Prom
   // Verify user is still a member of their selected team
   const membership = await ctx.db
     .query("teamMembers")
-    .withIndex("by_team_and_user", (q: any) => 
+    .withIndex("by_team_and_user", (q) => 
       q.eq("teamId", user.currentTeamId!).eq("userId", user._id)
     )
     .first();
@@ -108,7 +108,7 @@ export async function hasTeamPermission(
   
   const membership = await ctx.db
     .query("teamMembers")
-    .withIndex("by_team_and_user", (q: any) => 
+    .withIndex("by_team_and_user", (q) => 
       q.eq("teamId", user.currentTeamId).eq("userId", user._id)
     )
     .first();
@@ -133,7 +133,7 @@ export async function requireTeamPermission(
   
   const membership = await ctx.db
     .query("teamMembers")
-    .withIndex("by_team_and_user", (q: any) => 
+    .withIndex("by_team_and_user", (q) => 
       q.eq("teamId", user.currentTeamId).eq("userId", user._id)
     )
     .first();

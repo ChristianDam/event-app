@@ -74,6 +74,17 @@ export const setCurrentTeam = mutation({
   handler: async (ctx, args) => {
     const user = await requireAuth(ctx);
 
+    // Input validation
+    if (!args.teamId) {
+      throw new Error("Team ID is required");
+    }
+
+    // Verify team exists first (more efficient than membership check)
+    const team = await ctx.db.get(args.teamId);
+    if (!team) {
+      throw new Error("Team not found");
+    }
+
     // Verify user is a member of the team they want to select
     const membership = await ctx.db
       .query("teamMembers")
@@ -86,16 +97,12 @@ export const setCurrentTeam = mutation({
       throw new Error("You are not a member of this team");
     }
 
-    // Verify team still exists
-    const team = await ctx.db.get(args.teamId);
-    if (!team) {
-      throw new Error("Team not found");
+    // Only update if different from current team (optimization)
+    if (user.currentTeamId !== args.teamId) {
+      await ctx.db.patch(user._id, { 
+        currentTeamId: args.teamId 
+      });
     }
-
-    // Update user's current team
-    await ctx.db.patch(user._id, { 
-      currentTeamId: args.teamId 
-    });
 
     return null;
   },
