@@ -168,7 +168,7 @@ async function checkEventManagePermission(ctx: any, userId: Id<"users">, eventId
 /**
  * Create a new event (team-aware - uses current team)
  */
-export const createEventForCurrentTeam = mutation({
+export const createEvent = mutation({
   args: {
     title: v.string(),
     description: v.string(),
@@ -268,135 +268,6 @@ export const createEventForCurrentTeam = mutation({
     const teamMembers = await ctx.db
       .query("teamMembers")
       .withIndex("by_team", (q: any) => q.eq("teamId", teamId))
-      .collect();
-
-    for (const member of teamMembers) {
-      if (member.userId !== userId) { // Skip organizer, already added
-        await ctx.db.insert("threadParticipants", {
-          threadId,
-          userId: member.userId,
-          role: "participant",
-          joinedAt: now,
-        });
-      }
-    }
-
-    // Send welcome message to the thread
-    await ctx.db.insert("threadMessages", {
-      threadId,
-      authorId: undefined,
-      content: `Welcome to the discussion thread for ${args.title.trim()}! Use this space to coordinate with attendees and organizers.`,
-      messageType: "system",
-      createdAt: now,
-    });
-
-    return eventId;
-  },
-});
-
-/**
- * Create a new event (legacy - requires explicit teamId)
- */
-export const createEvent = mutation({
-  args: {
-    title: v.string(),
-    description: v.string(),
-    venue: v.string(),
-    startTime: v.number(),
-    endTime: v.number(),
-    timezone: v.optional(v.string()),
-    teamId: v.id("teams"),
-    eventType: v.union(
-      v.literal("music"),
-      v.literal("art"),
-      v.literal("workshop"),
-      v.literal("performance"),
-      v.literal("exhibition"),
-      v.literal("other")
-    ),
-    maxCapacity: v.optional(v.number()),
-    registrationDeadline: v.optional(v.number()),
-    status: v.optional(v.union(v.literal("draft"), v.literal("published"))),
-    eventImageId: v.optional(v.id("_storage")),
-  },
-  returns: v.id("events"),
-  handler: async (ctx, args) => {
-    const user = await requireAuth(ctx);
-    const userId = user._id;
-
-    // Validate input
-    if (args.title.trim().length < 3) {
-      throw new Error("Event title must be at least 3 characters long");
-    }
-    if (args.description.trim().length < 10) {
-      throw new Error("Event description must be at least 10 characters long");
-    }
-    if (args.venue.trim().length < 3) {
-      throw new Error("Venue must be at least 3 characters long");
-    }
-    if (args.endTime <= args.startTime) {
-      throw new Error("End time must be after start time");
-    }
-    if (args.startTime <= Date.now()) {
-      throw new Error("Event must be scheduled for the future");
-    }
-    if (args.maxCapacity && args.maxCapacity <= 0) {
-      throw new Error("Maximum capacity must be a positive number");
-    }
-    if (args.timezone && !isValidTimezone(args.timezone)) {
-      throw new Error("Invalid timezone. Please use a valid IANA timezone identifier");
-    }
-
-    // Check permissions
-    await checkEventCreatePermission(ctx, userId, args.teamId);
-
-    // Generate unique slug
-    const slug = await generateUniqueSlug(ctx, args.title);
-
-    const now = Date.now();
-
-    const eventId = await ctx.db.insert("events", {
-      title: args.title.trim(),
-      slug,
-      description: args.description.trim(),
-      venue: args.venue.trim(),
-      startTime: args.startTime,
-      endTime: args.endTime,
-      timezone: args.timezone || "Europe/Copenhagen",
-      teamId: args.teamId,
-      organizerId: userId,
-      eventType: args.eventType,
-      maxCapacity: args.maxCapacity,
-      registrationDeadline: args.registrationDeadline,
-      status: args.status || "draft",
-      eventImageId: args.eventImageId,
-      createdAt: now,
-      updatedAt: now,
-    });
-
-    // Create a default discussion thread for the event
-    const threadId = await ctx.db.insert("threads", {
-      title: "Event Discussion",
-      description: `Discussion thread for ${args.title.trim()}`,
-      threadType: "event",
-      eventId,
-      createdBy: userId,
-      createdAt: now,
-      isArchived: false,
-    });
-
-    // Add organizer as admin participant
-    await ctx.db.insert("threadParticipants", {
-      threadId,
-      userId,
-      role: "admin",
-      joinedAt: now,
-    });
-
-    // Add all team members as participants
-    const teamMembers = await ctx.db
-      .query("teamMembers")
-      .withIndex("by_team", (q) => q.eq("teamId", args.teamId))
       .collect();
 
     for (const member of teamMembers) {

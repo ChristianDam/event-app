@@ -40,7 +40,7 @@ export const getThreadMessages = query({
     // Verify user is a participant in the thread
     const participation = await ctx.db
       .query("threadParticipants")
-      .withIndex("by_thread_and_user", (q) => q.eq("threadId", args.threadId).eq("user._id", user._id))
+      .withIndex("by_thread_and_user", (q) => q.eq("threadId", args.threadId).eq("userId", user._id))
       .unique();
 
     if (!participation) {
@@ -142,7 +142,7 @@ export const sendMessage = mutation({
     // Verify user is a participant in the thread
     const participation = await ctx.db
       .query("threadParticipants")
-      .withIndex("by_thread_and_user", (q) => q.eq("threadId", args.threadId).eq("user._id", user._id))
+      .withIndex("by_thread_and_user", (q) => q.eq("threadId", args.threadId).eq("userId", user._id))
       .unique();
 
     if (!participation) {
@@ -235,7 +235,7 @@ export const deleteMessage = mutation({
     const isAuthor = message.authorId === user._id;
     const participation = await ctx.db
       .query("threadParticipants")
-      .withIndex("by_thread_and_user", (q) => q.eq("threadId", message.threadId).eq("user._id", user._id))
+      .withIndex("by_thread_and_user", (q) => q.eq("threadId", message.threadId).eq("userId", user._id))
       .unique();
 
     const isThreadAdmin = participation?.role === "admin";
