@@ -3,6 +3,7 @@ import { mutation, query } from "./_generated/server";
 import { auth } from "./auth";
 // import { internal } from "./_generated/api"; // Reserved for future use
 import { Id } from "./_generated/dataModel";
+import { requireAuth, getCurrentUserWithTeamReadOnly, requireTeam } from "./lib/auth";
 
 /**
  * Validate email address using proper regex
@@ -165,7 +166,136 @@ async function checkEventManagePermission(ctx: any, userId: Id<"users">, eventId
 }
 
 /**
- * Create a new event
+ * Create a new event (team-aware - uses current team)
+ */
+export const createEventForCurrentTeam = mutation({
+  args: {
+    title: v.string(),
+    description: v.string(),
+    venue: v.string(),
+    startTime: v.number(),
+    endTime: v.number(),
+    timezone: v.optional(v.string()),
+    eventType: v.union(
+      v.literal("music"),
+      v.literal("art"),
+      v.literal("workshop"),
+      v.literal("performance"),
+      v.literal("exhibition"),
+      v.literal("other")
+    ),
+    maxCapacity: v.optional(v.number()),
+    registrationDeadline: v.optional(v.number()),
+    status: v.optional(v.union(v.literal("draft"), v.literal("published"))),
+    eventImageId: v.optional(v.id("_storage")),
+  },
+  returns: v.id("events"),
+  handler: async (ctx, args) => {
+    const user = await requireTeam(ctx);
+    const teamId = user.currentTeamId;
+    const userId = user._id;
+
+    // Validate input
+    if (args.title.trim().length < 3) {
+      throw new Error("Event title must be at least 3 characters long");
+    }
+    if (args.description.trim().length < 10) {
+      throw new Error("Event description must be at least 10 characters long");
+    }
+    if (args.venue.trim().length < 3) {
+      throw new Error("Venue must be at least 3 characters long");
+    }
+    if (args.endTime <= args.startTime) {
+      throw new Error("End time must be after start time");
+    }
+    if (args.startTime <= Date.now()) {
+      throw new Error("Event must be scheduled for the future");
+    }
+    if (args.maxCapacity && args.maxCapacity <= 0) {
+      throw new Error("Maximum capacity must be a positive number");
+    }
+    if (args.timezone && !isValidTimezone(args.timezone)) {
+      throw new Error("Invalid timezone. Please use a valid IANA timezone identifier");
+    }
+
+    // Check permissions (user is already verified to be a team member by requireTeam)
+    await checkEventCreatePermission(ctx, userId, teamId);
+
+    // Generate unique slug
+    const slug = await generateUniqueSlug(ctx, args.title);
+
+    const now = Date.now();
+
+    const eventId = await ctx.db.insert("events", {
+      title: args.title.trim(),
+      slug,
+      description: args.description.trim(),
+      venue: args.venue.trim(),
+      startTime: args.startTime,
+      endTime: args.endTime,
+      timezone: args.timezone || "Europe/Copenhagen",
+      teamId,
+      organizerId: userId,
+      eventType: args.eventType,
+      maxCapacity: args.maxCapacity,
+      registrationDeadline: args.registrationDeadline,
+      status: args.status || "draft",
+      eventImageId: args.eventImageId,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Create a default discussion thread for the event
+    const threadId = await ctx.db.insert("threads", {
+      title: "Event Discussion",
+      description: `Discussion thread for ${args.title.trim()}`,
+      threadType: "event",
+      eventId,
+      createdBy: userId,
+      createdAt: now,
+      isArchived: false,
+    });
+
+    // Add organizer as admin participant
+    await ctx.db.insert("threadParticipants", {
+      threadId,
+      userId,
+      role: "admin",
+      joinedAt: now,
+    });
+
+    // Add all team members as participants
+    const teamMembers = await ctx.db
+      .query("teamMembers")
+      .withIndex("by_team", (q: any) => q.eq("teamId", teamId))
+      .collect();
+
+    for (const member of teamMembers) {
+      if (member.userId !== userId) { // Skip organizer, already added
+        await ctx.db.insert("threadParticipants", {
+          threadId,
+          userId: member.userId,
+          role: "participant",
+          joinedAt: now,
+        });
+      }
+    }
+
+    // Send welcome message to the thread
+    await ctx.db.insert("threadMessages", {
+      threadId,
+      authorId: undefined,
+      content: `Welcome to the discussion thread for ${args.title.trim()}! Use this space to coordinate with attendees and organizers.`,
+      messageType: "system",
+      createdAt: now,
+    });
+
+    return eventId;
+  },
+});
+
+/**
+ * Create a new event (legacy - requires explicit teamId)
  */
 export const createEvent = mutation({
   args: {
@@ -191,10 +321,8 @@ export const createEvent = mutation({
   },
   returns: v.id("events"),
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
+    const user = await requireAuth(ctx);
+    const userId = user._id;
 
     // Validate input
     if (args.title.trim().length < 3) {
@@ -613,6 +741,125 @@ export const getEventBySlug = query({
 
     // Use the helper function to build the response
     return await buildEventResponse(ctx, event, userId || undefined);
+  },
+});
+
+/**
+ * Get all events for the current team (team-aware pattern)
+ */
+export const getMyEvents = query({
+  args: {},
+  returns: v.array(v.object({
+    _id: v.id("events"),
+    _creationTime: v.number(),
+    title: v.string(),
+    slug: v.string(),
+    description: v.string(),
+    venue: v.string(),
+    startTime: v.number(),
+    endTime: v.number(),
+    timezone: v.string(),
+    eventType: v.union(
+      v.literal("music"),
+      v.literal("art"),
+      v.literal("workshop"),
+      v.literal("performance"),
+      v.literal("exhibition"),
+      v.literal("other")
+    ),
+    maxCapacity: v.optional(v.number()),
+    registrationDeadline: v.optional(v.number()),
+    status: v.union(v.literal("draft"), v.literal("published"), v.literal("cancelled")),
+    eventImageId: v.optional(v.id("_storage")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    organizer: v.object({
+      _id: v.id("users"),
+      name: v.optional(v.string()),
+      email: v.optional(v.string()),
+    }),
+    registrationCount: v.number(),
+    canManage: v.boolean(),
+  })),
+  handler: async (ctx) => {
+    const user = await getCurrentUserWithTeamReadOnly(ctx);
+    if (!user) return [];
+
+    const events = await ctx.db
+      .query("events")
+      .withIndex("by_team", (q: any) => q.eq("teamId", user.currentTeamId))
+      .order("desc") // Most recent first
+      .collect();
+
+    // Get team membership for permission checking
+    const membership = await ctx.db
+      .query("teamMembers")
+      .withIndex("by_team_and_user", (q: any) => 
+        q.eq("teamId", user.currentTeamId).eq("userId", user._id)
+      )
+      .first();
+
+    if (!membership) return [];
+
+    // Batch fetch all unique organizer IDs to avoid N+1 query problem
+    const organizerIds = [...new Set(events.map(event => event.organizerId))];
+    const organizersMap = new Map();
+    
+    for (const organizerId of organizerIds) {
+      const organizer = await ctx.db.get(organizerId);
+      if (organizer) {
+        organizersMap.set(organizerId, organizer);
+      }
+    }
+
+    // Batch fetch registration counts for all events
+    const registrationCountsMap = new Map();
+    for (const event of events) {
+      const registrations = await ctx.db
+        .query("eventRegistrations")
+        .withIndex("by_event", (q: any) => q.eq("eventId", event._id))
+        .collect();
+      registrationCountsMap.set(event._id, registrations.length);
+    }
+
+    const eventsWithDetails = [];
+    for (const event of events) {
+      const organizer = organizersMap.get(event.organizerId);
+      if (!organizer) continue;
+
+      // Check if user can manage this event
+      const canManage = event.organizerId === user._id || 
+                       membership.role === "admin" || 
+                       membership.role === "owner";
+
+      eventsWithDetails.push({
+        _id: event._id,
+        _creationTime: event._creationTime,
+        title: event.title,
+        slug: event.slug,
+        description: event.description,
+        venue: event.venue,
+        startTime: event.startTime,
+        endTime: event.endTime,
+        timezone: event.timezone,
+        eventType: event.eventType,
+        maxCapacity: event.maxCapacity,
+        registrationDeadline: event.registrationDeadline,
+        status: event.status,
+        eventImageId: event.eventImageId,
+        createdAt: event.createdAt,
+        updatedAt: event.updatedAt,
+        organizer: {
+          _id: organizer._id,
+          name: organizer.name,
+          email: organizer.email,
+        },
+        registrationCount: registrationCountsMap.get(event._id) || 0,
+        canManage,
+      });
+    }
+
+    return eventsWithDetails;
   },
 });
 

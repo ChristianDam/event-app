@@ -3,6 +3,7 @@ import { mutation, query, internalQuery, internalMutation } from "./_generated/s
 import { auth } from "./auth";
 import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
+import { requireAuth } from "./lib/auth";
 
 /**
  * Create a new team with the authenticated user as owner
@@ -14,10 +15,8 @@ export const createTeam = mutation({
   },
   returns: v.id("teams"),
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
+    const user = await requireAuth(ctx);
+    const userId = user._id;
 
     const now = Date.now();
     
@@ -79,6 +78,11 @@ export const createTeam = mutation({
       content: `Welcome to ${args.name}! This is your team's general discussion thread.`,
       messageType: "system",
       createdAt: now,
+    });
+
+    // Set this as the user's current team
+    await ctx.db.patch(userId, {
+      currentTeamId: teamId,
     });
 
     return teamId;
@@ -156,6 +160,11 @@ export const createDefaultTeam = internalMutation({
       createdAt: now,
     });
 
+    // Set this as the user's current team
+    await ctx.db.patch(args.userId, {
+      currentTeamId: teamId,
+    });
+
     return teamId;
   },
 });
@@ -177,16 +186,14 @@ export const getMyTeams = query({
     primaryColor: v.optional(v.string()),
     role: v.union(v.literal("owner"), v.literal("admin"), v.literal("member")),
     memberCount: v.number(),
+    isCurrentTeam: v.boolean(),
   })),
   handler: async (ctx) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
+    const user = await requireAuth(ctx);
 
     const teamMemberships = await ctx.db
       .query("teamMembers")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .withIndex("by_user", (q: any) => q.eq("userId", user._id))
       .collect();
 
     const teams = [];
@@ -197,7 +204,7 @@ export const getMyTeams = query({
       // Count team members
       const memberCount = await ctx.db
         .query("teamMembers")
-        .withIndex("by_team", (q) => q.eq("teamId", team._id))
+        .withIndex("by_team", (q: any) => q.eq("teamId", team._id))
         .collect()
         .then(members => members.length);
 
@@ -205,6 +212,7 @@ export const getMyTeams = query({
         ...team,
         role: membership.role,
         memberCount,
+        isCurrentTeam: user.currentTeamId === team._id,
       });
     }
 
@@ -235,16 +243,13 @@ export const getTeam = query({
     v.null()
   ),
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
+    const user = await requireAuth(ctx);
 
     // Check if user is a member of this team
     const membership = await ctx.db
       .query("teamMembers")
-      .withIndex("by_team_and_user", (q) => 
-        q.eq("teamId", args.teamId).eq("userId", userId)
+      .withIndex("by_team_and_user", (q: any) => 
+        q.eq("teamId", args.teamId).eq("userId", user._id)
       )
       .first();
 
@@ -734,8 +739,8 @@ export const acceptInvitation = mutation({
       };
     }
 
-    const user = await ctx.db.get(userId);
-    if (!user?.email) {
+    const currentUser = await ctx.db.get(userId);
+    if (!currentUser?.email) {
       return {
         success: false,
         error: "User email not found",
@@ -773,7 +778,7 @@ export const acceptInvitation = mutation({
     }
 
     // Check if email matches
-    if (invitation.email !== user.email) {
+    if (invitation.email !== currentUser.email) {
       return {
         success: false,
         error: "This invitation was sent to a different email address",
@@ -827,6 +832,14 @@ export const acceptInvitation = mutation({
 
     // Mark invitation as accepted
     await ctx.db.patch(invitation._id, { status: "accepted" });
+
+    // Set this team as current if user doesn't have a current team
+    const userRecord = await ctx.db.get(userId);
+    if (userRecord && !userRecord.currentTeamId) {
+      await ctx.db.patch(userId, {
+        currentTeamId: invitation.teamId,
+      });
+    }
 
     const team = await ctx.db.get(invitation.teamId);
     return {

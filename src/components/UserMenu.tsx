@@ -17,7 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { PersonIcon, PlusIcon, GearIcon } from "@radix-ui/react-icons";
+import { PersonIcon, PlusIcon, GearIcon, CheckIcon } from "@radix-ui/react-icons";
 import { ReactNode, useState } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useQuery, useMutation } from "convex/react";
@@ -33,6 +33,8 @@ export function UserMenu({
   navigate: (to: string) => void;
 }) {
   const teams = useQuery(api.teams.getMyTeams);
+  const currentTeam = useQuery(api.users.getCurrentTeam);
+  const setCurrentTeam = useMutation(api.users.setCurrentTeam);
   const [showCreateTeam, setShowCreateTeam] = useState(false);
 
   return (
@@ -59,10 +61,57 @@ export function UserMenu({
             </DropdownMenuLabel>
           )}
           
+          {/* Current Team Indicator */}
+          <DropdownMenuSeparator />
+          {currentTeam ? (
+            <>
+              <DropdownMenuLabel className="text-xs text-muted-foreground uppercase">
+                Current Team
+              </DropdownMenuLabel>
+              <DropdownMenuItem className="flex items-center gap-3 bg-primary/10">
+                {currentTeam.logo ? (
+                  <img 
+                    src={`${window.location.origin}/api/storage/${currentTeam.logo}`}
+                    alt={`${currentTeam.name} logo`}
+                    className="w-6 h-6 rounded object-cover border"
+                  />
+                ) : (
+                  <div 
+                    className="w-6 h-6 rounded flex items-center justify-center text-white text-xs font-bold"
+                    style={{ backgroundColor: currentTeam.primaryColor || "#3b82f6" }}
+                  >
+                    {currentTeam.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div className="flex flex-col">
+                  <span 
+                    className="font-medium text-sm"
+                    style={{ color: currentTeam.primaryColor || undefined }}
+                  >
+                    {currentTeam.name}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {currentTeam.userRole}
+                  </span>
+                </div>
+                <CheckIcon className="ml-auto h-4 w-4 text-primary" />
+              </DropdownMenuItem>
+            </>
+          ) : (
+            <>
+              <DropdownMenuLabel className="text-xs text-muted-foreground uppercase">
+                No Team Selected
+              </DropdownMenuLabel>
+              <DropdownMenuItem disabled className="text-muted-foreground text-sm">
+                Select a team below to get started
+              </DropdownMenuItem>
+            </>
+          )}
+          
           {/* Teams Section */}
           <DropdownMenuSeparator />
           <DropdownMenuLabel className="text-xs text-muted-foreground uppercase">
-            Teams
+            {currentTeam ? 'Switch Team' : 'Select Team'}
           </DropdownMenuLabel>
           
           {teams === undefined ? (
@@ -70,44 +119,63 @@ export function UserMenu({
           ) : teams.length === 0 ? (
             <DropdownMenuItem disabled>No teams found</DropdownMenuItem>
           ) : (
-            teams.map((team) => (
-              <DropdownMenuItem 
-                key={team._id} 
-                className="flex items-center justify-between cursor-pointer"
-                onClick={() => { void navigate(`/team/${team._id}`); }}
-              >
-                <div className="flex items-center gap-3">
-                  {team.logo ? (
-                    <img 
-                      src={`${window.location.origin}/api/storage/${team.logo}`}
-                      alt={`${team.name} logo`}
-                      className="w-8 h-8 rounded object-cover border"
-                    />
-                  ) : (
-                    <div 
-                      className="w-8 h-8 rounded flex items-center justify-center text-white text-xs font-bold"
-                      style={{ backgroundColor: team.primaryColor || "#3b82f6" }}
-                    >
-                      {team.name.charAt(0).toUpperCase()}
+            teams
+              .filter((team) => !team.isCurrentTeam) // Don't show current team in switch list
+              .map((team) => (
+                <DropdownMenuItem 
+                  key={team._id} 
+                  className="flex items-center justify-between cursor-pointer"
+                  onClick={async () => {
+                    try {
+                      await setCurrentTeam({ teamId: team._id });
+                      // Navigate to team page after selecting/switching
+                      navigate(`/team/${team._id}`);
+                    } catch (error) {
+                      console.error("Failed to switch team:", error);
+                      // TODO: Show error toast
+                    }
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    {team.logo ? (
+                      <img 
+                        src={`${window.location.origin}/api/storage/${team.logo}`}
+                        alt={`${team.name} logo`}
+                        className="w-8 h-8 rounded object-cover border"
+                      />
+                    ) : (
+                      <div 
+                        className="w-8 h-8 rounded flex items-center justify-center text-white text-xs font-bold"
+                        style={{ backgroundColor: team.primaryColor || "#3b82f6" }}
+                      >
+                        {team.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="flex flex-col">
+                      <span 
+                        className="font-medium"
+                        style={{ color: team.primaryColor || undefined }}
+                      >
+                        {team.name}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {team.role} • {team.memberCount} member{team.memberCount !== 1 ? 's' : ''}
+                      </span>
                     </div>
-                  )}
-                  <div className="flex flex-col">
-                    <span 
-                      className="font-medium"
-                      style={{ color: team.primaryColor || undefined }}
-                    >
-                      {team.name}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {team.role} • {team.memberCount} member{team.memberCount !== 1 ? 's' : ''}
-                    </span>
                   </div>
-                </div>
-                <Button variant="ghost" size="icon" className="h-6 w-6">
-                  <GearIcon className="h-3 w-3" />
-                </Button>
-              </DropdownMenuItem>
-            ))
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/team/${team._id}`);
+                    }}
+                  >
+                    <GearIcon className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuItem>
+              ))
           )}
           
           <DropdownMenuItem 
@@ -115,7 +183,7 @@ export function UserMenu({
             className="text-primary"
           >
             <PlusIcon className="mr-2 h-4 w-4" />
-            Create New Team
+            Create team
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />

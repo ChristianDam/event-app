@@ -14,6 +14,8 @@ export default defineSchema({
     isAnonymous: v.optional(v.boolean()),
     // Custom field.
     favoriteColor: v.optional(v.string()),
+    // Team-aware pattern: user's currently selected team
+    currentTeamId: v.optional(v.id("teams")),
   })
     .index("email", ["email"])
     .index("phone", ["phone"]),

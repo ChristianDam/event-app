@@ -18,6 +18,7 @@ import type * as emails_TeamInvitationEmail from "../emails/TeamInvitationEmail.
 import type * as events from "../events.js";
 import type * as helpers from "../helpers.js";
 import type * as http from "../http.js";
+import type * as lib_auth from "../lib/auth.js";
 import type * as messages from "../messages.js";
 import type * as otp_ResendOTP from "../otp/ResendOTP.js";
 import type * as otp_VerificationCodeEmail from "../otp/VerificationCodeEmail.js";
@@ -40,6 +41,7 @@ declare const fullApi: ApiFromModules<{
   events: typeof events;
   helpers: typeof helpers;
   http: typeof http;
+  "lib/auth": typeof lib_auth;
   messages: typeof messages;
   "otp/ResendOTP": typeof otp_ResendOTP;
   "otp/VerificationCodeEmail": typeof otp_VerificationCodeEmail;
