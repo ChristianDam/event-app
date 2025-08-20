@@ -34,8 +34,6 @@ export async function getCurrentUserWithTeam(ctx: MutationCtx): Promise<(Doc<"us
     .first();
     
   if (!membership) {
-    // User is no longer a member of their selected team, clear it
-    await ctx.db.patch(user._id, { currentTeamId: undefined });
     return null;
   }
   

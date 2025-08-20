@@ -182,6 +182,7 @@ export const getMyTeams = query({
     ownerId: v.id("users"),
     createdAt: v.number(),
     logo: v.optional(v.id("_storage")),
+    logoUrl: v.optional(v.string()),
     primaryColor: v.optional(v.string()),
     role: v.union(v.literal("owner"), v.literal("admin"), v.literal("member")),
     memberCount: v.number(),
@@ -209,6 +210,7 @@ export const getMyTeams = query({
 
       teams.push({
         ...team,
+        logoUrl: team.logo ? (await ctx.storage.getUrl(team.logo)) ?? undefined : undefined,
         role: membership.role,
         memberCount,
         isCurrentTeam: user.currentTeamId === team._id,
@@ -236,6 +238,7 @@ export const getTeam = query({
       ownerId: v.id("users"),
       createdAt: v.number(),
       logo: v.optional(v.id("_storage")),
+      logoUrl: v.optional(v.string()),
       primaryColor: v.optional(v.string()),
       userRole: v.union(v.literal("owner"), v.literal("admin"), v.literal("member")),
     }),
@@ -263,6 +266,7 @@ export const getTeam = query({
 
     return {
       ...team,
+      logoUrl: team.logo ? (await ctx.storage.getUrl(team.logo)) ?? undefined : undefined,
       userRole: membership.role,
     };
   },

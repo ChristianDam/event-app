@@ -22,7 +22,6 @@ import { ReactNode, useState } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { getStorageUrl } from "../utils/storage";
 
 export function UserMenu({
   favoriteColor,
@@ -72,9 +71,9 @@ export function UserMenu({
                 Current Team
               </DropdownMenuLabel>
               <DropdownMenuItem className="flex items-center gap-3 bg-primary/10">
-                {currentTeam.logo ? (
+                {currentTeam.logoUrl ? (
                   <img 
-                    src={getStorageUrl(currentTeam.logo)}
+                    src={currentTeam.logoUrl}
                     alt={`${currentTeam.name} logo`}
                     className="w-6 h-6 rounded object-cover border"
                   />
@@ -123,8 +122,8 @@ export function UserMenu({
             <DropdownMenuItem disabled>No teams found</DropdownMenuItem>
           ) : (
             teams
-              .filter((team) => !team.isCurrentTeam) // Don't show current team in switch list
-              .map((team) => (
+              .filter((team: any) => !team.isCurrentTeam) // Don't show current team in switch list
+              .map((team: any) => (
                 <DropdownMenuItem 
                   key={team._id} 
                   className={`flex items-center justify-between cursor-pointer ${
@@ -151,9 +150,9 @@ export function UserMenu({
                   }}
                 >
                   <div className="flex items-center gap-3">
-                    {team.logo ? (
+                    {team.logoUrl ? (
                       <img 
-                        src={getStorageUrl(team.logo)}
+                        src={team.logoUrl}
                         alt={`${team.name} logo`}
                         className="w-8 h-8 rounded object-cover border"
                       />

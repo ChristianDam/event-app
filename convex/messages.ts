@@ -303,7 +303,7 @@ export const list = query({
     author: v.string(),
   })),
   handler: async (ctx) => {
-    const user = await requireAuth(ctx);
+    await requireAuth(ctx);
     
     // Return empty array for now - this function is deprecated
     // Applications should migrate to thread-based messaging
@@ -315,7 +315,7 @@ export const send = mutation({
   args: {},
   returns: v.null(),
   handler: async (ctx) => {
-    const user = await requireAuth(ctx);
+    await requireAuth(ctx);
     
     // This function is deprecated - applications should use sendMessage with threads
     throw new Error("This function is deprecated. Please use thread-based messaging.");
