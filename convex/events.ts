@@ -1,9 +1,9 @@
 import { v } from "convex/values";
-import { mutation, query, QueryCtx, MutationCtx } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { auth } from "./auth";
 // import { internal } from "./_generated/api"; // Reserved for future use
-import { Id, Doc } from "./_generated/dataModel";
-import { requireAuth, getCurrentUserWithTeamReadOnly, requireTeam } from "./lib/auth";
+import { Id } from "./_generated/dataModel";
+import { requireAuth, getCurrentUserWithTeamReadOnly, requireTeam, getCurrentUserWithTeam } from "./lib/auth";
 
 /**
  * Validate email address using proper regex
@@ -39,7 +39,7 @@ function generateSlug(title: string): string {
 /**
  * Generate a unique slug by appending numbers if needed
  */
-async function generateUniqueSlug(ctx: QueryCtx | MutationCtx, title: string, excludeEventId?: Id<"events">): Promise<string> {
+async function generateUniqueSlug(ctx: any, title: string, excludeEventId?: Id<"events">): Promise<string> {
   const baseSlug = generateSlug(title);
   let slug = baseSlug;
   let counter = 1;
@@ -48,7 +48,7 @@ async function generateUniqueSlug(ctx: QueryCtx | MutationCtx, title: string, ex
   while (true) {
     const existingEvent = await ctx.db
       .query("events")
-      .withIndex("by_slug", (q) => q.eq("slug", slug))
+      .withIndex("by_slug", (q: any) => q.eq("slug", slug))
       .first();
 
     // If no existing event or it's the same event we're updating
@@ -65,10 +65,10 @@ async function generateUniqueSlug(ctx: QueryCtx | MutationCtx, title: string, ex
 /**
  * Check if user is a member of the team
  */
-async function checkTeamMembership(ctx: QueryCtx | MutationCtx, userId: Id<"users">, teamId: Id<"teams">) {
+async function checkTeamMembership(ctx: any, userId: Id<"users">, teamId: Id<"teams">) {
   const membership = await ctx.db
     .query("teamMembers")
-    .withIndex("by_team_and_user", (q) => 
+    .withIndex("by_team_and_user", (q: any) => 
       q.eq("teamId", teamId).eq("userId", userId)
     )
     .first();
@@ -79,7 +79,7 @@ async function checkTeamMembership(ctx: QueryCtx | MutationCtx, userId: Id<"user
 /**
  * Check if user can manage events for this team (owner, admin, or member)
  */
-async function checkEventCreatePermission(ctx: QueryCtx | MutationCtx, userId: Id<"users">, teamId: Id<"teams">) {
+async function checkEventCreatePermission(ctx: any, userId: Id<"users">, teamId: Id<"teams">) {
   const membership = await checkTeamMembership(ctx, userId, teamId);
   if (!membership) {
     throw new Error("You must be a team member to create events");
@@ -90,7 +90,7 @@ async function checkEventCreatePermission(ctx: QueryCtx | MutationCtx, userId: I
 /**
  * Build standardized event response with team and organizer details
  */
-async function buildEventResponse(ctx: QueryCtx | MutationCtx, event: Doc<"events">, userId?: Id<"users">) {
+async function buildEventResponse(ctx: any, event: any, userId?: Id<"users">) {
   // Get team details
   const team = await ctx.db.get(event.teamId);
   if (!team) {
@@ -106,9 +106,9 @@ async function buildEventResponse(ctx: QueryCtx | MutationCtx, event: Doc<"event
   // Count registrations
   const registrationCount = await ctx.db
     .query("eventRegistrations")
-    .withIndex("by_event", (q) => q.eq("eventId", event._id))
+    .withIndex("by_event", (q: any) => q.eq("eventId", event._id))
     .collect()
-    .then((registrations) => registrations.length);
+    .then((registrations: any) => registrations.length);
 
   // Check if user can manage this event
   let canManage = false;
@@ -145,7 +145,7 @@ async function buildEventResponse(ctx: QueryCtx | MutationCtx, event: Doc<"event
 /**
  * Check if user can edit/delete specific event (organizer, team admin, or owner)
  */
-async function checkEventManagePermission(ctx: QueryCtx | MutationCtx, userId: Id<"users">, eventId: Id<"events">) {
+async function checkEventManagePermission(ctx: any, userId: Id<"users">, eventId: Id<"events">) {
   const event = await ctx.db.get(eventId);
   if (!event) {
     throw new Error("Event not found");
@@ -267,7 +267,7 @@ export const createEventForCurrentTeam = mutation({
     // Add all team members as participants
     const teamMembers = await ctx.db
       .query("teamMembers")
-      .withIndex("by_team", (q) => q.eq("teamId", teamId))
+      .withIndex("by_team", (q: any) => q.eq("teamId", teamId))
       .collect();
 
     for (const member of teamMembers) {
@@ -632,15 +632,14 @@ export const getEvent = query({
       return null;
     }
 
-    // Only return published events for non-team members
-    const userId = await auth.getUserId(ctx);
+    const user = await getCurrentUserWithTeamReadOnly(ctx);
     let canManage = false;
 
-    if (userId) {
-      if (event.organizerId === userId) {
+    if (user) {
+      if (event.organizerId === user._id) {
         canManage = true;
       } else {
-        const membership = await checkTeamMembership(ctx, userId, event.teamId);
+        const membership = await checkTeamMembership(ctx, user._id, event.teamId);
         if (membership && (membership.role === "admin" || membership.role === "owner")) {
           canManage = true;
         }
@@ -653,7 +652,7 @@ export const getEvent = query({
     }
 
     // Use the helper function to build the response
-    return await buildEventResponse(ctx, event, userId || undefined);
+    return await buildEventResponse(ctx, event, user?._id || undefined);
   },
 });
 
@@ -712,7 +711,7 @@ export const getEventBySlug = query({
   handler: async (ctx, args) => {
     const event = await ctx.db
       .query("events")
-      .withIndex("by_slug", (q) => q.eq("slug", args.slug))
+      .withIndex("by_slug", (q: any) => q.eq("slug", args.slug))
       .first();
 
     if (!event) {
@@ -787,14 +786,14 @@ export const getMyEvents = query({
 
     const events = await ctx.db
       .query("events")
-      .withIndex("by_team", (q) => q.eq("teamId", user.currentTeamId))
+      .withIndex("by_team", (q: any) => q.eq("teamId", user.currentTeamId))
       .order("desc") // Most recent first
       .collect();
 
     // Get team membership for permission checking
     const membership = await ctx.db
       .query("teamMembers")
-      .withIndex("by_team_and_user", (q) => 
+      .withIndex("by_team_and_user", (q: any) => 
         q.eq("teamId", user.currentTeamId).eq("userId", user._id)
       )
       .first();
@@ -817,7 +816,7 @@ export const getMyEvents = query({
     for (const event of events) {
       const registrations = await ctx.db
         .query("eventRegistrations")
-        .withIndex("by_event", (q) => q.eq("eventId", event._id))
+        .withIndex("by_event", (q: any) => q.eq("eventId", event._id))
         .collect();
       registrationCountsMap.set(event._id, registrations.length);
     }

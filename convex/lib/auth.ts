@@ -22,11 +22,14 @@ export async function getCurrentUserWithTeam(ctx: MutationCtx): Promise<(Doc<"us
   const user = await getCurrentUser(ctx);
   if (!user || !user.currentTeamId) return null;
   
+  // At this point, currentTeamId is guaranteed to exist due to the check above
+  const currentTeamId = user.currentTeamId;
+  
   // Verify user is still a member of their selected team
   const membership = await ctx.db
     .query("teamMembers")
     .withIndex("by_team_and_user", (q) => 
-      q.eq("teamId", user.currentTeamId!).eq("userId", user._id)
+      q.eq("teamId", currentTeamId).eq("userId", user._id)
     )
     .first();
     
@@ -38,7 +41,7 @@ export async function getCurrentUserWithTeam(ctx: MutationCtx): Promise<(Doc<"us
   
   return {
     ...user,
-    currentTeamId: user.currentTeamId,
+    currentTeamId,
   };
 }
 
@@ -50,11 +53,14 @@ export async function getCurrentUserWithTeamReadOnly(ctx: DatabaseContext): Prom
   const user = await getCurrentUser(ctx);
   if (!user || !user.currentTeamId) return null;
   
+  // At this point, currentTeamId is guaranteed to exist due to the check above
+  const currentTeamId = user.currentTeamId;
+  
   // Verify user is still a member of their selected team
   const membership = await ctx.db
     .query("teamMembers")
     .withIndex("by_team_and_user", (q) => 
-      q.eq("teamId", user.currentTeamId!).eq("userId", user._id)
+      q.eq("teamId", currentTeamId).eq("userId", user._id)
     )
     .first();
     
@@ -65,7 +71,7 @@ export async function getCurrentUserWithTeamReadOnly(ctx: DatabaseContext): Prom
   
   return {
     ...user,
-    currentTeamId: user.currentTeamId,
+    currentTeamId,
   };
 }
 
@@ -106,6 +112,7 @@ export async function hasTeamPermission(
   const user = await getCurrentUserWithTeamReadOnly(ctx);
   if (!user) return false;
   
+  // user.currentTeamId is guaranteed to exist here due to getCurrentUserWithTeamReadOnly
   const membership = await ctx.db
     .query("teamMembers")
     .withIndex("by_team_and_user", (q) => 
@@ -131,6 +138,7 @@ export async function requireTeamPermission(
 ): Promise<Doc<"teamMembers">> {
   const user = await requireTeam(ctx);
   
+  // user.currentTeamId is guaranteed to exist here due to requireTeam
   const membership = await ctx.db
     .query("teamMembers")
     .withIndex("by_team_and_user", (q) => 

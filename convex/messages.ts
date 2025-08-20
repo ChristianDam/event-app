@@ -1,8 +1,7 @@
 import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
-import { getAuthUserId } from "@convex-dev/auth/server";
 import { paginationOptsValidator } from "convex/server";
-import { Doc, Id } from "./_generated/dataModel";
+import { requireAuth } from "./lib/auth";
 
 // Thread Message Functions
 
@@ -36,15 +35,12 @@ export const getThreadMessages = query({
     continueCursor: v.string(),
   }),
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) {
-      throw new Error("Not signed in");
-    }
+    const user = await requireAuth(ctx);
 
     // Verify user is a participant in the thread
     const participation = await ctx.db
       .query("threadParticipants")
-      .withIndex("by_thread_and_user", (q) => q.eq("threadId", args.threadId).eq("userId", userId))
+      .withIndex("by_thread_and_user", (q) => q.eq("threadId", args.threadId).eq("user._id", user._id))
       .unique();
 
     if (!participation) {
@@ -141,15 +137,12 @@ export const sendMessage = mutation({
   },
   returns: v.id("threadMessages"),
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) {
-      throw new Error("Not signed in");
-    }
+    const user = await requireAuth(ctx);
 
     // Verify user is a participant in the thread
     const participation = await ctx.db
       .query("threadParticipants")
-      .withIndex("by_thread_and_user", (q) => q.eq("threadId", args.threadId).eq("userId", userId))
+      .withIndex("by_thread_and_user", (q) => q.eq("threadId", args.threadId).eq("user._id", user._id))
       .unique();
 
     if (!participation) {
@@ -176,7 +169,7 @@ export const sendMessage = mutation({
     const now = Date.now();
     const messageId = await ctx.db.insert("threadMessages", {
       threadId: args.threadId,
-      authorId: userId,
+      authorId: user._id,
       content: args.content,
       messageType: "text",
       replyToId: args.replyToId,
@@ -199,10 +192,7 @@ export const editMessage = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) {
-      throw new Error("Not signed in");
-    }
+    const user = await requireAuth(ctx);
 
     const message = await ctx.db.get(args.messageId);
     if (!message) {
@@ -210,7 +200,7 @@ export const editMessage = mutation({
     }
 
     // Only the author can edit their message
-    if (message.authorId !== userId) {
+    if (message.authorId !== user._id) {
       throw new Error("Not authorized to edit this message");
     }
 
@@ -234,10 +224,7 @@ export const deleteMessage = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) {
-      throw new Error("Not signed in");
-    }
+    const user = await requireAuth(ctx);
 
     const message = await ctx.db.get(args.messageId);
     if (!message) {
@@ -245,10 +232,10 @@ export const deleteMessage = mutation({
     }
 
     // Check if user can delete this message (author or thread admin)
-    const isAuthor = message.authorId === userId;
+    const isAuthor = message.authorId === user._id;
     const participation = await ctx.db
       .query("threadParticipants")
-      .withIndex("by_thread_and_user", (q) => q.eq("threadId", message.threadId).eq("userId", userId))
+      .withIndex("by_thread_and_user", (q) => q.eq("threadId", message.threadId).eq("user._id", user._id))
       .unique();
 
     const isThreadAdmin = participation?.role === "admin";
@@ -316,10 +303,7 @@ export const list = query({
     author: v.string(),
   })),
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) {
-      throw new Error("Not signed in");
-    }
+    const user = await requireAuth(ctx);
     
     // Return empty array for now - this function is deprecated
     // Applications should migrate to thread-based messaging
@@ -328,13 +312,10 @@ export const list = query({
 });
 
 export const send = mutation({
-  args: { body: v.string() },
+  args: {},
   returns: v.null(),
-  handler: async (ctx, { body }) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) {
-      throw new Error("Not signed in");
-    }
+  handler: async (ctx) => {
+    const user = await requireAuth(ctx);
     
     // This function is deprecated - applications should use sendMessage with threads
     throw new Error("This function is deprecated. Please use thread-based messaging.");

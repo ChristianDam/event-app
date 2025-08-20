@@ -1,9 +1,8 @@
 import { v } from "convex/values";
 import { mutation, query, internalQuery, internalMutation } from "./_generated/server";
-import { auth } from "./auth";
 import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
-import { requireAuth } from "./lib/auth";
+import { requireAuth, getCurrentUser } from "./lib/auth";
 
 /**
  * Create a new team with the authenticated user as owner
@@ -47,7 +46,7 @@ export const createTeam = mutation({
     // Add creator as team owner
     await ctx.db.insert("teamMembers", {
       teamId,
-      userId,
+      userId: user._id,
       role: "owner",
       joinedAt: now,
     });
@@ -66,7 +65,7 @@ export const createTeam = mutation({
     // Add creator as admin participant in the thread
     await ctx.db.insert("threadParticipants", {
       threadId,
-      userId,
+      userId: user._id,
       role: "admin",
       joinedAt: now,
     });
@@ -280,16 +279,13 @@ export const updateTeam = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
+    const user = await requireAuth(ctx);
 
     // Check if user has permission to update team
     const membership = await ctx.db
       .query("teamMembers")
       .withIndex("by_team_and_user", (q) => 
-        q.eq("teamId", args.teamId).eq("userId", userId)
+        q.eq("teamId", args.teamId).eq("userId", user._id)
       )
       .first();
 
@@ -344,16 +340,13 @@ export const updateTeamBranding = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
+    const user = await requireAuth(ctx);
 
     // Check if user has permission to update team
     const membership = await ctx.db
       .query("teamMembers")
       .withIndex("by_team_and_user", (q) => 
-        q.eq("teamId", args.teamId).eq("userId", userId)
+        q.eq("teamId", args.teamId).eq("userId", user._id)
       )
       .first();
 
@@ -392,16 +385,13 @@ export const generateLogoUploadUrl = mutation({
   },
   returns: v.string(),
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
+    const user = await requireAuth(ctx);
 
     // Check if user has permission to update team
     const membership = await ctx.db
       .query("teamMembers")
       .withIndex("by_team_and_user", (q) => 
-        q.eq("teamId", args.teamId).eq("userId", userId)
+        q.eq("teamId", args.teamId).eq("userId", user._id)
       )
       .first();
 
@@ -436,16 +426,13 @@ export const getTeamMembers = query({
     }),
   })),
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
+    const user = await requireAuth(ctx);
 
     // Check if user is a member of this team
     const membership = await ctx.db
       .query("teamMembers")
       .withIndex("by_team_and_user", (q) => 
-        q.eq("teamId", args.teamId).eq("userId", userId)
+        q.eq("teamId", args.teamId).eq("userId", user._id)
       )
       .first();
 
@@ -489,16 +476,13 @@ export const removeMember = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
+    const user = await requireAuth(ctx);
 
     // Check if user has permission to remove members
     const userMembership = await ctx.db
       .query("teamMembers")
       .withIndex("by_team_and_user", (q) => 
-        q.eq("teamId", args.teamId).eq("userId", userId)
+        q.eq("teamId", args.teamId).eq("userId", user._id)
       )
       .first();
 
@@ -542,15 +526,12 @@ export const leaveTeam = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
+    const user = await requireAuth(ctx);
 
     const membership = await ctx.db
       .query("teamMembers")
       .withIndex("by_team_and_user", (q) => 
-        q.eq("teamId", args.teamId).eq("userId", userId)
+        q.eq("teamId", args.teamId).eq("userId", user._id)
       )
       .first();
 
@@ -594,16 +575,13 @@ export const inviteByEmail = mutation({
   },
   returns: v.id("teamInvitations"),
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
+    const user = await requireAuth(ctx);
 
     // Check if user has permission to invite
     const membership = await ctx.db
       .query("teamMembers")
       .withIndex("by_team_and_user", (q) => 
-        q.eq("teamId", args.teamId).eq("userId", userId)
+        q.eq("teamId", args.teamId).eq("userId", user._id)
       )
       .first();
 
@@ -653,7 +631,7 @@ export const inviteByEmail = mutation({
 
     const invitationId = await ctx.db.insert("teamInvitations", {
       teamId: args.teamId,
-      invitedBy: userId,
+      invitedBy: user._id,
       email: args.email,
       token,
       role: args.role,
@@ -731,16 +709,15 @@ export const acceptInvitation = mutation({
     error: v.optional(v.string()),
   }),
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
+    const user = await getCurrentUser(ctx);
+    if (!user) {
       return {
         success: false,
         error: "Not authenticated",
       };
     }
 
-    const currentUser = await ctx.db.get(userId);
-    if (!currentUser?.email) {
+    if (!user?.email) {
       return {
         success: false,
         error: "User email not found",
@@ -778,7 +755,7 @@ export const acceptInvitation = mutation({
     }
 
     // Check if email matches
-    if (invitation.email !== currentUser.email) {
+    if (invitation.email !== user.email) {
       return {
         success: false,
         error: "This invitation was sent to a different email address",
@@ -789,7 +766,7 @@ export const acceptInvitation = mutation({
     const existingMembership = await ctx.db
       .query("teamMembers")
       .withIndex("by_team_and_user", (q) => 
-        q.eq("teamId", invitation.teamId).eq("userId", userId)
+        q.eq("teamId", invitation.teamId).eq("userId", user._id)
       )
       .first();
 
@@ -809,7 +786,7 @@ export const acceptInvitation = mutation({
     const now = Date.now();
     await ctx.db.insert("teamMembers", {
       teamId: invitation.teamId,
-      userId,
+      userId: user._id,
       role: invitation.role,
       joinedAt: now,
     });
@@ -824,7 +801,7 @@ export const acceptInvitation = mutation({
     for (const thread of teamThreads) {
       await ctx.db.insert("threadParticipants", {
         threadId: thread._id,
-        userId,
+        userId: user._id,
         role: "participant",
         joinedAt: now,
       });
@@ -834,9 +811,9 @@ export const acceptInvitation = mutation({
     await ctx.db.patch(invitation._id, { status: "accepted" });
 
     // Set this team as current if user doesn't have a current team
-    const userRecord = await ctx.db.get(userId);
+    const userRecord = await ctx.db.get(user._id);
     if (userRecord && !userRecord.currentTeamId) {
-      await ctx.db.patch(userId, {
+      await ctx.db.patch(user._id, {
         currentTeamId: invitation.teamId,
       });
     }
@@ -872,16 +849,13 @@ export const getPendingInvitations = query({
     expiresAt: v.number(),
   })),
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
+    const user = await requireAuth(ctx);
 
     // Check if user is a member of this team
     const membership = await ctx.db
       .query("teamMembers")
       .withIndex("by_team_and_user", (q) => 
-        q.eq("teamId", args.teamId).eq("userId", userId)
+        q.eq("teamId", args.teamId).eq("userId", user._id)
       )
       .first();
 
@@ -929,10 +903,7 @@ export const cancelInvitation = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
+    const user = await requireAuth(ctx);
 
     const invitation = await ctx.db.get(args.invitationId);
     if (!invitation) {
@@ -943,7 +914,7 @@ export const cancelInvitation = mutation({
     const membership = await ctx.db
       .query("teamMembers")
       .withIndex("by_team_and_user", (q) => 
-        q.eq("teamId", invitation.teamId).eq("userId", userId)
+        q.eq("teamId", invitation.teamId).eq("userId", user._id)
       )
       .first();
 

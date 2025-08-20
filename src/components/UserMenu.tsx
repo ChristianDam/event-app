@@ -22,6 +22,7 @@ import { ReactNode, useState } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import { getStorageUrl } from "../utils/storage";
 
 export function UserMenu({
   favoriteColor,
@@ -37,6 +38,7 @@ export function UserMenu({
   const setCurrentTeam = useMutation(api.users.setCurrentTeam);
   const [showCreateTeam, setShowCreateTeam] = useState(false);
   const [isTeamSwitching, setIsTeamSwitching] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   return (
     <div className="flex items-center gap-2 text-sm font-medium">
@@ -72,7 +74,7 @@ export function UserMenu({
               <DropdownMenuItem className="flex items-center gap-3 bg-primary/10">
                 {currentTeam.logo ? (
                   <img 
-                    src={`${window.location.origin}/api/storage/${currentTeam.logo}`}
+                    src={getStorageUrl(currentTeam.logo)}
                     alt={`${currentTeam.name} logo`}
                     className="w-6 h-6 rounded object-cover border"
                   />
@@ -139,8 +141,10 @@ export function UserMenu({
                       navigate(`/team/${team._id}`);
                     } catch (error) {
                       console.error("Failed to switch team:", error);
-                      // Show user-friendly error (would be better with toast notification)
-                      alert(`Failed to switch to ${team.name}. Please try again.`);
+                      // Show user-friendly error message
+                      setErrorMessage(`Failed to switch to ${team.name}. Please try again.`);
+                      // Auto-hide error after 5 seconds
+                      setTimeout(() => setErrorMessage(null), 5000);
                     } finally {
                       setIsTeamSwitching(null);
                     }
@@ -149,7 +153,7 @@ export function UserMenu({
                   <div className="flex items-center gap-3">
                     {team.logo ? (
                       <img 
-                        src={`${window.location.origin}/api/storage/${team.logo}`}
+                        src={getStorageUrl(team.logo)}
                         alt={`${team.name} logo`}
                         className="w-8 h-8 rounded object-cover border"
                       />
@@ -208,6 +212,21 @@ export function UserMenu({
           <SignOutButton />
         </DropdownMenuContent>
       </DropdownMenu>
+      
+      {/* Error message display */}
+      {errorMessage && (
+        <div className="fixed top-4 right-4 bg-destructive text-destructive-foreground px-4 py-2 rounded-md shadow-lg z-50 max-w-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-sm">{errorMessage}</span>
+            <button 
+              onClick={() => setErrorMessage(null)}
+              className="ml-2 text-destructive-foreground hover:opacity-70"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
       
       {showCreateTeam && (
         <CreateTeamDialog onClose={() => setShowCreateTeam(false)} />
