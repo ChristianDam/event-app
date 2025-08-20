@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,9 +13,8 @@ interface TeamPageProps {
   navigate: (to: string) => void;
 }
 
-export default function TeamPage({ navigate }: TeamPageProps) {
+export default function TeamPage({}: TeamPageProps) {
   const [inviteEmail, setInviteEmail] = useState("");
-  const user = useQuery(api.users.viewer);
   
   // Mock data - replace with actual queries when backend is ready
   const teamSettings = {

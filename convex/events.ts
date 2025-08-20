@@ -1,8 +1,8 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { auth } from "./auth";
 // import { internal } from "./_generated/api"; // Reserved for future use
 import { Id } from "./_generated/dataModel";
+import { requireAuth, requireTeam } from "./lib/auth";
 
 /**
  * Validate email address using proper regex
@@ -165,7 +165,7 @@ async function checkEventManagePermission(ctx: any, userId: Id<"users">, eventId
 }
 
 /**
- * Create a new event
+ * Create a new event (team-aware - uses current team)
  */
 export const createEvent = mutation({
   args: {
@@ -175,7 +175,6 @@ export const createEvent = mutation({
     startTime: v.number(),
     endTime: v.number(),
     timezone: v.optional(v.string()),
-    teamId: v.id("teams"),
     eventType: v.union(
       v.literal("music"),
       v.literal("art"),
@@ -191,10 +190,9 @@ export const createEvent = mutation({
   },
   returns: v.id("events"),
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
+    const user = await requireTeam(ctx);
+    const teamId = user.currentTeamId;
+    const userId = user._id;
 
     // Validate input
     if (args.title.trim().length < 3) {
@@ -219,8 +217,8 @@ export const createEvent = mutation({
       throw new Error("Invalid timezone. Please use a valid IANA timezone identifier");
     }
 
-    // Check permissions
-    await checkEventCreatePermission(ctx, userId, args.teamId);
+    // Check permissions (user is already verified to be a team member by requireTeam)
+    await checkEventCreatePermission(ctx, userId, teamId);
 
     // Generate unique slug
     const slug = await generateUniqueSlug(ctx, args.title);
@@ -235,7 +233,7 @@ export const createEvent = mutation({
       startTime: args.startTime,
       endTime: args.endTime,
       timezone: args.timezone || "Europe/Copenhagen",
-      teamId: args.teamId,
+      teamId,
       organizerId: userId,
       eventType: args.eventType,
       maxCapacity: args.maxCapacity,
@@ -268,7 +266,7 @@ export const createEvent = mutation({
     // Add all team members as participants
     const teamMembers = await ctx.db
       .query("teamMembers")
-      .withIndex("by_team", (q) => q.eq("teamId", args.teamId))
+      .withIndex("by_team", (q: any) => q.eq("teamId", teamId))
       .collect();
 
     for (const member of teamMembers) {
@@ -322,13 +320,13 @@ export const updateEvent = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
+    const user = await requireAuth(ctx);
+    if (!user?._id) {
       throw new Error("Not authenticated");
     }
 
     // Check permissions and get event
-    const { event } = await checkEventManagePermission(ctx, userId, args.eventId);
+    const { event } = await checkEventManagePermission(ctx, user._id, args.eventId);
 
     // Build update object
     const updates: any = {
@@ -422,13 +420,13 @@ export const deleteEvent = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
+    const user = await requireAuth(ctx);
+    if (!user?._id) {
       throw new Error("Not authenticated");
     }
 
     // Check permissions
-    await checkEventManagePermission(ctx, userId, args.eventId);
+    await checkEventManagePermission(ctx, user._id, args.eventId);
 
     // Delete all registrations for this event
     const registrations = await ctx.db
@@ -504,15 +502,14 @@ export const getEvent = query({
       return null;
     }
 
-    // Only return published events for non-team members
-    const userId = await auth.getUserId(ctx);
+    const user = await requireAuth(ctx);
     let canManage = false;
 
-    if (userId) {
-      if (event.organizerId === userId) {
+    if (user) {
+      if (event.organizerId === user._id) {
         canManage = true;
       } else {
-        const membership = await checkTeamMembership(ctx, userId, event.teamId);
+        const membership = await checkTeamMembership(ctx, user._id, event.teamId);
         if (membership && (membership.role === "admin" || membership.role === "owner")) {
           canManage = true;
         }
@@ -525,7 +522,7 @@ export const getEvent = query({
     }
 
     // Use the helper function to build the response
-    return await buildEventResponse(ctx, event, userId || undefined);
+    return await buildEventResponse(ctx, event, user?._id || undefined);
   },
 });
 
@@ -592,14 +589,14 @@ export const getEventBySlug = query({
     }
 
     // Only return published events for non-team members
-    const userId = await auth.getUserId(ctx);
+    const user = await requireAuth(ctx);
     let canManage = false;
 
-    if (userId) {
-      if (event.organizerId === userId) {
+    if (user?._id) {
+      if (event.organizerId === user._id) {
         canManage = true;
       } else {
-        const membership = await checkTeamMembership(ctx, userId, event.teamId);
+        const membership = await checkTeamMembership(ctx, user._id, event.teamId);
         if (membership && (membership.role === "admin" || membership.role === "owner")) {
           canManage = true;
         }
@@ -612,7 +609,126 @@ export const getEventBySlug = query({
     }
 
     // Use the helper function to build the response
-    return await buildEventResponse(ctx, event, userId || undefined);
+    return await buildEventResponse(ctx, event, user?._id || undefined);
+  },
+});
+
+/**
+ * Get all events for the current team (team-aware pattern)
+ */
+export const getMyEvents = query({
+  args: {},
+  returns: v.array(v.object({
+    _id: v.id("events"),
+    _creationTime: v.number(),
+    title: v.string(),
+    slug: v.string(),
+    description: v.string(),
+    venue: v.string(),
+    startTime: v.number(),
+    endTime: v.number(),
+    timezone: v.string(),
+    eventType: v.union(
+      v.literal("music"),
+      v.literal("art"),
+      v.literal("workshop"),
+      v.literal("performance"),
+      v.literal("exhibition"),
+      v.literal("other")
+    ),
+    maxCapacity: v.optional(v.number()),
+    registrationDeadline: v.optional(v.number()),
+    status: v.union(v.literal("draft"), v.literal("published"), v.literal("cancelled")),
+    eventImageId: v.optional(v.id("_storage")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    organizer: v.object({
+      _id: v.id("users"),
+      name: v.optional(v.string()),
+      email: v.optional(v.string()),
+    }),
+    registrationCount: v.number(),
+    canManage: v.boolean(),
+  })),
+  handler: async (ctx) => {
+    const user = await requireAuth(ctx);
+    if (!user) return [];
+
+    const events = await ctx.db
+      .query("events")
+      .withIndex("by_team", (q: any) => q.eq("teamId", user.currentTeamId))
+      .order("desc") // Most recent first
+      .collect();
+
+    // Get team membership for permission checking
+    const membership = await ctx.db
+      .query("teamMembers")
+      .withIndex("by_team_and_user", (q: any) => 
+        q.eq("teamId", user.currentTeamId).eq("userId", user._id)
+      )
+      .first();
+
+    if (!membership) return [];
+
+    // Batch fetch all unique organizer IDs to avoid N+1 query problem
+    const organizerIds = [...new Set(events.map(event => event.organizerId))];
+    const organizersMap = new Map();
+    
+    for (const organizerId of organizerIds) {
+      const organizer = await ctx.db.get(organizerId);
+      if (organizer) {
+        organizersMap.set(organizerId, organizer);
+      }
+    }
+
+    // Batch fetch registration counts for all events
+    const registrationCountsMap = new Map();
+    for (const event of events) {
+      const registrations = await ctx.db
+        .query("eventRegistrations")
+        .withIndex("by_event", (q: any) => q.eq("eventId", event._id))
+        .collect();
+      registrationCountsMap.set(event._id, registrations.length);
+    }
+
+    const eventsWithDetails = [];
+    for (const event of events) {
+      const organizer = organizersMap.get(event.organizerId);
+      if (!organizer) continue;
+
+      // Check if user can manage this event
+      const canManage = event.organizerId === user._id || 
+                       membership.role === "admin" || 
+                       membership.role === "owner";
+
+      eventsWithDetails.push({
+        _id: event._id,
+        _creationTime: event._creationTime,
+        title: event.title,
+        slug: event.slug,
+        description: event.description,
+        venue: event.venue,
+        startTime: event.startTime,
+        endTime: event.endTime,
+        timezone: event.timezone,
+        eventType: event.eventType,
+        maxCapacity: event.maxCapacity,
+        registrationDeadline: event.registrationDeadline,
+        status: event.status,
+        eventImageId: event.eventImageId,
+        createdAt: event.createdAt,
+        updatedAt: event.updatedAt,
+        organizer: {
+          _id: organizer._id,
+          name: organizer.name,
+          email: organizer.email,
+        },
+        registrationCount: registrationCountsMap.get(event._id) || 0,
+        canManage,
+      });
+    }
+
+    return eventsWithDetails;
   },
 });
 
@@ -656,13 +772,13 @@ export const getTeamEvents = query({
     canManage: v.boolean(),
   })),
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
+    const user = await requireAuth(ctx);
+    if (!user?._id) {
       throw new Error("Not authenticated");
     }
 
     // Check team membership
-    const membership = await checkTeamMembership(ctx, userId, args.teamId);
+    const membership = await checkTeamMembership(ctx, user._id, args.teamId);
     if (!membership) {
       throw new Error("Not a member of this team");
     }
@@ -700,7 +816,7 @@ export const getTeamEvents = query({
       if (!organizer) continue;
 
       // Check if user can manage this event
-      const canManage = event.organizerId === userId || 
+      const canManage = event.organizerId === user._id || 
                        membership.role === "admin" || 
                        membership.role === "owner";
 
@@ -744,13 +860,13 @@ export const generateEventImageUploadUrl = mutation({
   },
   returns: v.string(),
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
+    const user = await requireAuth(ctx);
+    if (!user?._id) {
       throw new Error("Not authenticated");
     }
 
     // Check if user can create events for this team
-    await checkEventCreatePermission(ctx, userId, args.teamId);
+    await checkEventCreatePermission(ctx, user._id, args.teamId);
 
     return await ctx.storage.generateUploadUrl();
   },
@@ -892,13 +1008,13 @@ export const getEventRegistrations = query({
     confirmationSent: v.boolean(),
   })),
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
+    const user = await requireAuth(ctx);
+    if (!user?._id) {
       throw new Error("Not authenticated");
     }
 
     // Check permissions - must be event organizer or team admin
-    await checkEventManagePermission(ctx, userId, args.eventId);
+    await checkEventManagePermission(ctx, user._id, args.eventId);
 
     const registrations = await ctx.db
       .query("eventRegistrations")
@@ -937,8 +1053,8 @@ export const removeRegistration = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
+    const user = await requireAuth(ctx);
+    if (!user?._id) {
       throw new Error("Not authenticated");
     }
 
@@ -948,7 +1064,7 @@ export const removeRegistration = mutation({
     }
 
     // Check permissions
-    await checkEventManagePermission(ctx, userId, registration.eventId);
+    await checkEventManagePermission(ctx, user._id, registration.eventId);
 
     await ctx.db.delete(args.registrationId);
     return null;

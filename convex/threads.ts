@@ -1,10 +1,159 @@
-import { query, mutation, internalQuery } from "./_generated/server";
+import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { paginationOptsValidator } from "convex/server";
-import { Doc, Id } from "./_generated/dataModel";
+import { getCurrentUserWithTeamReadOnly, requireTeam } from "./lib/auth";
 
 // Thread Management Functions
+
+/**
+ * Create a thread for the current team (team-aware pattern)
+ */
+export const createTeamThreadForCurrentTeam = mutation({
+  args: {
+    title: v.string(),
+    description: v.optional(v.string()),
+  },
+  returns: v.id("threads"),
+  handler: async (ctx, args) => {
+    const user = await requireTeam(ctx);
+    const teamId = user.currentTeamId;
+    const userId = user._id;
+
+    const threadId = await ctx.db.insert("threads", {
+      title: args.title,
+      description: args.description,
+      threadType: "team",
+      teamId,
+      createdBy: userId,
+      createdAt: Date.now(),
+      isArchived: false,
+    });
+
+    // Add creator as admin participant
+    await ctx.db.insert("threadParticipants", {
+      threadId,
+      userId,
+      role: "admin",
+      joinedAt: Date.now(),
+    });
+
+    // Add all team members as participants
+    const teamMembers = await ctx.db
+      .query("teamMembers")
+      .withIndex("by_team", (q) => q.eq("teamId", teamId))
+      .collect();
+
+    for (const member of teamMembers) {
+      if (member.userId !== userId) { // Skip creator, already added
+        await ctx.db.insert("threadParticipants", {
+          threadId,
+          userId: member.userId,
+          role: "participant",
+          joinedAt: Date.now(),
+        });
+      }
+    }
+
+    return threadId;
+  },
+});
+
+/**
+ * Get threads for the current team (team-aware pattern)
+ */
+export const getMyTeamThreads = query({
+  args: {
+    paginationOpts: paginationOptsValidator,
+  },
+  returns: v.object({
+    page: v.array(v.object({
+      _id: v.id("threads"),
+      title: v.string(),
+      description: v.optional(v.string()),
+      threadType: v.union(v.literal("team"), v.literal("event"), v.literal("ai")),
+      createdBy: v.id("users"),
+      createdAt: v.number(),
+      lastMessageAt: v.optional(v.number()),
+      messageCount: v.number(),
+      unreadCount: v.number(),
+    })),
+    isDone: v.boolean(),
+    continueCursor: v.string(),
+  }),
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserWithTeamReadOnly(ctx);
+    if (!user) {
+      return {
+        page: [],
+        isDone: true,
+        continueCursor: "",
+      };
+    }
+
+    // Verify user is team member (additional safety check)
+    const membership = await ctx.db
+      .query("teamMembers")
+      .withIndex("by_team_and_user", (q) => 
+        q.eq("teamId", user.currentTeamId).eq("userId", user._id)
+      )
+      .first();
+    
+    if (!membership) {
+      return {
+        page: [],
+        isDone: true,
+        continueCursor: "",
+      };
+    }
+
+    const result = await ctx.db
+      .query("threads")
+      .withIndex("by_team", (q) => q.eq("teamId", user.currentTeamId))
+      .filter((q) => q.eq(q.field("isArchived"), false))
+      .order("desc")
+      .paginate(args.paginationOpts);
+
+    const enrichedThreads = await Promise.all(
+      result.page.map(async (thread) => {
+        // Get message count
+        const messages = await ctx.db
+          .query("threadMessages")
+          .withIndex("by_thread", (q) => q.eq("threadId", thread._id))
+          .collect();
+
+        // Get user's last read timestamp
+        const participation = await ctx.db
+          .query("threadParticipants")
+          .withIndex("by_thread_and_user", (q) => 
+            q.eq("threadId", thread._id).eq("userId", user._id)
+          )
+          .first();
+
+        const lastReadAt = participation?.lastReadAt || 0;
+        const unreadCount = messages.filter((msg) => msg.createdAt > lastReadAt).length;
+
+        return {
+          _id: thread._id,
+          title: thread.title,
+          description: thread.description,
+          threadType: thread.threadType,
+          createdBy: thread.createdBy,
+          createdAt: thread.createdAt,
+          lastMessageAt: thread.lastMessageAt,
+          messageCount: messages.length,
+          unreadCount,
+        };
+      })
+    );
+
+    return {
+      page: enrichedThreads,
+      isDone: result.isDone,
+      continueCursor: result.continueCursor,
+    };
+  },
+});
 
 export const createTeamThread = mutation({
   args: {
@@ -125,14 +274,8 @@ export const createEventThread = mutation({
       });
     }
 
-    // Add all event attendees as participants
-    const registrations = await ctx.db
-      .query("eventRegistrations")
-      .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
-      .collect();
-
-    // Note: Since registrations store email/name but not user IDs,
-    // we'll need to match registered users later or when they join
+    // Note: Event attendee participation will be handled when users
+    // register and join the platform with matching email addresses
     
     return threadId;
   },

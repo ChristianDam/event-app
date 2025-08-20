@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CreateEventDialog } from "@/components/events";
 import { Plus, Calendar, Users, Eye, EyeOff, Edit, Trash2 } from "lucide-react";
 
 interface EventsPageProps {
@@ -16,14 +15,6 @@ export default function EventsPage({ navigate }: EventsPageProps) {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const user = useQuery(api.users.viewer);
   
-  // Mock team data - replace with actual team query when backend is ready
-  const mockTeam = {
-    _id: "team_123" as any,
-    name: "Product Team",
-    primaryColor: "#3b82f6",
-    secondaryColor: "#1e40af",
-    accentColor: "#dbeafe"
-  };
   
   // This query would need to be implemented in the backend
   // const events = useQuery(api.events.list);
@@ -215,18 +206,6 @@ export default function EventsPage({ navigate }: EventsPageProps) {
           </Card>
         )}
       </div>
-
-      {user && (
-        <CreateEventDialog
-          isOpen={showCreateDialog}
-          onClose={() => setShowCreateDialog(false)}
-          team={mockTeam}
-          onSuccess={(eventId) => {
-            console.log("Event created:", eventId);
-            // Could refresh events list or navigate to event
-          }}
-        />
-      )}
     </div>
   );
 }
