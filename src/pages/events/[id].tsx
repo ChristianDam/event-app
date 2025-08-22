@@ -289,7 +289,7 @@ const EventManagePage: React.FC<EventManagePageProps> = ({ params, navigate }) =
         <div className="flex items-center gap-2">
           <Button 
             variant="outline" 
-            onClick={() => navigate(`/events/${event.slug}`)}
+            onClick={() => navigate(`/events/discover/${event.slug}`)}
           >
             <Eye className="h-4 w-4 mr-2" />
             View Public Page

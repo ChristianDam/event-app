@@ -20,7 +20,7 @@ const PublicEventPage: React.FC<PublicEventPageProps> = ({ params, navigate }) =
   const event = useQuery(api.events.getEventBySlug, slug ? { slug } : 'skip');
   const eventRegistrationCount = useQuery(
     api.events.getEventRegistrationCount, 
-    event ? { eventId: event._id } : 'skip'
+    event && event._id ? { eventId: event._id } : 'skip'
   );
 
   // Update registration count when it loads

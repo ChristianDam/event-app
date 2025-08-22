@@ -37,14 +37,14 @@ const routes: RouteDefinition[] = [
     authRequired: true,
   },
   {
+    path: '/events/discover/[slug]',
+    component: PublicEventPage,
+    authRequired: false, // Public event pages
+  },
+  {
     path: '/events/[id]',
     component: EventManagePage,
     authRequired: true, // Organizers only
-  },
-  {
-    path: '/events/[slug]',
-    component: PublicEventPage,
-    authRequired: false, // Public event pages
   },
 ];
 

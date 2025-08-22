@@ -157,10 +157,10 @@ const EventListPage: React.FC<EventListPageProps> = ({ navigate }) => {
               key={event._id}
               event={event}
               onEdit={() => navigate(`/events/${event._id}`)}
-              onView={() => navigate(`/events/${event.slug}`)}
+              onView={() => navigate(`/events/discover/${event.slug}`)}
               onShare={() => {
                 if (event.status === 'published') {
-                  navigator.clipboard.writeText(`${window.location.origin}/events/${event.slug}`);
+                  navigator.clipboard.writeText(`${window.location.origin}/events/discover/${event.slug}`);
                   // Could add toast notification here
                 }
               }}
