@@ -120,7 +120,7 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
 
   const handleFinalSubmit = async () => {
     // Note: Image upload ID will be handled separately in the mutation
-    // The form data doesn't include eventImageId as it's not part of EventFormData
+    // The form data doesn't include bannerImageId as it's not part of EventFormData
     await handleSubmit();
   };
 

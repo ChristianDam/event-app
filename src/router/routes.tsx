@@ -7,6 +7,7 @@ import TeamPage from '../pages/team/index';
 import InviteTokenPage from '../pages/invite/[token]';
 import TeamIdPage from '../pages/team/[id]';
 import PublicEventPage from '../pages/events/[slug]';
+import EventManagePage from '../pages/events/[id]';
 
 // Define all routes
 const routes: RouteDefinition[] = [
@@ -34,6 +35,11 @@ const routes: RouteDefinition[] = [
     path: '/team/[id]',
     component: TeamIdPage,
     authRequired: true,
+  },
+  {
+    path: '/events/[id]',
+    component: EventManagePage,
+    authRequired: true, // Organizers only
   },
   {
     path: '/events/[slug]',

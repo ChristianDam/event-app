@@ -171,7 +171,8 @@ export const useEventForm = ({
         eventType: sanitizedData.eventType,
         maxCapacity: sanitizedData.maxCapacity,
         registrationDeadline: sanitizedData.registrationDeadline?.getTime(),
-        eventImageId: undefined, // This will be set by the image upload component
+        bannerImageId: undefined, // This will be set by the image upload component
+        socialImageId: undefined,
         status: 'draft' as const,
       };
 

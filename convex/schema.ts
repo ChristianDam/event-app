@@ -130,7 +130,8 @@ export default defineSchema({
       v.literal("published"),
       v.literal("cancelled")
     ),
-    eventImageId: v.optional(v.id("_storage")),
+    eventImageId: v.optional(v.id("_storage")), // Legacy field for existing data
+    bannerImageId: v.optional(v.id("_storage")),
     socialImageId: v.optional(v.id("_storage")), // Optimized for social sharing
     createdAt: v.number(),
     updatedAt: v.number(),
