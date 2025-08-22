@@ -22,6 +22,7 @@ import { ReactNode, useState } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import { toast } from 'sonner';
 
 export function UserMenu({
   favoriteColor,
@@ -136,12 +137,19 @@ export function UserMenu({
                     setIsTeamSwitching(team._id);
                     try {
                       await setCurrentTeam({ teamId: team._id });
+                      toast.success('Team switched successfully!', {
+                        description: `You are now viewing ${team.name}`,
+                      });
                       // Navigate to team page after selecting/switching
                       navigate(`/team/${team._id}`);
                     } catch (error) {
                       console.error("Failed to switch team:", error);
+                      const errorMsg = `Failed to switch to ${team.name}. Please try again.`;
                       // Show user-friendly error message
-                      setErrorMessage(`Failed to switch to ${team.name}. Please try again.`);
+                      setErrorMessage(errorMsg);
+                      toast.error('Failed to switch team', {
+                        description: errorMsg,
+                      });
                       // Auto-hide error after 5 seconds
                       setTimeout(() => setErrorMessage(null), 5000);
                     } finally {
@@ -237,7 +245,12 @@ export function UserMenu({
 function SignOutButton() {
   const { signOut } = useAuthActions();
   return (
-    <DropdownMenuItem onClick={() => void signOut()}>Sign out</DropdownMenuItem>
+    <DropdownMenuItem onClick={() => {
+      toast.success('Signed out successfully', {
+        description: 'You have been logged out.',
+      });
+      void signOut();
+    }}>Sign out</DropdownMenuItem>
   );
 }
 
@@ -257,10 +270,15 @@ function CreateTeamDialog({ onClose }: { onClose: () => void }) {
         name: teamName.trim(),
         description: description.trim() || undefined,
       });
+      toast.success('Team created successfully!', {
+        description: `${teamName.trim()} is ready for collaboration.`,
+      });
       onClose();
     } catch (error) {
       console.error("Failed to create team:", error);
-      // TODO: Show error toast
+      toast.error('Failed to create team', {
+        description: 'Please check your input and try again.',
+      });
     } finally {
       setIsCreating(false);
     }

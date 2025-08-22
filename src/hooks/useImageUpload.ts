@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
+import { toast } from 'sonner';
 
 interface UseImageUploadReturn {
   uploadedImageId: Id<"_storage"> | null;
@@ -134,11 +135,17 @@ export const useImageUpload = (teamId: Id<"teams">): UseImageUploadReturn => {
       const storageId = await uploadPromise;
       setUploadedImageId(storageId);
       setUploadProgress(100);
+      toast.success('Image uploaded successfully!', {
+        description: 'Your event image is ready to use.',
+      });
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Upload failed';
       setError(errorMessage);
       setUploadProgress(0);
+      toast.error('Image upload failed', {
+        description: errorMessage,
+      });
     } finally {
       setIsUploading(false);
     }

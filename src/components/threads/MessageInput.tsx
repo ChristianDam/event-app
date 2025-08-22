@@ -8,6 +8,7 @@ import {
   PaperPlaneIcon, 
   Cross1Icon 
 } from "@radix-ui/react-icons";
+import { toast } from 'sonner';
 
 interface MessageInputProps {
   threadId: Id<"threads">;
@@ -51,7 +52,9 @@ export function MessageInput({
       }
     } catch (error) {
       console.error("Failed to send message:", error);
-      alert("Failed to send message. Please try again.");
+      toast.error('Failed to send message', {
+        description: 'Please check your connection and try again.',
+      });
     } finally {
       setIsSending(false);
     }

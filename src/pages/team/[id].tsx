@@ -29,6 +29,7 @@ import { CreateEventDialog } from "@/components/events/CreateEventDialog";
 import { EventList } from "@/components/events/EventList";
 import { ThreadView } from "@/components/threads/ThreadView";
 import { useTeamEvents } from "@/hooks/useTeamEvents";
+import { toast } from 'sonner';
 
 interface TeamIdPageProps {
   params: Record<string, string>;
@@ -85,18 +86,34 @@ export default function TeamIdPage({ params, navigate }: TeamIdPageProps) {
       });
       setInviteEmail("");
       setShowInviteDialog(false);
+      toast.success('Invitation sent successfully!', {
+        description: `Invitation has been sent to ${inviteEmail.trim()}`,
+      });
     } catch (error) {
       console.error("Failed to invite member:", error);
+      toast.error('Failed to send invitation', {
+        description: 'Please check the email address and try again.',
+      });
     } finally {
       setIsInviting(false);
     }
   };
 
   const handleRemoveMember = async (userId: Id<"users">) => {
+    if (!confirm('Are you sure you want to remove this member from the team?')) {
+      return;
+    }
+    
     try {
       await removeMember({ teamId, memberUserId: userId });
+      toast.success('Member removed successfully', {
+        description: 'The member has been removed from the team.',
+      });
     } catch (error) {
       console.error("Failed to remove member:", error);
+      toast.error('Failed to remove member', {
+        description: 'Please try again. If the problem persists, contact support.',
+      });
     }
   };
 
@@ -123,10 +140,14 @@ export default function TeamIdPage({ params, navigate }: TeamIdPageProps) {
       }
       
       // Show success feedback
-      console.log("Team updated successfully");
+      toast.success('Team updated successfully!', {
+        description: 'Your team settings have been saved.',
+      });
     } catch (error) {
       console.error("Failed to update team:", error);
-      alert("Failed to update team. Please try again.");
+      toast.error('Failed to update team', {
+        description: 'Please check your input and try again.',
+      });
     } finally {
       setIsUpdating(false);
     }
@@ -137,9 +158,15 @@ export default function TeamIdPage({ params, navigate }: TeamIdPageProps) {
     
     try {
       await leaveTeam({ teamId });
+      toast.success('Left team successfully', {
+        description: 'You have been removed from the team.',
+      });
       void navigate("/");
     } catch (error) {
       console.error("Failed to leave team:", error);
+      toast.error('Failed to leave team', {
+        description: 'Please try again. If the problem persists, contact support.',
+      });
     }
   };
 
@@ -177,8 +204,14 @@ export default function TeamIdPage({ params, navigate }: TeamIdPageProps) {
 
       setShowBrandingDialog(false);
       setLogoFile(null);
+      toast.success('Team branding updated!', {
+        description: 'Your team logo and colors have been saved.',
+      });
     } catch (error) {
       console.error("Failed to update team branding:", error);
+      toast.error('Failed to update branding', {
+        description: 'Please check your image file and try again.',
+      });
     } finally {
       setIsUploadingBranding(false);
     }

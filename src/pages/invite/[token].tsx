@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useQuery, useMutation, Authenticated, Unauthenticated } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { SignInFormEmailCode } from "@/auth/SignInFormEmailCode";
+import { toast } from 'sonner';
 
 interface InviteTokenPageProps {
   params: Record<string, string>;
@@ -29,16 +30,27 @@ export default function InviteTokenPage({ params, navigate }: InviteTokenPagePro
       
       if (result.success && result.teamId) {
         setAccepted(true);
+        toast.success('Successfully joined team!', {
+          description: `Welcome to ${invitation.teamName}! Redirecting to team page...`,
+        });
         // Navigate to the team page after a short delay
         setTimeout(() => {
           void navigate(`/team/${result.teamId}`);
         }, 2000);
       } else {
-        setError(result.error || "Failed to accept invitation");
+        const errorMsg = result.error || "Failed to accept invitation";
+        setError(errorMsg);
+        toast.error('Failed to join team', {
+          description: errorMsg,
+        });
       }
     } catch (err) {
-      setError("An unexpected error occurred");
+      const errorMsg = "An unexpected error occurred";
+      setError(errorMsg);
       console.error("Failed to accept invitation:", err);
+      toast.error('Unexpected error', {
+        description: errorMsg,
+      });
     } finally {
       setIsAccepting(false);
     }

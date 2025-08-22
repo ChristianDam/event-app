@@ -7,6 +7,7 @@ import { eventTypeOptions, EventType, EventStatus } from '../../types/events';
 import { ArrowLeft, Save, Eye, Trash2, Users, Settings } from 'lucide-react';
 import { EventStatusBadge } from '../../components/events/EventStatusBadge';
 import { Id } from '../../../convex/_generated/dataModel';
+import { toast } from 'sonner';
 
 interface EventManagePageProps {
   params: Record<string, string>;
@@ -171,10 +172,14 @@ const EventManagePage: React.FC<EventManagePageProps> = ({ params, navigate }) =
       
       // Event saved successfully - update original form data to reflect current state
       setOriginalFormData({ ...formData });
-      console.log('Event updated successfully');
+      toast.success('Event updated successfully', {
+        description: 'Your changes have been saved.'
+      });
     } catch (error) {
       console.error('Failed to update event:', error);
-      // You could add toast notification here
+      toast.error('Failed to update event', {
+        description: 'Please try again. If the problem persists, contact support.'
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -190,10 +195,15 @@ const EventManagePage: React.FC<EventManagePageProps> = ({ params, navigate }) =
 
     try {
       await deleteEvent({ eventId: event._id });
+      toast.success('Event deleted successfully', {
+        description: 'The event has been permanently removed.'
+      });
       navigate('/events');
     } catch (error) {
       console.error('Failed to delete event:', error);
-      // You could add toast notification here
+      toast.error('Failed to delete event', {
+        description: 'Please try again. If the problem persists, contact support.'
+      });
     }
   };
 
