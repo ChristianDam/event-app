@@ -5,7 +5,11 @@ import { EventCard } from '../../components/events/EventCard';
 import { Button } from '../../components/ui/button';
 import { Plus } from 'lucide-react';
 
-const EventListPage: React.FC = () => {
+interface EventListPageProps {
+  navigate: (to: string) => void;
+}
+
+const EventListPage: React.FC<EventListPageProps> = ({ navigate }) => {
   const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
   
   // Use the existing getMyEvents query which is team-aware
@@ -80,7 +84,7 @@ const EventListPage: React.FC = () => {
         </div>
         
         <Button 
-          onClick={() => window.location.href = '/events/create'}
+          onClick={() => navigate('/events/create')}
           className="flex items-center gap-2"
         >
           <Plus className="h-4 w-4" />
@@ -138,7 +142,7 @@ const EventListPage: React.FC = () => {
           </p>
           {activeTab === 'upcoming' && (
             <Button 
-              onClick={() => window.location.href = '/events/create'}
+              onClick={() => navigate('/events/create')}
               className="flex items-center gap-2 mx-auto"
             >
               <Plus className="h-4 w-4" />
@@ -152,8 +156,8 @@ const EventListPage: React.FC = () => {
             <EventCard
               key={event._id}
               event={event}
-              onEdit={() => window.location.href = `/events/${event._id}`}
-              onView={() => window.location.href = `/events/${event.slug}`}
+              onEdit={() => navigate(`/events/${event._id}`)}
+              onView={() => navigate(`/events/${event.slug}`)}
               onShare={() => {
                 if (event.status === 'published') {
                   navigator.clipboard.writeText(`${window.location.origin}/events/${event.slug}`);
