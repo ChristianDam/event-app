@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { EventWithDetails } from '../../types/events';
+import { toast } from 'sonner';
 // import { validateEventField } from '../../utils/eventValidation'; // Reserved for future use
 
 interface EventRegistrationFormProps {
@@ -112,6 +113,9 @@ export const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
 
       // Show success state
       setShowSuccess(true);
+      toast.success('Registration successful!', {
+        description: `You're registered for ${event.title}. Check your email for confirmation.`,
+      });
       
       // Call success callback after a delay
       setTimeout(() => {
@@ -121,8 +125,12 @@ export const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
 
     } catch (error) {
       console.error('Registration failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Registration failed. Please try again.';
       setErrors({ 
-        general: error instanceof Error ? error.message : 'Registration failed. Please try again.' 
+        general: errorMessage
+      });
+      toast.error('Registration failed', {
+        description: errorMessage,
       });
     } finally {
       setIsSubmitting(false);

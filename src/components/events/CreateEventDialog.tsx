@@ -4,6 +4,7 @@ import { useEventForm } from '../../hooks/useEventForm';
 import { useImageUpload } from '../../hooks/useImageUpload';
 import { generateEventTheme, applyTeamTheme, clearTeamTheme, Team } from '../../utils/teamBranding';
 import { eventTypeOptions } from '../../types/events';
+import { toast } from 'sonner';
 
 interface CreateEventDialogProps {
   isOpen: boolean;
@@ -42,6 +43,9 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
   } = useEventForm({
     teamId: team._id,
     onSuccess: (eventId) => {
+      toast.success('Event created successfully!', {
+        description: 'Your event has been saved as a draft and is ready for review.',
+      });
       setShowSuccess(true);
       setTimeout(() => {
         onSuccess?.(eventId);
@@ -50,7 +54,9 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
     },
     onError: (error) => {
       console.error('Event creation failed:', error);
-      alert('Failed to create event. Please try again.');
+      toast.error('Failed to create event', {
+        description: error || 'Please check your input and try again.',
+      });
     },
   });
 
