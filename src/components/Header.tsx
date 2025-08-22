@@ -49,7 +49,7 @@ export function Header({ menu, navigate }: HeaderProps) {
                 onClick={handleNavigation(userTeams && userTeams.length > 0 ? `/team/${userTeams[0]._id}` : "/team")}
                 className="text-muted-foreground transition-colors hover:text-foreground"
               >
-                Team
+                Settings
               </a>
             </div>
           )}

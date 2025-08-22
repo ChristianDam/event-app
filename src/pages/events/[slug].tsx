@@ -56,8 +56,8 @@ const PublicEventPage: React.FC<PublicEventPageProps> = ({ params, navigate }) =
       updateMetaProperty('og:description', event.description);
       updateMetaProperty('og:type', 'event');
       updateMetaProperty('og:url', window.location.href);
-      if (event.eventImageId) {
-        updateMetaProperty('og:image', `${window.location.origin}/api/storage/${event.eventImageId}`);
+      if (event.socialImageUrl || event.bannerImageUrl) {
+        updateMetaProperty('og:image', event.socialImageUrl || event.bannerImageUrl);
       }
       
       // Twitter Card tags
@@ -128,10 +128,10 @@ const PublicEventPage: React.FC<PublicEventPageProps> = ({ params, navigate }) =
       {/* Hero Section */}
       <div className="relative">
         {/* Event Image Background */}
-        {event.eventImageId && (
+        {event.bannerImageUrl && (
           <div className="absolute inset-0 z-0">
             <img
-              src={`${window.location.origin}/api/storage/${event.eventImageId}`}
+              src={event.bannerImageUrl}
               alt={event.title}
               className="w-full h-full object-cover"
             />
@@ -150,9 +150,9 @@ const PublicEventPage: React.FC<PublicEventPageProps> = ({ params, navigate }) =
             
             {/* Team Branding */}
             <div className="flex items-center gap-3 mb-6">
-              {event.team.logo && (
+              {event.team.logoUrl && (
                 <img
-                  src={`${window.location.origin}/api/storage/${event.team.logo}`}
+                  src={event.team.logoUrl}
                   alt={`${event.team.name} logo`}
                   className="w-12 h-12 rounded-lg object-cover border-2 border-white/20"
                 />

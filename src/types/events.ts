@@ -26,8 +26,10 @@ export interface Event {
   maxCapacity?: number;
   registrationDeadline?: number;
   status: EventStatus;
-  eventImageId?: Id<"_storage">;
+  bannerImageId?: Id<"_storage">;
+  bannerImageUrl?: string;
   socialImageId?: Id<"_storage">;
+  socialImageUrl?: string;
   createdAt: number;
   updatedAt: number;
 }
@@ -38,6 +40,7 @@ export interface EventWithDetails extends Event {
     name: string;
     slug: string;
     logo?: Id<"_storage">;
+    logoUrl?: string;
     primaryColor?: string;
   };
   organizer: {
@@ -63,7 +66,10 @@ export interface TeamEvent {
   maxCapacity?: number;
   registrationDeadline?: number;
   status: EventStatus;
-  eventImageId?: Id<"_storage">;
+  bannerImageId?: Id<"_storage">;
+  bannerImageUrl?: string;
+  socialImageId?: Id<"_storage">;
+  socialImageUrl?: string;
   createdAt: number;
   updatedAt: number;
   organizer: {

@@ -122,13 +122,25 @@ async function buildEventResponse(ctx: any, event: any, userId?: Id<"users">) {
     }
   }
 
+  // Generate image URLs - handle legacy eventImageId
+  const bannerImageId = event.bannerImageId || event.eventImageId; // Fallback to legacy field
+  const bannerImageUrl = bannerImageId 
+    ? (await ctx.storage.getUrl(bannerImageId)) ?? undefined 
+    : undefined;
+  const socialImageUrl = event.socialImageId 
+    ? (await ctx.storage.getUrl(event.socialImageId)) ?? undefined 
+    : undefined;
+
   return {
     ...event,
+    bannerImageUrl,
+    socialImageUrl,
     team: {
       _id: team._id,
       name: team.name,
       slug: team.slug,
       logo: team.logo,
+      logoUrl: team.logo ? (await ctx.storage.getUrl(team.logo)) ?? undefined : undefined,
       primaryColor: team.primaryColor,
     },
     organizer: {
@@ -186,7 +198,8 @@ export const createEvent = mutation({
     maxCapacity: v.optional(v.number()),
     registrationDeadline: v.optional(v.number()),
     status: v.optional(v.union(v.literal("draft"), v.literal("published"))),
-    eventImageId: v.optional(v.id("_storage")),
+    bannerImageId: v.optional(v.id("_storage")),
+    socialImageId: v.optional(v.id("_storage")),
   },
   returns: v.id("events"),
   handler: async (ctx, args) => {
@@ -239,7 +252,8 @@ export const createEvent = mutation({
       maxCapacity: args.maxCapacity,
       registrationDeadline: args.registrationDeadline,
       status: args.status || "draft",
-      eventImageId: args.eventImageId,
+      bannerImageId: args.bannerImageId,
+      socialImageId: args.socialImageId,
       createdAt: now,
       updatedAt: now,
     });
@@ -316,9 +330,12 @@ export const updateEvent = mutation({
     maxCapacity: v.optional(v.number()),
     registrationDeadline: v.optional(v.number()),
     status: v.optional(v.union(v.literal("draft"), v.literal("published"), v.literal("cancelled"))),
-    eventImageId: v.optional(v.id("_storage")),
+    bannerImageId: v.optional(v.id("_storage")),
+    socialImageId: v.optional(v.id("_storage")),
   },
-  returns: v.null(),
+  returns: v.object({
+    slug: v.string(),
+  }),
   handler: async (ctx, args) => {
     const user = await requireAuth(ctx);
     if (!user?._id) {
@@ -402,12 +419,23 @@ export const updateEvent = mutation({
       updates.status = args.status;
     }
 
-    if (args.eventImageId !== undefined) {
-      updates.eventImageId = args.eventImageId;
+    if (args.bannerImageId !== undefined) {
+      updates.bannerImageId = args.bannerImageId;
+    }
+
+    if (args.socialImageId !== undefined) {
+      updates.socialImageId = args.socialImageId;
     }
 
     await ctx.db.patch(args.eventId, updates);
-    return null;
+    
+    // Get the updated event to return the current slug
+    const updatedEvent = await ctx.db.get(args.eventId);
+    if (!updatedEvent) {
+      throw new Error("Failed to retrieve updated event");
+    }
+    
+    return { slug: updatedEvent.slug };
   },
 });
 
@@ -454,13 +482,13 @@ export const getEvent = query({
   returns: v.union(
     v.object({
       _id: v.id("events"),
-      _creationTime: v.number(),
+      _creationTime: v.float64(),
       title: v.string(),
       slug: v.string(),
       description: v.string(),
       venue: v.string(),
-      startTime: v.number(),
-      endTime: v.number(),
+      startTime: v.float64(),
+      endTime: v.float64(),
       timezone: v.string(),
       teamId: v.id("teams"),
       organizerId: v.id("users"),
@@ -472,18 +500,22 @@ export const getEvent = query({
         v.literal("exhibition"),
         v.literal("other")
       ),
-      maxCapacity: v.optional(v.number()),
-      registrationDeadline: v.optional(v.number()),
+      maxCapacity: v.optional(v.float64()),
+      registrationDeadline: v.optional(v.float64()),
       status: v.union(v.literal("draft"), v.literal("published"), v.literal("cancelled")),
-      eventImageId: v.optional(v.id("_storage")),
+      eventImageId: v.optional(v.id("_storage")), // Legacy field
+      bannerImageId: v.optional(v.id("_storage")),
+      bannerImageUrl: v.optional(v.string()),
       socialImageId: v.optional(v.id("_storage")),
-      createdAt: v.number(),
-      updatedAt: v.number(),
+      socialImageUrl: v.optional(v.string()),
+      createdAt: v.float64(),
+      updatedAt: v.float64(),
       team: v.object({
         _id: v.id("teams"),
         name: v.string(),
         slug: v.string(),
         logo: v.optional(v.id("_storage")),
+        logoUrl: v.optional(v.string()),
         primaryColor: v.optional(v.string()),
       }),
       organizer: v.object({
@@ -491,7 +523,7 @@ export const getEvent = query({
         name: v.optional(v.string()),
         email: v.optional(v.string()),
       }),
-      registrationCount: v.number(),
+      registrationCount: v.float64(),
       canManage: v.boolean(),
     }),
     v.null()
@@ -536,13 +568,13 @@ export const getEventBySlug = query({
   returns: v.union(
     v.object({
       _id: v.id("events"),
-      _creationTime: v.number(),
+      _creationTime: v.float64(),
       title: v.string(),
       slug: v.string(),
       description: v.string(),
       venue: v.string(),
-      startTime: v.number(),
-      endTime: v.number(),
+      startTime: v.float64(),
+      endTime: v.float64(),
       timezone: v.string(),
       teamId: v.id("teams"),
       organizerId: v.id("users"),
@@ -554,18 +586,22 @@ export const getEventBySlug = query({
         v.literal("exhibition"),
         v.literal("other")
       ),
-      maxCapacity: v.optional(v.number()),
-      registrationDeadline: v.optional(v.number()),
+      maxCapacity: v.optional(v.float64()),
+      registrationDeadline: v.optional(v.float64()),
       status: v.union(v.literal("draft"), v.literal("published"), v.literal("cancelled")),
-      eventImageId: v.optional(v.id("_storage")),
+      eventImageId: v.optional(v.id("_storage")), // Legacy field
+      bannerImageId: v.optional(v.id("_storage")),
+      bannerImageUrl: v.optional(v.string()),
       socialImageId: v.optional(v.id("_storage")),
-      createdAt: v.number(),
-      updatedAt: v.number(),
+      socialImageUrl: v.optional(v.string()),
+      createdAt: v.float64(),
+      updatedAt: v.float64(),
       team: v.object({
         _id: v.id("teams"),
         name: v.string(),
         slug: v.string(),
         logo: v.optional(v.id("_storage")),
+        logoUrl: v.optional(v.string()),
         primaryColor: v.optional(v.string()),
       }),
       organizer: v.object({
@@ -573,7 +609,7 @@ export const getEventBySlug = query({
         name: v.optional(v.string()),
         email: v.optional(v.string()),
       }),
-      registrationCount: v.number(),
+      registrationCount: v.float64(),
       canManage: v.boolean(),
     }),
     v.null()
@@ -639,7 +675,10 @@ export const getMyEvents = query({
     maxCapacity: v.optional(v.number()),
     registrationDeadline: v.optional(v.number()),
     status: v.union(v.literal("draft"), v.literal("published"), v.literal("cancelled")),
-    eventImageId: v.optional(v.id("_storage")),
+    bannerImageId: v.optional(v.id("_storage")),
+    bannerImageUrl: v.optional(v.string()),
+    socialImageId: v.optional(v.id("_storage")),
+    socialImageUrl: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
     organizer: v.object({
@@ -701,6 +740,15 @@ export const getMyEvents = query({
                        membership.role === "admin" || 
                        membership.role === "owner";
 
+      // Generate image URLs - handle legacy eventImageId
+      const bannerImageId = event.bannerImageId || event.eventImageId; // Fallback to legacy field
+      const bannerImageUrl = bannerImageId 
+        ? (await ctx.storage.getUrl(bannerImageId)) ?? undefined 
+        : undefined;
+      const socialImageUrl = event.socialImageId 
+        ? (await ctx.storage.getUrl(event.socialImageId)) ?? undefined 
+        : undefined;
+
       eventsWithDetails.push({
         _id: event._id,
         _creationTime: event._creationTime,
@@ -715,7 +763,10 @@ export const getMyEvents = query({
         maxCapacity: event.maxCapacity,
         registrationDeadline: event.registrationDeadline,
         status: event.status,
-        eventImageId: event.eventImageId,
+        bannerImageId: bannerImageId,
+        bannerImageUrl,
+        socialImageId: event.socialImageId,
+        socialImageUrl,
         createdAt: event.createdAt,
         updatedAt: event.updatedAt,
         organizer: {
@@ -760,7 +811,10 @@ export const getTeamEvents = query({
     maxCapacity: v.optional(v.number()),
     registrationDeadline: v.optional(v.number()),
     status: v.union(v.literal("draft"), v.literal("published"), v.literal("cancelled")),
-    eventImageId: v.optional(v.id("_storage")),
+    bannerImageId: v.optional(v.id("_storage")),
+    bannerImageUrl: v.optional(v.string()),
+    socialImageId: v.optional(v.id("_storage")),
+    socialImageUrl: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
     organizer: v.object({
@@ -820,6 +874,15 @@ export const getTeamEvents = query({
                        membership.role === "admin" || 
                        membership.role === "owner";
 
+      // Generate image URLs - handle legacy eventImageId
+      const bannerImageId = event.bannerImageId || event.eventImageId; // Fallback to legacy field
+      const bannerImageUrl = bannerImageId 
+        ? (await ctx.storage.getUrl(bannerImageId)) ?? undefined 
+        : undefined;
+      const socialImageUrl = event.socialImageId 
+        ? (await ctx.storage.getUrl(event.socialImageId)) ?? undefined 
+        : undefined;
+
       eventsWithDetails.push({
         _id: event._id,
         _creationTime: event._creationTime,
@@ -834,7 +897,10 @@ export const getTeamEvents = query({
         maxCapacity: event.maxCapacity,
         registrationDeadline: event.registrationDeadline,
         status: event.status,
-        eventImageId: event.eventImageId,
+        bannerImageId: bannerImageId,
+        bannerImageUrl,
+        socialImageId: event.socialImageId,
+        socialImageUrl,
         createdAt: event.createdAt,
         updatedAt: event.updatedAt,
         organizer: {
