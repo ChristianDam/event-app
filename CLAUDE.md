@@ -1,3 +1,7 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # Convex Auth Example - Event Management Platform
 
 ## Project Overview
@@ -108,21 +112,29 @@ convex/
 # Start development (frontend + backend)
 npm run dev
 
-# Start just frontend
+# Start just frontend (opens at localhost:3000)
 npm run dev:frontend
 
-# Start just backend  
+# Start just backend (Convex dev server)
 npm run dev:backend
 
-# Type checking and linting
-npm run lint
+# Pre-development setup (runs convex dev until success, opens dashboard)
+npm run predev
 
-# Run tests
-npm test
-npm run test:coverage
+# Type checking and linting (includes both frontend and Convex)
+npm run lint
 
 # Build for production
 npm run build
+
+# Preview production build
+npm run preview
+
+# Testing commands
+npm test                  # Start test watcher
+npm run test:once        # Run tests once
+npm run test:debug       # Debug mode with inspect-brk
+npm run test:coverage    # Run tests with coverage report
 ```
 
 ## Key Development Guidelines
@@ -132,20 +144,51 @@ npm run build
 - Include meaningful commit messages that reference the type of change (feat, fix, refactor, etc.)
 - Keep documentation in sync with code changes
 
-### Convex Functions
+### Convex Functions & Architecture Patterns
 - Always use the new function syntax with explicit `args` and `returns` validators
 - Use appropriate function types: `query`, `mutation`, `action`, `internalQuery`, etc.
 - Follow file-based routing: functions in `convex/teams.ts` are accessed via `api.teams.functionName`
+- **Team-Aware Pattern**: Most functions expect users to have a selected team (`currentTeamId` on user record)
+- **Authorization Layers**: Use helper functions from `convex/lib/auth.ts`:
+  - `getCurrentUser()` - get current user or null
+  - `requireAuth()` - require authentication (throws if not authenticated)
+  - `requireTeam()` - require team selection (throws if no team)
+  - `requireTeamPermission(role)` - require specific team role
+- **Slug Generation**: Events use URL-friendly slugs with uniqueness validation
+- **Email Validation**: Use proper regex patterns for email validation in functions
 
 ### Authentication
 - Use `ctx.auth.getUserId()` to get current user ID in Convex functions
 - Handle anonymous users appropriately with optional user ID checks
 - Implement proper authorization checks for team/event access
 
+### Team-Aware Architecture Pattern
+This application uses a **team-aware architecture** where most operations are scoped to the user's currently selected team:
+
+- **User Context**: Each user has a `currentTeamId` field indicating their active team
+- **Team Switching**: Users can be members of multiple teams but operate within one at a time
+- **Authorization Flow**: 
+  1. Check user authentication
+  2. Verify team selection (`currentTeamId` exists)
+  3. Validate team membership and permissions
+  4. Scope operations to the current team
+- **Data Isolation**: Events, threads, and other resources are team-scoped
+- **Role-Based Access**: Teams have owner/admin/member hierarchy with different permissions
+
 ### Database Operations
 - Use indexes for efficient queries (all defined in schema.ts)
 - Prefer `withIndex()` over `filter()` for performance
 - Use `unique()` for single document queries that should return exactly one result
+- **Critical Indexes**: Most queries use compound indexes like `by_team_and_user` for team-scoped data
+- **Team Scoping**: Always filter data by the user's `currentTeamId` when applicable
+
+### Custom Routing System
+- **File-Based Router**: Custom implementation in `src/router/fileBasedRouter.tsx`
+- **Route Registration**: All routes defined in `src/router/routes.tsx` with path patterns like `/team/[id]`
+- **Dynamic Parameters**: Use bracket notation `[param]` for dynamic route segments
+- **Authentication**: Routes have optional `authRequired` flag for auth enforcement
+- **Public Routes**: Some routes (invitations, public events) allow unauthenticated access
+- **Page Components**: Must accept `{ params, navigate }` props for routing integration
 
 ### Frontend Patterns
 - **Prioritize reusable components** - Create modular, composable components that can be used across different parts of the application
@@ -153,6 +196,8 @@ npm run build
 - Use custom hooks for complex state management (`useEventForm`, `useTeamEvents`)
 - Implement proper loading and error states
 - Follow the established component patterns for consistency
+- **Component Props**: Event components expect `EventWithDetails` or `TeamEvent` types
+- **Action Handlers**: Components use callback props (`onEdit`, `onView`, `onShare`) for user actions
 
 ### Design System & Theming
 - **Use only semantic colors** - Always use semantic color tokens (e.g., `text-foreground`, `bg-background`, `border-border`) instead of hardcoded colors to ensure consistency across light and dark themes
