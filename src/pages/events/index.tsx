@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery } from 'convex/react';
+import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { EventCard } from '../../components/events/EventCard';
 import { Button } from '../../components/ui/button';
@@ -15,6 +15,18 @@ const EventListPage: React.FC<EventListPageProps> = ({ navigate }) => {
   // Use the existing getMyEvents query which is team-aware
   const events = useQuery(api.events.getMyEvents);
   const isLoading = events === undefined;
+
+  // Mutation to create a new draft event
+  const createDraftEvent = useMutation(api.events.createDraftEvent);
+
+  const handleCreateEvent = async () => {
+    try {
+      const eventId = await createDraftEvent();
+      navigate(`/events/${eventId}`);
+    } catch (error) {
+      console.error('Failed to create draft event:', error);
+    }
+  };
 
   // Handle case where user is not authenticated
   if (events === null) {
@@ -84,7 +96,7 @@ const EventListPage: React.FC<EventListPageProps> = ({ navigate }) => {
         </div>
         
         <Button 
-          onClick={() => navigate('/events/create')}
+          onClick={handleCreateEvent}
           className="flex items-center gap-2"
         >
           <Plus className="h-4 w-4" />
@@ -142,7 +154,7 @@ const EventListPage: React.FC<EventListPageProps> = ({ navigate }) => {
           </p>
           {activeTab === 'upcoming' && (
             <Button 
-              onClick={() => navigate('/events/create')}
+              onClick={handleCreateEvent}
               className="flex items-center gap-2 mx-auto"
             >
               <Plus className="h-4 w-4" />

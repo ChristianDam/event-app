@@ -311,6 +311,97 @@ export const createEvent = mutation({
 });
 
 /**
+ * Create a new draft event with minimal data for editing
+ */
+export const createDraftEvent = mutation({
+  args: {},
+  returns: v.id("events"),
+  handler: async (ctx) => {
+    const user = await requireTeam(ctx);
+    const teamId = user.currentTeamId;
+    const userId = user._id;
+
+    // Check permissions (user is already verified to be a team member by requireTeam)
+    await checkEventCreatePermission(ctx, userId, teamId);
+
+    const now = Date.now();
+    const tomorrow = now + 24 * 60 * 60 * 1000;
+    const tomorrowPlusHour = tomorrow + 60 * 60 * 1000;
+    
+    // Create event with minimal default values
+    const title = "Untitled Event";
+    const slug = await generateUniqueSlug(ctx, title);
+
+    const eventId = await ctx.db.insert("events", {
+      title,
+      slug,
+      description: "",
+      venue: "",
+      startTime: tomorrow,
+      endTime: tomorrowPlusHour,
+      timezone: "Europe/Copenhagen",
+      teamId,
+      organizerId: userId,
+      eventType: "other",
+      maxCapacity: undefined,
+      registrationDeadline: undefined,
+      status: "draft",
+      bannerImageId: undefined,
+      socialImageId: undefined,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Create a default discussion thread for the event
+    const threadId = await ctx.db.insert("threads", {
+      title: "Event Discussion",
+      description: `Discussion thread for ${title}`,
+      threadType: "event",
+      eventId,
+      createdBy: userId,
+      createdAt: now,
+      isArchived: false,
+    });
+
+    // Add organizer as admin participant
+    await ctx.db.insert("threadParticipants", {
+      threadId,
+      userId,
+      role: "admin",
+      joinedAt: now,
+    });
+
+    // Add all team members as participants
+    const teamMembers = await ctx.db
+      .query("teamMembers")
+      .withIndex("by_team", (q: any) => q.eq("teamId", teamId))
+      .collect();
+
+    for (const member of teamMembers) {
+      if (member.userId !== userId) { // Skip organizer, already added
+        await ctx.db.insert("threadParticipants", {
+          threadId,
+          userId: member.userId,
+          role: "participant",
+          joinedAt: now,
+        });
+      }
+    }
+
+    // Send welcome message to the thread
+    await ctx.db.insert("threadMessages", {
+      threadId,
+      authorId: undefined,
+      content: `Welcome to the discussion thread for ${title}! Use this space to coordinate with attendees and organizers.`,
+      messageType: "system",
+      createdAt: now,
+    });
+
+    return eventId;
+  },
+});
+
+/**
  * Update an existing event
  */
 export const updateEvent = mutation({
