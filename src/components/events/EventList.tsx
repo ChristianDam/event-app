@@ -6,6 +6,7 @@ import { EventCard } from './EventCard';
 
 interface EventListProps {
   teamId: Id<"teams">;
+  navigate?: (to: string) => void;
   view?: 'grid' | 'list';
   limit?: number;
   showFilters?: boolean;
@@ -25,6 +26,7 @@ interface FilterState {
 
 export const EventList: React.FC<EventListProps> = ({
   teamId,
+  navigate,
   view = 'grid',
   limit,
   showFilters = true,
@@ -330,6 +332,7 @@ export const EventList: React.FC<EventListProps> = ({
             <EventCard
               key={event._id}
               event={event}
+              navigate={navigate}
               onEdit={onEventEdit ? () => onEventEdit(event._id) : undefined}
               onView={onEventView ? () => onEventView(event._id) : undefined}
               onShare={onEventShare ? () => onEventShare(event._id) : undefined}

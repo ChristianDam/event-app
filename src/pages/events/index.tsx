@@ -156,6 +156,7 @@ const EventListPage: React.FC<EventListPageProps> = ({ navigate }) => {
             <EventCard
               key={event._id}
               event={event}
+              navigate={navigate}
               onEdit={() => navigate(`/events/${event._id}`)}
               onView={() => navigate(`/events/discover/${event.slug}`)}
               onShare={() => {

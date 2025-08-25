@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 // import { internal } from "./_generated/api"; // Reserved for future use
 import { Id } from "./_generated/dataModel";
-import { requireAuth, requireTeam } from "./lib/auth";
+import { getCurrentUser, requireAuth, requireTeam } from "./lib/auth";
 
 /**
  * Validate email address using proper regex
@@ -122,10 +122,12 @@ async function buildEventResponse(ctx: any, event: any, userId?: Id<"users">) {
     }
   }
 
-  // Generate image URLs - handle legacy eventImageId
-  const bannerImageId = event.bannerImageId || event.eventImageId; // Fallback to legacy field
-  const bannerImageUrl = bannerImageId 
-    ? (await ctx.storage.getUrl(bannerImageId)) ?? undefined 
+  // Generate image URLs - separate event image and banner image
+  const eventImageUrl = event.eventImageId 
+    ? (await ctx.storage.getUrl(event.eventImageId)) ?? undefined 
+    : undefined;
+  const bannerImageUrl = event.bannerImageId 
+    ? (await ctx.storage.getUrl(event.bannerImageId)) ?? undefined 
     : undefined;
   const socialImageUrl = event.socialImageId 
     ? (await ctx.storage.getUrl(event.socialImageId)) ?? undefined 
@@ -133,6 +135,7 @@ async function buildEventResponse(ctx: any, event: any, userId?: Id<"users">) {
 
   return {
     ...event,
+    eventImageUrl,
     bannerImageUrl,
     socialImageUrl,
     team: {
@@ -330,6 +333,7 @@ export const updateEvent = mutation({
     maxCapacity: v.optional(v.number()),
     registrationDeadline: v.optional(v.number()),
     status: v.optional(v.union(v.literal("draft"), v.literal("published"), v.literal("cancelled"))),
+    eventImageId: v.optional(v.id("_storage")), // Legacy field
     bannerImageId: v.optional(v.id("_storage")),
     socialImageId: v.optional(v.id("_storage")),
   },
@@ -419,6 +423,10 @@ export const updateEvent = mutation({
       updates.status = args.status;
     }
 
+    if (args.eventImageId !== undefined) {
+      updates.eventImageId = args.eventImageId;
+    }
+
     if (args.bannerImageId !== undefined) {
       updates.bannerImageId = args.bannerImageId;
     }
@@ -504,6 +512,7 @@ export const getEvent = query({
       registrationDeadline: v.optional(v.float64()),
       status: v.union(v.literal("draft"), v.literal("published"), v.literal("cancelled")),
       eventImageId: v.optional(v.id("_storage")), // Legacy field
+      eventImageUrl: v.optional(v.string()),
       bannerImageId: v.optional(v.id("_storage")),
       bannerImageUrl: v.optional(v.string()),
       socialImageId: v.optional(v.id("_storage")),
@@ -590,6 +599,7 @@ export const getEventBySlug = query({
       registrationDeadline: v.optional(v.float64()),
       status: v.union(v.literal("draft"), v.literal("published"), v.literal("cancelled")),
       eventImageId: v.optional(v.id("_storage")), // Legacy field
+      eventImageUrl: v.optional(v.string()),
       bannerImageId: v.optional(v.id("_storage")),
       bannerImageUrl: v.optional(v.string()),
       socialImageId: v.optional(v.id("_storage")),
@@ -624,8 +634,8 @@ export const getEventBySlug = query({
       return null;
     }
 
-    // Only return published events for non-team members
-    const user = await requireAuth(ctx);
+    // Allow unauthenticated access for public events
+    const user = await getCurrentUser(ctx);
     let canManage = false;
 
     if (user?._id) {
@@ -935,6 +945,23 @@ export const generateEventImageUploadUrl = mutation({
     await checkEventCreatePermission(ctx, user._id, args.teamId);
 
     return await ctx.storage.generateUploadUrl();
+  },
+});
+
+/**
+ * Get image URL by storage ID
+ */
+export const getImageUrl = query({
+  args: {
+    storageId: v.id("_storage"),
+  },
+  returns: v.union(v.string(), v.null()),
+  handler: async (ctx, args) => {
+    const user = await requireAuth(ctx);
+    if (!user?._id) {
+      throw new Error("Not authenticated");
+    }
+    return await ctx.storage.getUrl(args.storageId);
   },
 });
 

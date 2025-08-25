@@ -3,9 +3,16 @@ import { EventWithDetails, TeamEvent, eventTypeOptions } from '../../types/event
 import { EventStatusBadge } from './EventStatusBadge';
 import { MoreHorizontal } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '../ui/card';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '../ui/dropdown-menu';
 
 interface EventCardProps {
   event: EventWithDetails | TeamEvent;
+  navigate?: (to: string) => void;
   onEdit?: () => void;
   onView?: () => void;
   onShare?: () => void;
@@ -15,6 +22,7 @@ interface EventCardProps {
 
 export const EventCard: React.FC<EventCardProps> = ({
   event,
+  navigate,
   onEdit,
   onView,
   onShare,
@@ -27,7 +35,10 @@ export const EventCard: React.FC<EventCardProps> = ({
   const isFull = event.maxCapacity && event.registrationCount >= event.maxCapacity;
 
   return (
-    <Card className={`${className}`}>
+    <Card 
+      className={`${className} cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.01]`}
+      onClick={()=> navigate && navigate(`/events/${event._id}`)}
+    >
       {/* Event image or placeholder - Following PRD hierarchy #1 */}
       <CardHeader className="p-0 aspect-video bg-muted rounded-t-lg flex items-center justify-center">
         {'bannerImageUrl' in event && event.bannerImageUrl ? (
@@ -54,49 +65,56 @@ export const EventCard: React.FC<EventCardProps> = ({
             
             {/* PRD hierarchy #5: Actions menu (⋯) */}
             {event.canManage && (
-              <div className="relative group">
-                <button className="p-1 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted">
+              <DropdownMenu>
+                <DropdownMenuTrigger 
+                  className="p-1 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <MoreHorizontal className="w-4 h-4" />
-                </button>
-                
-                {/* Dropdown menu */}
-                <div className="absolute right-0 mt-1 w-48 bg-popover rounded-md shadow-lg border border-border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
-                  <div className="py-1">
-                    {onEdit && (
-                      <button
-                        onClick={onEdit}
-                        className="block w-full px-4 py-2 text-left text-sm text-popover-foreground hover:bg-muted"
-                      >
-                        Edit Event
-                      </button>
-                    )}
-                    {onView && event.status === 'published' && (
-                      <button
-                        onClick={onView}
-                        className="block w-full px-4 py-2 text-left text-sm text-popover-foreground hover:bg-muted"
-                      >
-                        View Public Page
-                      </button>
-                    )}
-                    {onShare && event.status === 'published' && (
-                      <button
-                        onClick={onShare}
-                        className="block w-full px-4 py-2 text-left text-sm text-popover-foreground hover:bg-muted"
-                      >
-                        Copy Link
-                      </button>
-                    )}
-                    {onDuplicate && (
-                      <button
-                        onClick={onDuplicate}
-                        className="block w-full px-4 py-2 text-left text-sm text-popover-foreground hover:bg-muted"
-                      >
-                        Duplicate
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {onEdit && (
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit();
+                      }}
+                    >
+                      Edit Event
+                    </DropdownMenuItem>
+                  )}
+                  {onView && event.status === 'published' && (
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onView();
+                      }}
+                    >
+                      View Public Page
+                    </DropdownMenuItem>
+                  )}
+                  {onShare && event.status === 'published' && (
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onShare();
+                      }}
+                    >
+                      Copy Link
+                    </DropdownMenuItem>
+                  )}
+                  {onDuplicate && (
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDuplicate();
+                      }}
+                    >
+                      Duplicate
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
           <h3 className="text-lg font-semibold text-foreground line-clamp-2 hover:text-primary cursor-pointer">

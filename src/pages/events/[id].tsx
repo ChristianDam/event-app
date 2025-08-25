@@ -4,10 +4,11 @@ import { api } from '../../../convex/_generated/api';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { eventTypeOptions, EventType, EventStatus } from '../../types/events';
-import { ArrowLeft, Save, Eye, Trash2, Users, Settings } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Trash2, Users, Settings, Upload, X } from 'lucide-react';
 import { EventStatusBadge } from '../../components/events/EventStatusBadge';
 import { Id } from '../../../convex/_generated/dataModel';
 import { toast } from 'sonner';
+import { useImageUpload } from '../../hooks/useImageUpload';
 
 interface EventManagePageProps {
   params: Record<string, string>;
@@ -25,6 +26,8 @@ interface FormData {
   maxCapacity?: number;
   registrationDeadline?: string;
   status: EventStatus;
+  eventImageId?: Id<"_storage">;
+  bannerImageId?: Id<"_storage">;
 }
 
 const EventManagePage: React.FC<EventManagePageProps> = ({ params, navigate }) => {
@@ -43,6 +46,70 @@ const EventManagePage: React.FC<EventManagePageProps> = ({ params, navigate }) =
     api.events.getEventRegistrations, 
     eventId ? { eventId } : 'skip'
   );
+
+  // Image upload functionality  
+  const eventImageUpload = useImageUpload(event?.team?._id as Id<"teams">);
+  const bannerImageUpload = useImageUpload(event?.team?._id as Id<"teams">);
+  const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
+  const [currentBannerUrl, setCurrentBannerUrl] = useState<string | null>(null);
+
+  // Set current image URLs when event loads
+  useEffect(() => {
+    if (event) {
+      // Set event image URL
+      if (event.eventImageUrl) {
+        setCurrentImageUrl(event.eventImageUrl);
+      }
+      
+      // Set banner image URL
+      if (event.bannerImageUrl) {
+        setCurrentBannerUrl(event.bannerImageUrl);
+      }
+    }
+  }, [event]);
+
+  // Handle event image upload completion
+  useEffect(() => {
+    if (eventImageUpload.uploadedImageId && formData) {
+      handleInputChange('eventImageId', eventImageUpload.uploadedImageId);
+    }
+  }, [eventImageUpload.uploadedImageId, formData]);
+
+  // Handle banner image upload completion
+  useEffect(() => {
+    if (bannerImageUpload.uploadedImageId && formData) {
+      handleInputChange('bannerImageId', bannerImageUpload.uploadedImageId);
+    }
+  }, [bannerImageUpload.uploadedImageId, formData]);
+
+  // Query for new event image URL when eventImageId changes
+  const newEventImageUrl = useQuery(
+    api.events.getImageUrl, 
+    formData?.eventImageId && formData.eventImageId !== (event?.eventImageId)
+      ? { storageId: formData.eventImageId } 
+      : 'skip'
+  );
+
+  // Query for new banner image URL when bannerImageId changes
+  const newBannerImageUrl = useQuery(
+    api.events.getImageUrl, 
+    formData?.bannerImageId && formData.bannerImageId !== event?.bannerImageId
+      ? { storageId: formData.bannerImageId } 
+      : 'skip'
+  );
+
+  // Update current image URLs when new image URLs are available
+  useEffect(() => {
+    if (newEventImageUrl) {
+      setCurrentImageUrl(newEventImageUrl);
+    }
+  }, [newEventImageUrl]);
+
+  useEffect(() => {
+    if (newBannerImageUrl) {
+      setCurrentBannerUrl(newBannerImageUrl);
+    }
+  }, [newBannerImageUrl]);
 
   // Initialize form data when event loads
   useEffect(() => {
@@ -63,6 +130,8 @@ const EventManagePage: React.FC<EventManagePageProps> = ({ params, navigate }) =
           ? new Date(event.registrationDeadline).toISOString().slice(0, 16)
           : undefined,
         status: event.status,
+        eventImageId: event.eventImageId, // Legacy field for event-specific image
+        bannerImageId: event.bannerImageId, // New field for banner image
       };
       
       setFormData(initialFormData);
@@ -77,7 +146,7 @@ const EventManagePage: React.FC<EventManagePageProps> = ({ params, navigate }) =
     // Compare all form fields
     const fieldsToCompare: (keyof FormData)[] = [
       'title', 'description', 'venue', 'startTime', 'endTime', 
-      'timezone', 'eventType', 'maxCapacity', 'registrationDeadline', 'status'
+      'timezone', 'eventType', 'maxCapacity', 'registrationDeadline', 'status', 'eventImageId', 'bannerImageId'
     ];
     
     return fieldsToCompare.some(field => {
@@ -168,6 +237,8 @@ const EventManagePage: React.FC<EventManagePageProps> = ({ params, navigate }) =
           ? new Date(formData.registrationDeadline).getTime()
           : undefined,
         status: formData.status,
+        eventImageId: formData.eventImageId,
+        bannerImageId: formData.bannerImageId,
       });
       
       // Event saved successfully - update original form data to reflect current state
@@ -182,6 +253,44 @@ const EventManagePage: React.FC<EventManagePageProps> = ({ params, navigate }) =
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Handle event image file selection
+  const handleEventImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      await eventImageUpload.uploadImage(file);
+    }
+    // Clear the input so the same file can be selected again
+    e.target.value = '';
+  };
+
+  // Handle banner image file selection
+  const handleBannerImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      await bannerImageUpload.uploadImage(file);
+    }
+    // Clear the input so the same file can be selected again
+    e.target.value = '';
+  };
+
+  // Handle removing the current event image
+  const handleRemoveEventImage = () => {
+    if (formData) {
+      handleInputChange('eventImageId', undefined);
+      setCurrentImageUrl(null);
+      eventImageUpload.clearImage();
+    }
+  };
+
+  // Handle removing the current banner image
+  const handleRemoveBannerImage = () => {
+    if (formData) {
+      handleInputChange('bannerImageId', undefined);
+      setCurrentBannerUrl(null);
+      bannerImageUpload.clearImage();
     }
   };
 
@@ -351,6 +460,174 @@ const EventManagePage: React.FC<EventManagePageProps> = ({ params, navigate }) =
                 {errors.title && (
                   <p className="text-sm text-red-500 mt-1">{errors.title}</p>
                 )}
+              </div>
+
+              {/* Event Image (Legacy) */}
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Event Image (Profile)</label>
+                <p className="text-xs text-muted-foreground mb-3">Square image used for event cards and profiles</p>
+                <div className="space-y-4">
+                  {/* Current Image Preview */}
+                  {(currentImageUrl || formData.eventImageId) && (
+                    <div className="relative inline-block">
+                      <img
+                        src={currentImageUrl || ''}
+                        alt="Event profile image"
+                        className="w-48 h-48 object-cover rounded-lg border border-border"
+                        onError={() => setCurrentImageUrl(null)}
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-2 right-2"
+                        onClick={handleRemoveEventImage}
+                        disabled={eventImageUpload.isUploading}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {/* Upload Button */}
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleEventImageSelect}
+                      disabled={eventImageUpload.isUploading}
+                      className="hidden"
+                      id="event-image-upload"
+                    />
+                    <label htmlFor="event-image-upload">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={eventImageUpload.isUploading}
+                        asChild
+                      >
+                        <span className="cursor-pointer">
+                          {eventImageUpload.isUploading ? (
+                            <>
+                              <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2" />
+                              Uploading... ({eventImageUpload.uploadProgress}%)
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="h-4 w-4 mr-2" />
+                              {currentImageUrl || formData.eventImageId ? 'Change Event Image' : 'Upload Event Image'}
+                            </>
+                          )}
+                        </span>
+                      </Button>
+                    </label>
+                    
+                    {!currentImageUrl && !formData.eventImageId && (
+                      <p className="text-sm text-muted-foreground">
+                        JPG, PNG, or WebP. Max 10MB.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Upload Progress */}
+                  {eventImageUpload.isUploading && (
+                    <div className="w-full bg-muted rounded-full h-2">
+                      <div
+                        className="bg-primary h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${eventImageUpload.uploadProgress}%` }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Error Message */}
+                  {eventImageUpload.error && (
+                    <p className="text-sm text-red-500">{eventImageUpload.error}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Banner Image */}
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Banner Image</label>
+                <p className="text-xs text-muted-foreground mb-3">Wide banner image used on event pages and displays</p>
+                <div className="space-y-4">
+                  {/* Current Banner Preview */}
+                  {(currentBannerUrl || formData.bannerImageId) && (
+                    <div className="relative inline-block">
+                      <img
+                        src={currentBannerUrl || ''}
+                        alt="Event banner"
+                        className="w-full max-w-2xl h-48 object-cover rounded-lg border border-border"
+                        onError={() => setCurrentBannerUrl(null)}
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-2 right-2"
+                        onClick={handleRemoveBannerImage}
+                        disabled={bannerImageUpload.isUploading}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {/* Upload Button */}
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleBannerImageSelect}
+                      disabled={bannerImageUpload.isUploading}
+                      className="hidden"
+                      id="banner-image-upload"
+                    />
+                    <label htmlFor="banner-image-upload">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={bannerImageUpload.isUploading}
+                        asChild
+                      >
+                        <span className="cursor-pointer">
+                          {bannerImageUpload.isUploading ? (
+                            <>
+                              <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2" />
+                              Uploading... ({bannerImageUpload.uploadProgress}%)
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="h-4 w-4 mr-2" />
+                              {currentBannerUrl || formData.bannerImageId ? 'Change Banner' : 'Upload Banner'}
+                            </>
+                          )}
+                        </span>
+                      </Button>
+                    </label>
+                    
+                    {!currentBannerUrl && !formData.bannerImageId && (
+                      <p className="text-sm text-muted-foreground">
+                        JPG, PNG, or WebP. Max 10MB. Recommended 16:9 aspect ratio.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Upload Progress */}
+                  {bannerImageUpload.isUploading && (
+                    <div className="w-full bg-muted rounded-full h-2">
+                      <div
+                        className="bg-primary h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${bannerImageUpload.uploadProgress}%` }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Error Message */}
+                  {bannerImageUpload.error && (
+                    <p className="text-sm text-red-500">{bannerImageUpload.error}</p>
+                  )}
+                </div>
               </div>
 
               {/* Description */}
