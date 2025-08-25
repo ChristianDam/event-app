@@ -4,6 +4,7 @@ import { useEventForm } from '../../hooks/useEventForm';
 import { useImageUpload } from '../../hooks/useImageUpload';
 import { generateEventTheme, applyTeamTheme, clearTeamTheme, Team } from '../../utils/teamBranding';
 import { eventTypeOptions } from '../../types/events';
+import { DatePicker } from '../ui/date-picker';
 import { toast } from 'sonner';
 
 interface CreateEventDialogProps {
@@ -261,17 +262,15 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-foreground mb-2">
                             Start Date & Time *
                           </label>
-                          <input
-                            type="datetime-local"
-                            value={formData.startTime.toISOString().slice(0, 16)}
-                            onChange={(e) => handleInputChange('startTime', new Date(e.target.value))}
-                            className={`
-                              w-full p-3 border rounded-lg focus:ring-2 focus:ring-var(--event-primary, #3b82f6) focus:border-transparent
-                              ${errors.startTime ? 'border-red-300' : 'border-gray-300'}
-                            `}
+                          <DatePicker
+                            date={formData.startTime}
+                            onSelect={(date) => date && handleInputChange('startTime', date)}
+                            placeholder="Select start date and time"
+                            includeTime={true}
+                            className={errors.startTime ? 'border-red-500' : ''}
                           />
                           {errors.startTime && <p className="mt-1 text-sm text-red-600">{errors.startTime}</p>}
                         </div>
@@ -280,14 +279,12 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                           <label className="block text-sm font-medium text-foreground mb-2">
                             End Date & Time *
                           </label>
-                          <input
-                            type="datetime-local"
-                            value={formData.endTime.toISOString().slice(0, 16)}
-                            onChange={(e) => handleInputChange('endTime', new Date(e.target.value))}
-                            className={`
-                              w-full p-3 border rounded-lg focus:ring-2 focus:ring-var(--event-primary, #3b82f6) focus:border-transparent
-                              ${errors.endTime ? 'border-red-300' : 'border-gray-300'}
-                            `}
+                          <DatePicker
+                            date={formData.endTime}
+                            onSelect={(date) => date && handleInputChange('endTime', date)}
+                            placeholder="Select end date and time"
+                            includeTime={true}
+                            className={errors.endTime ? 'border-red-500' : ''}
                           />
                           {errors.endTime && <p className="mt-1 text-sm text-red-600">{errors.endTime}</p>}
                         </div>
@@ -343,14 +340,12 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                           <label className="block text-sm font-medium text-foreground mb-2">
                             Registration Deadline (Optional)
                           </label>
-                          <input
-                            type="datetime-local"
-                            value={formData.registrationDeadline?.toISOString().slice(0, 16) || ''}
-                            onChange={(e) => handleInputChange('registrationDeadline', e.target.value ? new Date(e.target.value) : undefined)}
-                            className={`
-                              w-full p-3 border rounded-lg focus:ring-2 focus:ring-var(--event-primary, #3b82f6) focus:border-transparent
-                              ${errors.registrationDeadline ? 'border-red-300' : 'border-gray-300'}
-                            `}
+                          <DatePicker
+                            date={formData.registrationDeadline}
+                            onSelect={(date) => handleInputChange('registrationDeadline', date)}
+                            placeholder="Select registration deadline"
+                            includeTime={true}
+                            className={errors.registrationDeadline ? 'border-red-500' : ''}
                           />
                           {errors.registrationDeadline && <p className="mt-1 text-sm text-red-600">{errors.registrationDeadline}</p>}
                         </div>

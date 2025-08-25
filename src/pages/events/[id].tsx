@@ -3,6 +3,7 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
+import { DatePicker } from '../../components/ui/date-picker';
 import { eventTypeOptions, EventType, EventStatus } from '../../types/events';
 import { ArrowLeft, Save, Eye, Trash2, Users, Settings, Upload, X } from 'lucide-react';
 import { EventStatusBadge } from '../../components/events/EventStatusBadge';
@@ -694,21 +695,21 @@ const EventManagePage: React.FC<EventManagePageProps> = ({ params, navigate }) =
               {/* Date and Time */}
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="startTime" className="block text-sm font-medium text-foreground mb-2">Start Date & Time</label>
-                  <Input
-                    id="startTime"
-                    type="datetime-local"
-                    value={formData.startTime}
-                    onChange={(e) => handleInputChange('startTime', e.target.value)}
+                  <label className="block text-sm font-medium text-foreground mb-2">Start Date & Time</label>
+                  <DatePicker
+                    date={formData.startTime ? new Date(formData.startTime) : undefined}
+                    onSelect={(date) => handleInputChange('startTime', date ? date.toISOString().slice(0, 16) : '')}
+                    placeholder="Select start date and time"
+                    includeTime={true}
                   />
                 </div>
                 <div>
-                  <label htmlFor="endTime" className="block text-sm font-medium text-foreground mb-2">End Date & Time</label>
-                  <Input
-                    id="endTime"
-                    type="datetime-local"
-                    value={formData.endTime}
-                    onChange={(e) => handleInputChange('endTime', e.target.value)}
+                  <label className="block text-sm font-medium text-foreground mb-2">End Date & Time</label>
+                  <DatePicker
+                    date={formData.endTime ? new Date(formData.endTime) : undefined}
+                    onSelect={(date) => handleInputChange('endTime', date ? date.toISOString().slice(0, 16) : '')}
+                    placeholder="Select end date and time"
+                    includeTime={true}
                     className={errors.endTime ? 'border-red-500' : ''}
                   />
                   {errors.endTime && (
@@ -735,12 +736,12 @@ const EventManagePage: React.FC<EventManagePageProps> = ({ params, navigate }) =
                   )}
                 </div>
                 <div>
-                  <label htmlFor="registrationDeadline" className="block text-sm font-medium text-foreground mb-2">Registration Deadline (Optional)</label>
-                  <Input
-                    id="registrationDeadline"
-                    type="datetime-local"
-                    value={formData.registrationDeadline || ''}
-                    onChange={(e) => handleInputChange('registrationDeadline', e.target.value || undefined)}
+                  <label className="block text-sm font-medium text-foreground mb-2">Registration Deadline (Optional)</label>
+                  <DatePicker
+                    date={formData.registrationDeadline ? new Date(formData.registrationDeadline) : undefined}
+                    onSelect={(date) => handleInputChange('registrationDeadline', date ? date.toISOString().slice(0, 16) : undefined)}
+                    placeholder="Select registration deadline"
+                    includeTime={true}
                   />
                 </div>
               </div>

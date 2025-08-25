@@ -2,31 +2,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ColorPicker } from "@/components/ui/color-picker";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   PersonIcon,
   PlusIcon,
   TrashIcon,
   GearIcon,
-  ImageIcon,
   CalendarIcon,
   ChatBubbleIcon,
 } from "@radix-ui/react-icons";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
-import { CreateEventDialog } from "@/components/events/CreateEventDialog";
-import { EventList } from "@/components/events/EventList";
 import { ThreadView } from "@/components/threads/ThreadView";
 import { useTeamEvents } from "@/hooks/useTeamEvents";
 import { toast } from 'sonner';
@@ -41,53 +29,64 @@ export default function TeamIdPage({ params, navigate }: TeamIdPageProps) {
   const team = useQuery(api.teams.getTeam, { teamId });
   const teamMembers = useQuery(api.teams.getTeamMembers, { teamId });
   
-  const [showInviteDialog, setShowInviteDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showBrandingDialog, setShowBrandingDialog] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"admin" | "member">("member");
   const [isInviting, setIsInviting] = useState(false);
+  const [emailError, setEmailError] = useState("");
   const [teamName, setTeamName] = useState("");
   const [teamDescription, setTeamDescription] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
   const [primaryColor, setPrimaryColor] = useState("");
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [isUploadingBranding, setIsUploadingBranding] = useState(false);
-  const [showCreateEventDialog, setShowCreateEventDialog] = useState(false);
-  const [showAllEvents, setShowAllEvents] = useState(false);
 
   const inviteByEmail = useMutation(api.teams.inviteByEmail);
   const removeMember = useMutation(api.teams.removeMember);
   const updateTeam = useMutation(api.teams.updateTeam);
   const leaveTeam = useMutation(api.teams.leaveTeam);
   const updateTeamBranding = useMutation(api.teams.updateTeamBranding);
-  const generateLogoUploadUrl = useMutation(api.teams.generateLogoUploadUrl);
   
   // Events data
   const { events, totalRegistrations } = useTeamEvents(teamId);
 
   // Set form values when team data loads
-  if (team && !teamName && !showEditDialog && !showBrandingDialog) {
-    setTeamName(team.name);
-    setTeamDescription(team.description || "");
-    setPrimaryColor(team.primaryColor || "#3b82f6");
-  }
+  useEffect(() => {
+    if (team && !teamName) {
+      setTeamName(team.name);
+      setTeamDescription(team.description || "");
+      setPrimaryColor(team.primaryColor || "#3b82f6");
+    }
+  }, [team, teamName]);
+
+  // Email validation helper
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inviteEmail.trim()) return;
-
+    const trimmedEmail = inviteEmail.trim();
+    
+    if (!trimmedEmail) {
+      setEmailError("Email is required");
+      return;
+    }
+    
+    if (!validateEmail(trimmedEmail)) {
+      setEmailError("Please enter a valid email address");
+      return;
+    }
+    
+    setEmailError("");
     setIsInviting(true);
     try {
       await inviteByEmail({
         teamId,
-        email: inviteEmail.trim(),
+        email: trimmedEmail,
         role: inviteRole,
       });
       setInviteEmail("");
-      setShowInviteDialog(false);
       toast.success('Invitation sent successfully!', {
-        description: `Invitation has been sent to ${inviteEmail.trim()}`,
+        description: `Invitation has been sent to ${trimmedEmail}`,
       });
     } catch (error) {
       console.error("Failed to invite member:", error);
@@ -98,6 +97,30 @@ export default function TeamIdPage({ params, navigate }: TeamIdPageProps) {
       setIsInviting(false);
     }
   };
+
+  const handleInviteKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && !isInviting && inviteEmail.trim()) {
+      e.preventDefault();
+      handleInvite(e as React.FormEvent);
+    }
+  }, [inviteEmail, isInviting]);
+
+  const handleEmailChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setInviteEmail(e.target.value);
+    if (emailError) {
+      setEmailError("");
+    }
+  }, [emailError]);
+
+  const handleInviteSubmit = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    handleInvite(e as React.FormEvent);
+  }, []);
+
+  const handleUpdateTeamSubmit = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    handleUpdateTeam(e as React.FormEvent);
+  }, [teamName, teamDescription, primaryColor, team?.primaryColor]);
 
   const handleRemoveMember = async (userId: Id<"users">) => {
     if (!confirm('Are you sure you want to remove this member from the team?')) {
@@ -161,7 +184,11 @@ export default function TeamIdPage({ params, navigate }: TeamIdPageProps) {
       toast.success('Left team successfully', {
         description: 'You have been removed from the team.',
       });
-      void navigate("/");
+      try {
+        navigate("/");
+      } catch (navError) {
+        console.error("Navigation failed:", navError);
+      }
     } catch (error) {
       console.error("Failed to leave team:", error);
       toast.error('Failed to leave team', {
@@ -170,52 +197,6 @@ export default function TeamIdPage({ params, navigate }: TeamIdPageProps) {
     }
   };
 
-  const handleUpdateBranding = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsUploadingBranding(true);
-
-    try {
-      let logoId: Id<"_storage"> | undefined = undefined;
-
-      // Upload logo if a file is selected
-      if (logoFile) {
-        const uploadUrl = await generateLogoUploadUrl({ teamId });
-        
-        const uploadResult = await fetch(uploadUrl, {
-          method: "POST",
-          headers: { "Content-Type": logoFile.type },
-          body: logoFile,
-        });
-        
-        if (!uploadResult.ok) {
-          throw new Error("Failed to upload logo");
-        }
-        
-        const { storageId } = await uploadResult.json();
-        logoId = storageId;
-      }
-
-      // Update branding
-      await updateTeamBranding({
-        teamId,
-        logo: logoId,
-        primaryColor: primaryColor || undefined,
-      });
-
-      setShowBrandingDialog(false);
-      setLogoFile(null);
-      toast.success('Team branding updated!', {
-        description: 'Your team logo and colors have been saved.',
-      });
-    } catch (error) {
-      console.error("Failed to update team branding:", error);
-      toast.error('Failed to update branding', {
-        description: 'Please check your image file and try again.',
-      });
-    } finally {
-      setIsUploadingBranding(false);
-    }
-  };
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
@@ -294,16 +275,30 @@ export default function TeamIdPage({ params, navigate }: TeamIdPageProps) {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Enter email address"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleInvite(e as any)}
-                  />
-                  <Button onClick={(e) => handleInvite(e as any)} disabled={!inviteEmail}>
-                    Send Invite
-                  </Button>
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Enter email address"
+                      value={inviteEmail}
+                      onChange={handleEmailChange}
+                      onKeyDown={handleInviteKeyDown}
+                      className={emailError ? "border-red-500" : ""}
+                    />
+                    <select 
+                      value={inviteRole} 
+                      onChange={(e) => setInviteRole(e.target.value as "admin" | "member")}
+                      className="px-3 py-2 border border-input rounded-md bg-background text-foreground min-w-[100px]"
+                    >
+                      <option value="member">Member</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                    <Button onClick={handleInviteSubmit} disabled={!inviteEmail || isInviting || !!emailError}>
+                      {isInviting ? "Sending..." : "Send Invite"}
+                    </Button>
+                  </div>
+                  {emailError && (
+                    <p className="text-sm text-red-500">{emailError}</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -397,7 +392,7 @@ export default function TeamIdPage({ params, navigate }: TeamIdPageProps) {
                 />
               </div>
               <Button 
-                onClick={(e) => handleUpdateTeam(e as any)} 
+                onClick={handleUpdateTeamSubmit} 
                 disabled={isUpdating || !teamName.trim()}
               >
                 {isUpdating ? "Saving..." : "Save Changes"}
@@ -446,7 +441,7 @@ export default function TeamIdPage({ params, navigate }: TeamIdPageProps) {
               <CardContent>
                 <Button 
                   variant="destructive" 
-                  onClick={() => { void handleLeaveTeam(); }}
+                  onClick={handleLeaveTeam}
                 >
                   Leave Team
                 </Button>
@@ -456,244 +451,7 @@ export default function TeamIdPage({ params, navigate }: TeamIdPageProps) {
         </TabsContent>
       </Tabs>
 
-      {/* Invite Member Dialog */}
-      {showInviteDialog && (
-        <Dialog open onOpenChange={() => setShowInviteDialog(false)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Invite Team Member</DialogTitle>
-              <DialogDescription>
-                Send an invitation to join {team.name}
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={(e) => { void handleInvite(e); }}>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium">Email Address</label>
-                  <Input
-                    type="email"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    placeholder="colleague@example.com"
-                    disabled={isInviting}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Role</label>
-                  <select
-                    value={inviteRole}
-                    onChange={(e) => setInviteRole(e.target.value as "admin" | "member")}
-                    className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2"
-                    disabled={isInviting}
-                  >
-                    <option value="member">Member</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
-              </div>
-              <DialogFooter className="mt-6">
-                <Button 
-                  type="button" 
-                  variant="outline"
-                  onClick={() => setShowInviteDialog(false)}
-                  disabled={isInviting}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isInviting || !inviteEmail.trim()}>
-                  {isInviting ? "Inviting..." : "Send Invitation"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {/* Edit Team Dialog */}
-      {showEditDialog && (
-        <Dialog open onOpenChange={() => setShowEditDialog(false)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Edit Team</DialogTitle>
-              <DialogDescription>
-                Update team details
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={(e) => { void handleUpdateTeam(e); }}>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium">Team Name</label>
-                  <Input
-                    value={teamName}
-                    onChange={(e) => setTeamName(e.target.value)}
-                    placeholder="Team name"
-                    disabled={isUpdating}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Description</label>
-                  <Input
-                    value={teamDescription}
-                    onChange={(e) => setTeamDescription(e.target.value)}
-                    placeholder="Brief team description"
-                    disabled={isUpdating}
-                  />
-                </div>
-              </div>
-              <DialogFooter className="mt-6">
-                <Button 
-                  type="button" 
-                  variant="outline"
-                  onClick={() => setShowEditDialog(false)}
-                  disabled={isUpdating}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isUpdating || !teamName.trim()}>
-                  {isUpdating ? "Updating..." : "Update Team"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {/* Team Branding Dialog */}
-      {showBrandingDialog && (
-        <Dialog open onOpenChange={() => setShowBrandingDialog(false)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Team Branding</DialogTitle>
-              <DialogDescription>
-                Customize your team's logo and primary color
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={(e) => { void handleUpdateBranding(e); }}>
-              <div className="space-y-6">
-                <div>
-                  <label className="text-sm font-medium">Team Logo</label>
-                  <div className="mt-2 flex items-center gap-4">
-                    {team.logo ? (
-                      <img 
-                        src={`${window.location.origin}/api/storage/${team.logo}`}
-                        alt="Current team logo"
-                        className="w-16 h-16 rounded-lg object-cover border"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center border">
-                        <ImageIcon className="h-6 w-6 text-gray-400" />
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => setLogoFile(e.target.files?.[0] || null)}
-                        disabled={isUploadingBranding}
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Upload a square image (PNG, JPG) up to 2MB
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Primary Color</label>
-                  <div className="mt-2">
-                    <ColorPicker
-                      value={primaryColor}
-                      onChange={setPrimaryColor}
-                      disabled={isUploadingBranding}
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      This color will be used in team invitations and branding
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <DialogFooter className="mt-6">
-                <Button 
-                  type="button" 
-                  variant="outline"
-                  onClick={() => setShowBrandingDialog(false)}
-                  disabled={isUploadingBranding}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isUploadingBranding}>
-                  {isUploadingBranding ? "Updating..." : "Update Branding"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      )}
-      
-      {/* Create Event Dialog */}
-      {showCreateEventDialog && (
-        <CreateEventDialog
-          isOpen={showCreateEventDialog}
-          onClose={() => setShowCreateEventDialog(false)}
-          team={team}
-          onSuccess={(eventId) => {
-            console.log('Event created:', eventId);
-            // Could navigate to event page or show success message
-          }}
-        />
-      )}
-      
-      {/* All Events Dialog */}
-      {showAllEvents && (
-        <Dialog open onOpenChange={() => setShowAllEvents(false)}>
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
-            <DialogHeader>
-              <DialogTitle>All Events - {team.name}</DialogTitle>
-              <DialogDescription>
-                Manage all events for your team
-              </DialogDescription>
-            </DialogHeader>
-            <div className="overflow-y-auto max-h-[70vh]">
-              <EventList
-                teamId={teamId}
-                view="list"
-                showFilters={true}
-                onEventEdit={(eventId) => {
-                  console.log('Edit event:', eventId);
-                  // Could navigate to edit page
-                }}
-                onEventView={(eventId) => {
-                  console.log('View event:', eventId);
-                  // Could navigate to event page
-                }}
-                onEventShare={(eventId) => {
-                  console.log('Share event:', eventId);
-                  // Could show share dialog
-                }}
-                onEventDuplicate={(eventId) => {
-                  console.log('Duplicate event:', eventId);
-                  // Could duplicate event
-                }}
-              />
-            </div>
-            <DialogFooter>
-              <Button 
-                onClick={() => setShowCreateEventDialog(true)}
-                style={{ backgroundColor: team.primaryColor || '#3b82f6' }}
-                className="text-white hover:opacity-90"
-              >
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Create New Event
-              </Button>
-              <Button variant="outline" onClick={() => setShowAllEvents(false)}>
-                Close
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
+     
     </div>
   );
 }
