@@ -3,6 +3,7 @@ import { router, RouteDefinition } from './fileBasedRouter';
 // Import all page components
 import HomePage from '../pages/index';
 import EventsPage from '../pages/events/index';
+import MessagesPage from '../pages/messages';
 import TeamPage from '../pages/team/index';
 import InviteTokenPage from '../pages/invite/[token]';
 import TeamIdPage from '../pages/team/[id]';
@@ -19,6 +20,11 @@ const routes: RouteDefinition[] = [
   {
     path: '/events',
     component: EventsPage,
+    authRequired: true,
+  },
+  {
+    path: '/messages',
+    component: MessagesPage,
     authRequired: true,
   },
   {

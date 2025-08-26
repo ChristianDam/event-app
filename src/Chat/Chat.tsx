@@ -14,7 +14,7 @@ export function Chat({ viewer }: { viewer: Id<"users"> }) {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    sendMessage({ body: newMessageText })
+    sendMessage({ body: newMessageText } as any)
       .then(() => {
         setNewMessageText("");
       })
@@ -26,7 +26,7 @@ export function Chat({ viewer }: { viewer: Id<"users"> }) {
   return (
     <>
       <MessageList>
-        {messages?.map((message) => (
+        {(messages as any)?.map((message: any) => (
           <Message
             key={message._id}
             author={message.userId}

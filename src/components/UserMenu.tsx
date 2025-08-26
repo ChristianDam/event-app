@@ -17,7 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { PersonIcon, PlusIcon, GearIcon, CheckIcon } from "@radix-ui/react-icons";
+import { PersonIcon } from "@radix-ui/react-icons";
 import { ReactNode, useState } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useQuery, useMutation } from "convex/react";
@@ -27,31 +27,34 @@ import { toast } from 'sonner';
 export function UserMenu({
   favoriteColor,
   children,
-  navigate,
+  compact = false,
 }: {
   favoriteColor: string | undefined;
   children: ReactNode;
-  navigate: (to: string) => void;
+  compact?: boolean;
 }) {
-  const teams = useQuery(api.teams.getMyTeams);
-  const currentTeam = useQuery(api.users.getCurrentTeam);
-  const setCurrentTeam = useMutation(api.users.setCurrentTeam);
+  const currentUser = useQuery(api.users.viewer);
   const [showCreateTeam, setShowCreateTeam] = useState(false);
-  const [isTeamSwitching, setIsTeamSwitching] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   return (
-    <div className="flex items-center gap-2 text-sm font-medium">
-      {children}
+    <div className={compact ? "" : "flex items-center gap-2 text-sm font-medium"}>
+      {!compact && children}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="secondary" size="icon" className="rounded-full">
-            <PersonIcon className="h-5 w-5" />
-            <span className="sr-only">Toggle user menu</span>
-          </Button>
+          {compact ? (
+            <button className="w-8 h-8 rounded-full text-white  font-bold hover:opacity-80 transition-opacity">
+              {children}
+            </button>
+          ) : (
+            <Button variant="secondary" size="icon" className="rounded-full">
+              <PersonIcon className="h-5 w-5" />
+              <span className="sr-only">Toggle user menu</span>
+            </Button>
+          )}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuLabel>{children}</DropdownMenuLabel>
+          <DropdownMenuLabel>{compact ? (currentUser?.name || currentUser?.email) : children}</DropdownMenuLabel>
           {favoriteColor !== undefined && (
             <DropdownMenuLabel className="flex items-center">
               Favorite color:
@@ -63,153 +66,6 @@ export function UserMenu({
               </div>
             </DropdownMenuLabel>
           )}
-          
-          {/* Current Team Indicator */}
-          <DropdownMenuSeparator />
-          {currentTeam ? (
-            <>
-              <DropdownMenuLabel className="text-xs text-muted-foreground uppercase">
-                Current Team
-              </DropdownMenuLabel>
-              <DropdownMenuItem className="flex items-center gap-3 bg-primary/10">
-                {currentTeam.logoUrl ? (
-                  <img 
-                    src={currentTeam.logoUrl}
-                    alt={`${currentTeam.name} logo`}
-                    className="w-6 h-6 rounded object-cover border"
-                  />
-                ) : (
-                  <div 
-                    className="w-6 h-6 rounded flex items-center justify-center text-white text-xs font-bold"
-                    style={{ backgroundColor: currentTeam.primaryColor || "#3b82f6" }}
-                  >
-                    {currentTeam.name.charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <div className="flex flex-col">
-                  <span 
-                    className="font-medium text-sm"
-                    style={{ color: currentTeam.primaryColor || undefined }}
-                  >
-                    {currentTeam.name}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {currentTeam.userRole}
-                  </span>
-                </div>
-                <CheckIcon className="ml-auto h-4 w-4 text-primary" />
-              </DropdownMenuItem>
-            </>
-          ) : (
-            <>
-              <DropdownMenuLabel className="text-xs text-muted-foreground uppercase">
-                No Team Selected
-              </DropdownMenuLabel>
-              <DropdownMenuItem disabled className="text-muted-foreground text-sm">
-                Select a team below to get started
-              </DropdownMenuItem>
-            </>
-          )}
-          
-          {/* Teams Section */}
-          <DropdownMenuSeparator />
-          <DropdownMenuLabel className="text-xs text-muted-foreground uppercase">
-            {currentTeam ? 'Switch Team' : 'Select Team'}
-          </DropdownMenuLabel>
-          
-          {teams === undefined ? (
-            <DropdownMenuItem disabled>Loading teams...</DropdownMenuItem>
-          ) : teams.length === 0 ? (
-            <DropdownMenuItem disabled>No teams found</DropdownMenuItem>
-          ) : (
-            teams
-              .filter((team: any) => !team.isCurrentTeam) // Don't show current team in switch list
-              .map((team: any) => (
-                <DropdownMenuItem 
-                  key={team._id} 
-                  className={`flex items-center justify-between cursor-pointer ${
-                    isTeamSwitching === team._id ? 'opacity-50' : ''
-                  }`}
-                  disabled={isTeamSwitching === team._id}
-                  onClick={async () => {
-                    if (isTeamSwitching) return; // Prevent multiple simultaneous switches
-                    
-                    setIsTeamSwitching(team._id);
-                    try {
-                      await setCurrentTeam({ teamId: team._id });
-                      toast.success('Team switched successfully!', {
-                        description: `You are now viewing ${team.name}`,
-                      });
-                      // Navigate to team page after selecting/switching
-                      navigate(`/team/${team._id}`);
-                    } catch (error) {
-                      console.error("Failed to switch team:", error);
-                      const errorMsg = `Failed to switch to ${team.name}. Please try again.`;
-                      // Show user-friendly error message
-                      setErrorMessage(errorMsg);
-                      toast.error('Failed to switch team', {
-                        description: errorMsg,
-                      });
-                      // Auto-hide error after 5 seconds
-                      setTimeout(() => setErrorMessage(null), 5000);
-                    } finally {
-                      setIsTeamSwitching(null);
-                    }
-                  }}
-                >
-                  <div className="flex items-center gap-3">
-                    {team.logoUrl ? (
-                      <img 
-                        src={team.logoUrl}
-                        alt={`${team.name} logo`}
-                        className="w-8 h-8 rounded object-cover border"
-                      />
-                    ) : (
-                      <div 
-                        className="w-8 h-8 rounded flex items-center justify-center text-white text-xs font-bold"
-                        style={{ backgroundColor: team.primaryColor || "#3b82f6" }}
-                      >
-                        {team.name.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    <div className="flex flex-col">
-                      <span 
-                        className="font-medium"
-                        style={{ color: team.primaryColor || undefined }}
-                      >
-                        {team.name}
-                        {isTeamSwitching === team._id && (
-                          <span className="ml-2 text-xs text-muted-foreground">Switching...</span>
-                        )}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {team.role} • {team.memberCount} member{team.memberCount !== 1 ? 's' : ''}
-                      </span>
-                    </div>
-                  </div>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-6 w-6"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/team/${team._id}`);
-                    }}
-                  >
-                    <GearIcon className="h-3 w-3" />
-                  </Button>
-                </DropdownMenuItem>
-              ))
-          )}
-          
-          <DropdownMenuItem 
-            onClick={() => setShowCreateTeam(true)}
-            className="text-primary"
-          >
-            <PlusIcon className="mr-2 h-4 w-4" />
-            Create team
-          </DropdownMenuItem>
-
           <DropdownMenuSeparator />
           <DropdownMenuLabel className="flex items-center gap-2 py-0 font-normal">
             Theme

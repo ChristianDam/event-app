@@ -11,7 +11,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '../../components/ui/dialog';
 import { eventTypeOptions, EventType, EventStatus } from '../../types/events';
 import { ArrowLeft, Save, Eye, Trash2, Users, Settings, Upload, X } from 'lucide-react';
