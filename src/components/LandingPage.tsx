@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { SignInFormEmailCode } from "@/auth/SignInFormEmailCode";
 import { Users, Calendar, Shield, ArrowRight } from "lucide-react";
 import { useState } from "react";
+import { H2, Lead } from "@/components/typography/typography";
 
 export function LandingPage() {
   const [showSignIn, setShowSignIn] = useState(false);
@@ -20,10 +21,10 @@ export function LandingPage() {
           <br />
           <span className="text-blue-600">Events & Members</span>
         </h1>
-        <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+        <Lead className="mb-8 max-w-2xl mx-auto">
           Streamline your team management with our comprehensive platform for organizing events, 
           managing members, and building stronger connections.
-        </p>
+        </Lead>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button 
             size="lg" 
@@ -108,7 +109,7 @@ export function LandingPage() {
 
       {/* Call to Action */}
       <div className="text-center bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-12">
-        <h2 className="text-3xl font-bold mb-4">Ready to get started?</h2>
+        <H2 className="mb-4">Ready to get started?</H2>
         <p className="text-lg text-muted-foreground mb-6">
           Join thousands of teams already using our platform to stay organized and connected.
         </p>

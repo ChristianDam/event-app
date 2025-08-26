@@ -6,6 +6,9 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -17,12 +20,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { PersonIcon } from "@radix-ui/react-icons";
-import { ReactNode, useState } from "react";
+import { PersonIcon, CheckIcon, PlusIcon } from "@radix-ui/react-icons";
+import { ReactNode, useState, useCallback } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { toast } from 'sonner';
+import { Id } from "../../convex/_generated/dataModel";
+import { Small } from "./typography/typography";
 
 export function UserMenu({
   favoriteColor,
@@ -36,8 +41,29 @@ export function UserMenu({
   compact?: boolean;
 }) {
   const currentUser = useQuery(api.users.viewer);
+  const currentTeam = useQuery(api.users.getCurrentTeam);
+  const allTeams = useQuery(api.teams.getMyTeams);
+  const setCurrentTeam = useMutation(api.users.setCurrentTeam);
   const [showCreateTeam, setShowCreateTeam] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const handleTeamSwitch = useCallback(async (teamId: Id<"teams">) => {
+    try {
+      await setCurrentTeam({ teamId });
+      toast.success('Team switched successfully', {
+        description: `You are now working with ${allTeams?.find(t => t._id === teamId)?.name}.`,
+      });
+    } catch (error) {
+      console.error("Failed to switch teams:", error);
+      toast.error('Failed to switch teams', {
+        description: 'Please try again or check your connection.',
+      });
+    }
+  }, [setCurrentTeam, allTeams]);
+
+  const handleCreateTeam = useCallback(() => {
+    navigate("/team/create");
+  }, [navigate]);
 
   return (
     <div className={compact ? "" : "flex items-center gap-2 text-sm font-medium"}>
@@ -55,7 +81,7 @@ export function UserMenu({
             </Button>
           )}
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuContent align="end" className="w-64">
           <DropdownMenuLabel>{compact ? (currentUser?.name || currentUser?.email) : children}</DropdownMenuLabel>
           {favoriteColor !== undefined && (
             <DropdownMenuLabel className="flex items-center">
@@ -68,6 +94,76 @@ export function UserMenu({
               </div>
             </DropdownMenuLabel>
           )}
+          
+          {/* Team switching section */}
+          {currentTeam && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate(`/team/${currentTeam._id}`)} className="flex items-center gap-3">
+
+                  <Small>
+                    Team settings
+                  </Small>
+              </DropdownMenuItem>
+            </>
+          )}
+
+          {/* Switch team section */}
+          {allTeams && allTeams.length > 1 && (
+            <>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="flex items-center gap-3">
+                  <Small>Switch team</Small>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="w-64">
+                  {allTeams.map((team) => (
+                    <DropdownMenuItem
+                      key={team._id}
+                      onClick={() => handleTeamSwitch(team._id)}
+                      className="flex items-center gap-3"
+                    >
+                      {team.logoUrl ? (
+                        <img 
+                          src={team.logoUrl}
+                          alt={`${team.name} logo`}
+                          className="w-6 h-6 rounded object-cover border"
+                        />
+                      ) : (
+                        <div 
+                          className="w-6 h-6 rounded flex items-center justify-center text-white text-xs font-bold"
+                          style={{ backgroundColor: team.primaryColor || "#3b82f6" }}
+                        >
+                          {team.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm truncate">
+                          {team.name}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {team.role}
+                        </div>
+                      </div>
+                      {team.isCurrentTeam && (
+                        <CheckIcon className="h-4 w-4 text-primary" />
+                      )}
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={handleCreateTeam} className="flex items-center gap-3">
+            <div className="w-6 h-6 rounded border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
+              <PlusIcon className="h-3 w-3 text-muted-foreground" />
+            </div>
+            <Small>Create team</Small>
+          </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+            </>
+          )}
+
+          {/* Create team option */}
+          
+
           <DropdownMenuSeparator />
           <DropdownMenuLabel className="flex items-center gap-2 py-0 font-normal">
             Theme
@@ -108,7 +204,7 @@ function SignOutButton() {
         description: 'You have been logged out.',
       });
       void signOut();
-    }}>Sign out</DropdownMenuItem>
+    }}>Log out</DropdownMenuItem>
   );
 }
 

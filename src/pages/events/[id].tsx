@@ -20,7 +20,7 @@ import { Id } from '../../../convex/_generated/dataModel';
 import { toast } from 'sonner';
 import { useImageUpload } from '../../hooks/useImageUpload';
 import { Card } from '@/components/ui/card';
-import { Lead, P, Small } from '@/components/typography/typography';
+import { H1, H2, Small, Muted } from '@/components/typography/typography';
 
 interface EventManagePageProps {
   params: Record<string, string>;
@@ -336,8 +336,8 @@ const EventManagePage: React.FC<EventManagePageProps> = ({ params, navigate }) =
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <h1 className="text-2xl font-semibold text-foreground mb-2">Invalid Event</h1>
-          <p className="text-muted-foreground">Event not found.</p>
+          <H2 className="text-foreground mb-2">Invalid Event</H2>
+          <Muted className="">Event not found.</Muted>
         </div>
       </div>
     );
@@ -396,7 +396,7 @@ const EventManagePage: React.FC<EventManagePageProps> = ({ params, navigate }) =
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">{event.title}</h1>
+            <H1 className="text-foreground">{event.title}</H1>
             <div className="flex items-center gap-4 mt-2">
               <EventStatusBadge status={event.status} />
               <span className="text-sm text-muted-foreground">

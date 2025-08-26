@@ -5,7 +5,7 @@ import { EventCard } from '../../components/events/EventCard';
 import { Button } from '../../components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Plus, CalendarIcon, HistoryIcon } from 'lucide-react';
-import { H1, H2, Lead, Muted, P } from '@/components/typography/typography';
+import { H2, Muted } from '@/components/typography/typography';
 
 interface EventListPageProps {
   navigate: (to: string) => void;
@@ -117,8 +117,8 @@ const EventListPage: React.FC<EventListPageProps> = ({ navigate }) => {
         </TabsList>
 
         <TabsContent value="upcoming" className="space-y-6">
-          <Muted>
-            {upcomingEvents.length} upcoming event{upcomingEvents.length !== 1 ? 's' : ''} found
+          <Muted className="">
+            {`${upcomingEvents.length} upcoming event${upcomingEvents.length !== 1 ? 's' : ''} found`}
           </Muted>
 
           {upcomingEvents.length === 0 ? (

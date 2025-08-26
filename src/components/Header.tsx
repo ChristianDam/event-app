@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { useConvexAuth, useQuery } from "convex/react";
 import { Button } from "@/components/ui/button";
 import { api } from "../../convex/_generated/api";
+import { H4 } from "@/components/typography/typography";
 
 interface HeaderProps {
   menu?: ReactNode;
@@ -26,7 +27,7 @@ export function Header({ menu, navigate }: HeaderProps) {
       <nav className="container w-full justify-between flex flex-row items-center gap-6">
         <div className="flex items-center gap-6 md:gap-10">
           <a href="/" onClick={handleNavigation("/")}>
-            <h1 className="text-base font-semibold">Event planner</h1>
+            <H4 className="">Event planner</H4>
           </a>
           {!isLoading && isAuthenticated && (
             <div className="flex items-center gap-4 text-sm">

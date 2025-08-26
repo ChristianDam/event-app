@@ -1,7 +1,7 @@
 import React from 'react';
 import { EventWithDetails, TeamEvent, eventTypeOptions } from '../../types/events';
 import { EventStatusBadge } from './EventStatusBadge';
-import { Calendar1, CalendarHeart, MoreHorizontal, Users2 } from 'lucide-react';
+import { CalendarHeart, MoreHorizontal, Users2 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '../ui/card';
 import { 
   DropdownMenu, 
@@ -9,7 +9,7 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from '../ui/dropdown-menu';
-import { H3, H4, Muted, Small } from '../typography/typography';
+import { H4, Muted, Small } from '../typography/typography';
 
 interface EventCardProps {
   event: EventWithDetails | TeamEvent;
@@ -61,7 +61,7 @@ export const EventCard: React.FC<EventCardProps> = ({
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <span className="text-lg">{eventTypeConfig?.icon || '📅'}</span>
-              <Small>{eventTypeConfig?.label}</Small>
+              <Small>{eventTypeConfig?.label || 'Event'}</Small>
             </div>
             
             {/* PRD hierarchy #5: Actions menu (⋯) */}
@@ -127,8 +127,8 @@ export const EventCard: React.FC<EventCardProps> = ({
         <div className="mb-3">
           <div className="flex items-center text-sm text-muted-foreground">
             <CalendarHeart className="w-4 h-4 mr-1 flex-shrink-0" />
-            <Muted>
-              {startDate.toLocaleDateString()} at {startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            <Muted className="">
+              {`${startDate.toLocaleDateString()} at ${startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
             </Muted>
           </div>
         </div>
@@ -146,9 +146,8 @@ export const EventCard: React.FC<EventCardProps> = ({
           
           <div className="flex items-center">
             <Users2 className="text-muted-foreground w-4 h-4 mr-1 flex-shrink-0" />
-            <Muted>
-              {event.registrationCount} registered
-              {event.maxCapacity && ` / ${event.maxCapacity}`}
+            <Muted className="">
+              {`${event.registrationCount} registered${event.maxCapacity ? ` / ${event.maxCapacity}` : ''}`}
             </Muted>
           </div>
         </div>

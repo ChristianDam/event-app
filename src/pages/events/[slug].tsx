@@ -5,6 +5,7 @@ import { generateEventTheme, applyTeamTheme, clearTeamTheme } from '../../utils/
 import { formatDate, formatTime, isUpcoming, isPast } from '../../utils/dateTime';
 import { eventTypeOptions } from '../../types/events';
 import { EventRegistrationForm } from '../../components/events/EventRegistrationForm';
+import { H1, H2, H3, Large, Small, Muted } from '../../components/typography/typography';
 
 interface PublicEventPageProps {
   params: Record<string, string>;
@@ -158,21 +159,21 @@ const PublicEventPage: React.FC<PublicEventPageProps> = ({ params, navigate }) =
                 />
               )}
               <div>
-                <div className="text-foreground/80 text-sm font-medium">Organized by</div>
-                <div className="text-xl font-bold">{event.team.name}</div>
+                <Small className="text-foreground/80">Organized by</Small>
+                <Large className="">{event.team.name}</Large>
               </div>
             </div>
 
             {/* Event Type Badge */}
             <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 mb-4">
               <span className="text-2xl">{eventTypeConfig?.icon || '📅'}</span>
-              <span className="font-medium">{eventTypeConfig?.label}</span>
+              <Small className="font-medium">{eventTypeConfig?.label || 'Event'}</Small>
             </div>
 
             {/* Event Title */}
-            <h1 className="text-4xl md:text-6xl font-bold mb-4 leading-tight">
+            <H1 className="text-4xl md:text-6xl mb-4 leading-tight">
               {event.title}
-            </h1>
+            </H1>
 
             {/* Date and Status */}
             <div className="flex flex-wrap items-center gap-4 text-lg mb-8">
@@ -240,17 +241,17 @@ const PublicEventPage: React.FC<PublicEventPageProps> = ({ params, navigate }) =
               
               {/* Description */}
               <section className="bg-background rounded-lg p-6 shadow-sm">
-                <h2 className="text-2xl font-bold mb-4">About This Event</h2>
+                <H2 className="mb-4">About This Event</H2>
                 <div className="prose prose-lg max-w-none">
-                  <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                  <Muted className="leading-relaxed whitespace-pre-wrap">
                     {event.description}
-                  </p>
+                  </Muted>
                 </div>
               </section>
 
               {/* Date & Time Details */}
               <section className="bg-background rounded-lg p-6 shadow-sm">
-                <h2 className="text-2xl font-bold mb-4">When & Where</h2>
+                <H2 className="mb-4">When & Where</H2>
                 <div className="space-y-4">
                   <div className="flex items-start gap-3">
                     <svg className="w-6 h-6 text-primary mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -285,7 +286,7 @@ const PublicEventPage: React.FC<PublicEventPageProps> = ({ params, navigate }) =
 
               {/* Social Sharing */}
               <section className="bg-background rounded-lg p-6 shadow-sm">
-                <h2 className="text-2xl font-bold mb-4">Share This Event</h2>
+                <H2 className="mb-4">Share This Event</H2>
                 <div className="flex flex-wrap gap-3">
                   <SocialShareButton 
                     platform="facebook" 
@@ -317,7 +318,7 @@ const PublicEventPage: React.FC<PublicEventPageProps> = ({ params, navigate }) =
               {/* Registration Card */}
               <div className="bg-background rounded-lg p-6 shadow-sm border-l-4" 
                    style={{ borderLeftColor: event.team.primaryColor || '#3b82f6' }}>
-                <h3 className="text-xl font-bold mb-4">Event Registration</h3>
+                <H3 className="mb-4">Event Registration</H3>
                 
                 {canRegister ? (
                   <div className="space-y-4">
@@ -386,7 +387,7 @@ const PublicEventPage: React.FC<PublicEventPageProps> = ({ params, navigate }) =
 
               {/* Organizer Info */}
               <div className="bg-background rounded-lg p-6 shadow-sm">
-                <h3 className="text-xl font-bold mb-4">Organized by</h3>
+                <H3 className="mb-4">Organized by</H3>
                 <div className="flex items-center gap-3">
                   {event.team.logo && (
                     <img
@@ -565,10 +566,10 @@ const EventNotFound: React.FC<{ navigate: (to: string) => void }> = ({ navigate 
     <div className="min-h-screen bg-muted/50 flex items-center justify-center">
       <div className="text-center">
         <div className="text-6xl mb-4">🎪</div>
-        <h1 className="text-3xl font-bold text-foreground mb-4">Event Not Found</h1>
-        <p className="text-muted-foreground mb-8">
+        <H1 className="text-foreground mb-4">Event Not Found</H1>
+        <Muted className="mb-8">
           The event you're looking for doesn't exist or is no longer available.
-        </p>
+        </Muted>
         <button
           onClick={() => navigate('/')}
           className="bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors"
