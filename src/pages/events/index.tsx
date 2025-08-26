@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { EventCard } from '../../components/events/EventCard';
 import { Button } from '../../components/ui/button';
-import { Plus } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import { Plus, CalendarIcon, HistoryIcon } from 'lucide-react';
 
 interface EventListPageProps {
   navigate: (to: string) => void;
 }
 
 const EventListPage: React.FC<EventListPageProps> = ({ navigate }) => {
-  const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
   
   // Use the existing getMyEvents query which is team-aware
   const events = useQuery(api.events.getMyEvents);
@@ -81,8 +81,6 @@ const EventListPage: React.FC<EventListPageProps> = ({ navigate }) => {
   const now = Date.now();
   const upcomingEvents = events?.filter(event => event.startTime > now).sort((a, b) => a.startTime - b.startTime) || [];
   const pastEvents = events?.filter(event => event.startTime <= now).sort((a, b) => b.startTime - a.startTime) || [];
-  
-  const displayEvents = activeTab === 'upcoming' ? upcomingEvents : pastEvents;
 
   return (
     <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -105,86 +103,105 @@ const EventListPage: React.FC<EventListPageProps> = ({ navigate }) => {
       </div>
 
       {/* Tabs */}
-      <div className="mb-6">
-        <div className="border-b border-border">
-          <nav className="-mb-px flex space-x-8">
-            <button
-              onClick={() => setActiveTab('upcoming')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'upcoming'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground'
-              }`}
-            >
-              Upcoming ({upcomingEvents.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('past')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'past'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground'
-              }`}
-            >
-              Past Events ({pastEvents.length})
-            </button>
-          </nav>
-        </div>
-      </div>
+      <Tabs defaultValue="upcoming" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="upcoming" className="flex items-center gap-2">
+            <CalendarIcon className="h-4 w-4" />
+            Upcoming ({upcomingEvents.length})
+          </TabsTrigger>
+          <TabsTrigger value="past" className="flex items-center gap-2">
+            <HistoryIcon className="h-4 w-4" />
+            Past Events ({pastEvents.length})
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Event count and summary */}
-      <div className="mb-6 text-sm text-muted-foreground">
-        {displayEvents.length} event{displayEvents.length !== 1 ? 's' : ''} found
-      </div>
-
-      {/* Events grid */}
-      {displayEvents.length === 0 ? (
-        <div className="bg-card rounded-lg border border-border p-12 text-center">
-          <div className="text-6xl text-muted-foreground mb-4">
-            {activeTab === 'upcoming' ? '📅' : '📚'}
+        <TabsContent value="upcoming" className="space-y-6">
+          <div className="text-sm text-muted-foreground">
+            {upcomingEvents.length} upcoming event{upcomingEvents.length !== 1 ? 's' : ''} found
           </div>
-          <h3 className="text-lg font-medium text-foreground mb-2">
-            {activeTab === 'upcoming' ? 'No upcoming events' : 'No past events'}
-          </h3>
-          <p className="text-muted-foreground mb-4">
-            {activeTab === 'upcoming' 
-              ? 'Create your first event to get started with event management.'
-              : 'Once you create and complete events, they will appear here.'
-            }
-          </p>
-          {activeTab === 'upcoming' && (
-            <Button 
-              onClick={handleCreateEvent}
-              className="flex items-center gap-2 mx-auto"
-            >
-              <Plus className="h-4 w-4" />
-              Create Your First Event
-            </Button>
+
+          {upcomingEvents.length === 0 ? (
+            <div className="bg-card rounded-lg border border-border p-12 text-center">
+              <div className="text-6xl text-muted-foreground mb-4">📅</div>
+              <h3 className="text-lg font-medium text-foreground mb-2">
+                No upcoming events
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                Create your first event to get started with event management.
+              </p>
+              <Button 
+                onClick={handleCreateEvent}
+                className="flex items-center gap-2 mx-auto"
+              >
+                <Plus className="h-4 w-4" />
+                Create Your First Event
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {upcomingEvents.map(event => (
+                <EventCard
+                  key={event._id}
+                  event={event}
+                  navigate={navigate}
+                  onEdit={() => navigate(`/events/${event._id}`)}
+                  onView={() => navigate(`/events/discover/${event.slug}`)}
+                  onShare={() => {
+                    if (event.status === 'published') {
+                      navigator.clipboard.writeText(`${window.location.origin}/events/discover/${event.slug}`);
+                      // Could add toast notification here
+                    }
+                  }}
+                  onDuplicate={() => {
+                    // Could implement duplication logic
+                    console.log('Duplicate event', event._id);
+                  }}
+                />
+              ))}
+            </div>
           )}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {displayEvents.map(event => (
-            <EventCard
-              key={event._id}
-              event={event}
-              navigate={navigate}
-              onEdit={() => navigate(`/events/${event._id}`)}
-              onView={() => navigate(`/events/discover/${event.slug}`)}
-              onShare={() => {
-                if (event.status === 'published') {
-                  navigator.clipboard.writeText(`${window.location.origin}/events/discover/${event.slug}`);
-                  // Could add toast notification here
-                }
-              }}
-              onDuplicate={() => {
-                // Could implement duplication logic
-                console.log('Duplicate event', event._id);
-              }}
-            />
-          ))}
-        </div>
-      )}
+        </TabsContent>
+
+        <TabsContent value="past" className="space-y-6">
+          <div className="text-sm text-muted-foreground">
+            {pastEvents.length} past event{pastEvents.length !== 1 ? 's' : ''} found
+          </div>
+
+          {pastEvents.length === 0 ? (
+            <div className="bg-card rounded-lg border border-border p-12 text-center">
+              <div className="text-6xl text-muted-foreground mb-4">📚</div>
+              <h3 className="text-lg font-medium text-foreground mb-2">
+                No past events
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                Once you create and complete events, they will appear here.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {pastEvents.map(event => (
+                <EventCard
+                  key={event._id}
+                  event={event}
+                  navigate={navigate}
+                  onEdit={() => navigate(`/events/${event._id}`)}
+                  onView={() => navigate(`/events/discover/${event.slug}`)}
+                  onShare={() => {
+                    if (event.status === 'published') {
+                      navigator.clipboard.writeText(`${window.location.origin}/events/discover/${event.slug}`);
+                      // Could add toast notification here
+                    }
+                  }}
+                  onDuplicate={() => {
+                    // Could implement duplication logic
+                    console.log('Duplicate event', event._id);
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
