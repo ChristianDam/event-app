@@ -1,8 +1,6 @@
 import { Layout } from "@/Layout";
-import { UserMenu } from "@/components/UserMenu";
 import { LandingPage } from "@/components/LandingPage";
-import { api } from "../convex/_generated/api";
-import { Authenticated, Unauthenticated, useQuery } from "convex/react";
+import { Authenticated, Unauthenticated } from "convex/react";
 import { SignInFormEmailCode } from "./auth/SignInFormEmailCode";
 import { useState, useEffect } from "react";
 import { router } from "./router/routes";
@@ -46,7 +44,6 @@ function useRouter() {
 }
 
 function AppContent() {
-  const user = useQuery(api.users.viewer);
   const { location, navigate } = useRouter();
   
   // Match current route
@@ -81,16 +78,7 @@ function AppContent() {
   return (
     <Layout
       navigate={navigate}
-      menu={
-        <>
-          <Authenticated>
-            <UserMenu favoriteColor={user?.favoriteColor} navigate={navigate}>
-              {user?.name ?? user?.email ?? user?.phone ?? "Anonymous"}
-            </UserMenu>
-          </Authenticated>
-          <Unauthenticated>{null}</Unauthenticated>
-        </>
-      }
+      currentPath={location.pathname}
     >
       <>
         {!requiresAuth ? (

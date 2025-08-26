@@ -31,7 +31,7 @@ export default function InviteTokenPage({ params, navigate }: InviteTokenPagePro
       if (result.success && result.teamId) {
         setAccepted(true);
         toast.success('Successfully joined team!', {
-          description: `Welcome to ${invitation.teamName}! Redirecting to team page...`,
+          description: `Welcome to ${invitation?.teamName}! Redirecting to team page...`,
         });
         // Navigate to the team page after a short delay
         setTimeout(() => {

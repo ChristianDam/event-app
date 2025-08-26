@@ -4,6 +4,14 @@ import { api } from '../../../convex/_generated/api';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { DatePicker } from '../../components/ui/date-picker';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../../components/ui/dialog';
 import { eventTypeOptions, EventType, EventStatus } from '../../types/events';
 import { ArrowLeft, Save, Eye, Trash2, Users, Settings, Upload, X } from 'lucide-react';
 import { EventStatusBadge } from '../../components/events/EventStatusBadge';
@@ -38,6 +46,7 @@ const EventManagePage: React.FC<EventManagePageProps> = ({ params, navigate }) =
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState<'details' | 'registrations'>('details');
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Fetch event data
   const event = useQuery(api.events.getEvent, eventId ? { eventId } : 'skip');
@@ -296,12 +305,14 @@ const EventManagePage: React.FC<EventManagePageProps> = ({ params, navigate }) =
   };
 
   // Handle event deletion
-  const handleDelete = async () => {
+  const handleDeleteClick = () => {
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteConfirm = async () => {
     if (!event) return;
     
-    if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
-      return;
-    }
+    setShowDeleteDialog(false);
 
     try {
       await deleteEvent({ eventId: event._id });
@@ -406,9 +417,8 @@ const EventManagePage: React.FC<EventManagePageProps> = ({ params, navigate }) =
           </Button>
           <Button 
             variant="destructive" 
-            onClick={handleDelete}
-            disabled={event.registrationCount > 0}
-            title={event.registrationCount > 0 ? 'Cannot delete event with registrations' : 'Delete event'}
+            onClick={handleDeleteClick}
+            title={ 'Delete event'}
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -809,6 +819,26 @@ const EventManagePage: React.FC<EventManagePageProps> = ({ params, navigate }) =
           )}
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Event</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this event? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm}>
+              Delete Event
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
