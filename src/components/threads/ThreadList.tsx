@@ -5,6 +5,18 @@ import { Id } from "../../../convex/_generated/dataModel";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { 
   ChatBubbleIcon, 
   PlusIcon,
@@ -19,6 +31,10 @@ interface ThreadListProps {
 
 export function ThreadList({ teamId, onThreadSelect, selectedThreadId }: ThreadListProps) {
   const [cursor, setCursor] = useState<string | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
   
   const threads = useQuery(api.threads.getThreadsForTeam, { 
     teamId,
@@ -28,21 +44,37 @@ export function ThreadList({ teamId, onThreadSelect, selectedThreadId }: ThreadL
   const createThread = useMutation(api.threads.createTeamThread);
 
   const handleCreateThread = async () => {
-    const title = prompt("Enter thread title:");
-    if (!title?.trim()) return;
+    if (!title.trim()) return;
     
-    const description = prompt("Enter thread description (optional):");
-    
+    setIsCreating(true);
     try {
       const threadId = await createThread({
         teamId,
         title: title.trim(),
-        description: description?.trim() || undefined,
+        description: description.trim() || undefined,
       });
+      
+      // Reset form and close dialog
+      setTitle("");
+      setDescription("");
+      setIsCreateDialogOpen(false);
+      
+      // Select the new thread
       onThreadSelect(threadId);
     } catch (error) {
       console.error("Failed to create thread:", error);
+      // In a real app, you'd want to show a toast notification instead
       alert("Failed to create thread. Please try again.");
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleDialogClose = () => {
+    if (!isCreating) {
+      setTitle("");
+      setDescription("");
+      setIsCreateDialogOpen(false);
     }
   };
 
@@ -82,10 +114,62 @@ export function ThreadList({ teamId, onThreadSelect, selectedThreadId }: ThreadL
             {threads.page.length} thread{threads.page.length !== 1 ? 's' : ''}
           </p>
         </div>
-        <Button onClick={handleCreateThread} size="sm">
-          <PlusIcon className="h-4 w-4 mr-2" />
-          New Thread
-        </Button>
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm">
+              <PlusIcon className="h-4 w-4 mr-2" />
+              New Thread
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Create New Thread</DialogTitle>
+              <DialogDescription>
+                Start a new discussion thread for your team.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="title">Title</Label>
+                <Input
+                  id="title"
+                  placeholder="Enter thread title..."
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  disabled={isCreating}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="description">Description (optional)</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Enter thread description..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  disabled={isCreating}
+                  rows={3}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleDialogClose}
+                disabled={isCreating}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleCreateThread}
+                disabled={!title.trim() || isCreating}
+              >
+                {isCreating ? "Creating..." : "Create Thread"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Thread List */}
@@ -153,7 +237,7 @@ export function ThreadList({ teamId, onThreadSelect, selectedThreadId }: ThreadL
               <div className="text-muted-foreground mb-4">
                 No threads yet. Start the conversation!
               </div>
-              <Button onClick={handleCreateThread}>
+              <Button onClick={() => setIsCreateDialogOpen(true)}>
                 <PlusIcon className="h-4 w-4 mr-2" />
                 Create First Thread
               </Button>

@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { ThreadList } from "./ThreadList";
 import { ThreadMessages } from "./ThreadMessages";
@@ -13,6 +15,25 @@ interface ThreadViewProps {
 export function ThreadView({ teamId }: ThreadViewProps) {
   const [selectedThreadId, setSelectedThreadId] = useState<Id<"threads"> | undefined>(undefined);
   const [replyToId, setReplyToId] = useState<Id<"threadMessages"> | undefined>();
+  
+  // Get first page of threads to find the latest one
+  const threads = useQuery(api.threads.getThreadsForTeam, { 
+    teamId,
+    paginationOpts: { numItems: 20, cursor: null }
+  });
+
+  // Auto-select the latest active thread when threads load and no thread is selected
+  useEffect(() => {
+    if (threads && threads.page.length > 0 && selectedThreadId === undefined) {
+      // Find the thread with the most recent activity (lastMessageAt or createdAt)
+      const mostActiveThread = threads.page.reduce((latest, current) => {
+        const latestTime = latest.lastMessageAt || latest.createdAt;
+        const currentTime = current.lastMessageAt || current.createdAt;
+        return currentTime > latestTime ? current : latest;
+      });
+      setSelectedThreadId(mostActiveThread._id);
+    }
+  }, [threads, selectedThreadId]);
 
   const handleThreadSelect = (threadId: Id<"threads">) => {
     setSelectedThreadId(threadId);
