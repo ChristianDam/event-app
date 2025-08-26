@@ -263,7 +263,7 @@ export const createEvent = mutation({
 
     // Create a default discussion thread for the event
     const threadId = await ctx.db.insert("threads", {
-      title: "Event Discussion",
+      title: args.title.trim(),
       description: `Discussion thread for ${args.title.trim()}`,
       threadType: "event",
       eventId,
@@ -354,7 +354,7 @@ export const createDraftEvent = mutation({
 
     // Create a default discussion thread for the event
     const threadId = await ctx.db.insert("threads", {
-      title: "Event Discussion",
+      title: title,
       description: `Discussion thread for ${title}`,
       threadType: "event",
       eventId,
@@ -527,6 +527,22 @@ export const updateEvent = mutation({
     }
 
     await ctx.db.patch(args.eventId, updates);
+    
+    // If title was updated, update the related event thread title
+    if (args.title !== undefined && args.title.trim() !== event.title) {
+      const eventThread = await ctx.db
+        .query("threads")
+        .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
+        .filter((q) => q.eq(q.field("threadType"), "event"))
+        .first();
+      
+      if (eventThread) {
+        await ctx.db.patch(eventThread._id, {
+          title: args.title.trim(),
+          description: `Discussion thread for ${args.title.trim()}`,
+        });
+      }
+    }
     
     // Get the updated event to return the current slug
     const updatedEvent = await ctx.db.get(args.eventId);

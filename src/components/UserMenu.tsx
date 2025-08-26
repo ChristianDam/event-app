@@ -27,10 +27,12 @@ import { toast } from 'sonner';
 export function UserMenu({
   favoriteColor,
   children,
+  navigate,
   compact = false,
 }: {
   favoriteColor: string | undefined;
   children: ReactNode;
+  navigate: (to: string) => void;
   compact?: boolean;
 }) {
   const currentUser = useQuery(api.users.viewer);

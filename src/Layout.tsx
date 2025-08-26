@@ -25,7 +25,7 @@ export function Layout({
               <SidebarTrigger className="-ml-1" aria-label="Toggle sidebar" />
             </header>
             <main className="flex-1 overflow-auto">{children}</main>
-            <Footer />
+            
           </SidebarInset>
         ) : (
           <main className="flex grow flex-col">

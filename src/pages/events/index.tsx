@@ -5,6 +5,7 @@ import { EventCard } from '../../components/events/EventCard';
 import { Button } from '../../components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Plus, CalendarIcon, HistoryIcon } from 'lucide-react';
+import { H1, H2, Lead, Muted, P } from '@/components/typography/typography';
 
 interface EventListPageProps {
   navigate: (to: string) => void;
@@ -86,11 +87,11 @@ const EventListPage: React.FC<EventListPageProps> = ({ navigate }) => {
     <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Events</h1>
-          <p className="text-muted-foreground mt-2">
+        <div className="space-y-0">
+          <H2>Events</H2>
+          <Muted className='text-muted-foreground '>
             Manage and view all your team's events in one place
-          </p>
+          </Muted>
         </div>
         
         <Button 
@@ -116,9 +117,9 @@ const EventListPage: React.FC<EventListPageProps> = ({ navigate }) => {
         </TabsList>
 
         <TabsContent value="upcoming" className="space-y-6">
-          <div className="text-sm text-muted-foreground">
+          <Muted>
             {upcomingEvents.length} upcoming event{upcomingEvents.length !== 1 ? 's' : ''} found
-          </div>
+          </Muted>
 
           {upcomingEvents.length === 0 ? (
             <div className="bg-card rounded-lg border border-border p-12 text-center">

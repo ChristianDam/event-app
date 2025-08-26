@@ -384,15 +384,46 @@ export const getThreadsForTeam = query({
       throw new Error("Not a team member");
     }
 
-    const result = await ctx.db
+    // Get team threads
+    const teamThreadsResult = await ctx.db
       .query("threads")
       .withIndex("by_team", (q) => q.eq("teamId", args.teamId))
       .filter((q) => q.eq(q.field("isArchived"), false))
-      .order("desc")
-      .paginate(args.paginationOpts);
+      .collect();
+
+    // Get team events
+    const teamEvents = await ctx.db
+      .query("events")
+      .withIndex("by_team", (q) => q.eq("teamId", args.teamId))
+      .collect();
+
+    // Get event threads for team events
+    const eventThreadsPromises = teamEvents.map(async (event) => {
+      const eventThreads = await ctx.db
+        .query("threads")
+        .withIndex("by_event", (q) => q.eq("eventId", event._id))
+        .filter((q) => q.eq(q.field("isArchived"), false))
+        .collect();
+      return eventThreads;
+    });
+
+    const eventThreadsResults = await Promise.all(eventThreadsPromises);
+    const eventThreads = eventThreadsResults.flat();
+
+    // Combine and sort all threads by creation time (desc)
+    const allThreads = [...teamThreadsResult, ...eventThreads]
+      .sort((a, b) => b.createdAt - a.createdAt);
+
+    // Apply pagination manually
+    const startIndex = args.paginationOpts.cursor ? 
+      parseInt(args.paginationOpts.cursor) : 0;
+    const endIndex = startIndex + args.paginationOpts.numItems;
+    const paginatedThreads = allThreads.slice(startIndex, endIndex);
+    const isDone = endIndex >= allThreads.length;
+    const continueCursor = isDone ? "" : endIndex.toString();
 
     const enrichedThreads = await Promise.all(
-      result.page.map(async (thread) => {
+      paginatedThreads.map(async (thread) => {
         // Get message count
         const messages = await ctx.db
           .query("threadMessages")
@@ -424,8 +455,8 @@ export const getThreadsForTeam = query({
 
     return {
       page: enrichedThreads,
-      isDone: result.isDone,
-      continueCursor: result.continueCursor,
+      isDone,
+      continueCursor,
     };
   },
 });

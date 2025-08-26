@@ -9,6 +9,7 @@ import {
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
+  SidebarSeparator,
   useSidebar,
 } from "@/components/ui/sidebar";
 import {
@@ -126,7 +127,7 @@ export function AppSidebar({ navigate, currentPath }: AppSidebarProps) {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="px-[11px]">
+      <SidebarHeader className="px-[11px] mb-2">
         {/* Compact Team Switcher - Avatar Only */}
         {currentTeam && (
           <DropdownMenu>
@@ -203,12 +204,11 @@ export function AppSidebar({ navigate, currentPath }: AppSidebarProps) {
           </DropdownMenu>
         )}
       </SidebarHeader>
-
+        <SidebarSeparator />
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="gap-6 px-[11px] items-center" role="navigation" aria-label="Main navigation">
-
                 <SidebarMenuButton 
                   className="w-12 h-12 justify-center"
                   tooltip="Home" 
@@ -281,9 +281,9 @@ export function AppSidebar({ navigate, currentPath }: AppSidebarProps) {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="px-[11px] py-4 flex justify-center">
+      <SidebarFooter className="px-[11px] py-4 flex justify-center items-center">
         {/* Compact User Avatar */}
-        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
           <UserMenu
             favoriteColor={currentUser?.favoriteColor}
             compact={true}

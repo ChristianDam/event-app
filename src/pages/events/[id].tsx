@@ -13,11 +13,14 @@ import {
   DialogTitle,
 } from '../../components/ui/dialog';
 import { eventTypeOptions, EventType, EventStatus } from '../../types/events';
-import { ArrowLeft, Save, Eye, Trash2, Users, Settings, Upload, X } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Trash2, Users, Settings, Upload, X, MessageSquare } from 'lucide-react';
 import { EventStatusBadge } from '../../components/events/EventStatusBadge';
+import { EventThreadView } from '../../components/threads/EventThreadView';
 import { Id } from '../../../convex/_generated/dataModel';
 import { toast } from 'sonner';
 import { useImageUpload } from '../../hooks/useImageUpload';
+import { Card } from '@/components/ui/card';
+import { Lead, P, Small } from '@/components/typography/typography';
 
 interface EventManagePageProps {
   params: Record<string, string>;
@@ -45,7 +48,7 @@ const EventManagePage: React.FC<EventManagePageProps> = ({ params, navigate }) =
   const [originalFormData, setOriginalFormData] = useState<FormData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [activeTab, setActiveTab] = useState<'details' | 'registrations'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'registrations' | 'discussion'>('details');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Fetch event data
@@ -380,7 +383,7 @@ const EventManagePage: React.FC<EventManagePageProps> = ({ params, navigate }) =
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-screen-md mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <Button 
             variant="ghost" 
@@ -393,7 +396,7 @@ const EventManagePage: React.FC<EventManagePageProps> = ({ params, navigate }) =
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Manage Event</h1>
+            <h1 className="text-3xl font-bold text-foreground">{event.title}</h1>
             <div className="flex items-center gap-4 mt-2">
               <EventStatusBadge status={event.status} />
               <span className="text-sm text-muted-foreground">
@@ -407,7 +410,6 @@ const EventManagePage: React.FC<EventManagePageProps> = ({ params, navigate }) =
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
           <Button 
             variant="outline" 
             onClick={() => navigate(`/events/discover/${event.slug}`)}
@@ -415,14 +417,6 @@ const EventManagePage: React.FC<EventManagePageProps> = ({ params, navigate }) =
             <Eye className="h-4 w-4 mr-2" />
             View Public Page
           </Button>
-          <Button 
-            variant="destructive" 
-            onClick={handleDeleteClick}
-            title={ 'Delete event'}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
       </div>
 
       {/* Tabs */}
@@ -449,14 +443,22 @@ const EventManagePage: React.FC<EventManagePageProps> = ({ params, navigate }) =
           <Users className="h-4 w-4" />
           Registrations ({event.registrationCount})
         </button>
+        <button
+          onClick={() => setActiveTab('discussion')}
+          className={`flex items-center gap-2 px-4 py-2 font-medium border-b-2 transition-colors ${
+            activeTab === 'discussion' 
+              ? 'border-primary text-primary' 
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <MessageSquare className="h-4 w-4" />
+          Discussion
+        </button>
       </div>
 
       {/* Tab Content */}
       {activeTab === 'details' && (
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-background rounded-lg p-6 shadow-sm border">
-            <h2 className="text-xl font-semibold text-foreground mb-4">Event Information</h2>
-            
             <div className="grid gap-4">
               {/* Title */}
               <div>
@@ -755,6 +757,19 @@ const EventManagePage: React.FC<EventManagePageProps> = ({ params, navigate }) =
                   />
                 </div>
               </div>
+              <Card className="bg-destructive/30 p-4 gap-4 border border-destructive hover:bg-destructive/40 transition-colors">
+                <Small className='mb-4 text-destructive-foreground'>
+                  Deleting this event is permanent and cannot be undone. All event data, including registrations and discussions, will be lost.
+                </Small>
+                <Button 
+                  variant="destructive" 
+                  onClick={handleDeleteClick}
+                  title={ 'Delete event'}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  <Small>Delete</Small>
+                </Button>
+              </Card>
             </div>
 
             {/* Actions */}
@@ -768,7 +783,6 @@ const EventManagePage: React.FC<EventManagePageProps> = ({ params, navigate }) =
                 {isSubmitting ? 'Saving...' : hasChanges() ? 'Save Changes' : 'No Changes'}
               </Button>
             </div>
-          </div>
         </form>
       )}
 
@@ -817,6 +831,12 @@ const EventManagePage: React.FC<EventManagePageProps> = ({ params, navigate }) =
               </p>
             </div>
           )}
+        </div>
+      )}
+
+      {activeTab === 'discussion' && (
+        <div className="bg-background rounded-lg p-6 shadow-sm border">
+          <EventThreadView eventId={event._id} />
         </div>
       )}
 
