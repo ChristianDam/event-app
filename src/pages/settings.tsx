@@ -1,102 +1,47 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { User, Palette, Camera, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { FormField, FormInput } from "@/components/ui/form";
+import { useProfileForm } from "../hooks/useProfileForm";
 import { toast } from "sonner";
 
 export default function SettingsPage(): JSX.Element {
   const user = useQuery(api.users.viewer);
-  const updateProfile = useMutation(api.users.updateProfile);
   const updateAvatar = useMutation(api.users.updateAvatar);
   const generateUploadUrl = useMutation(api.files.generateUploadUrl);
 
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    favoriteColor: "",
-  });
-
-  const [isLoading, setIsLoading] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  // Initialize form data when user loads
-  useEffect(() => {
-    if (user) {
-      setFormData({
-        name: user.name || "",
-        email: user.email || "",
-        phone: user.phone || "",
-        favoriteColor: user.favoriteColor || "",
-      });
-    }
-  }, [user]);
-
-  // Check if form has changes
-  const hasChanges = useMemo(() => {
-    if (!user) return false;
-    return (
-      formData.name !== (user.name || "") ||
-      formData.email !== (user.email || "") ||
-      formData.phone !== (user.phone || "") ||
-      formData.favoriteColor !== (user.favoriteColor || "")
-    );
-  }, [formData, user]);
-
-  const validateForm = () => {
-    const errors: Record<string, string> = {};
-    
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = "Please enter a valid email address";
-    }
-    
-    if (formData.phone && !/^[+]?[1-9][\d]{0,20}$/.test(formData.phone.replace(/[\s\-()]/g, ""))) {
-      errors.phone = "Please enter a valid phone number";
-    }
-    
-    if (formData.name && formData.name.length < 2) {
-      errors.name = "Name must be at least 2 characters long";
-    }
-    
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user || !hasChanges) return;
-
-    if (!validateForm()) {
-      toast.error("Please fix the validation errors");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      await updateProfile({
-        name: formData.name || undefined,
-        email: formData.email || undefined,
-        phone: formData.phone || undefined,
-        favoriteColor: formData.favoriteColor || undefined,
-      });
+  const {
+    formData,
+    errors,
+    isSubmitting,
+    hasChanges,
+    handleInputChange,
+    handleSubmit,
+    resetForm,
+  } = useProfileForm({
+    initialData: user ? {
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      favoriteColor: user.favoriteColor
+    } : undefined,
+    onSuccess: () => {
       toast.success("Profile updated successfully!", {
         description: "Your changes have been saved."
       });
-      setFormErrors({});
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to update profile");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+    onError: (error) => {
+      toast.error(error || "Failed to update profile");
+    },
+  });
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -145,21 +90,7 @@ export default function SettingsPage(): JSX.Element {
     }
   };
 
-  const resetForm = () => {
-    if (user) {
-      setFormData({
-        name: user.name || "",
-        email: user.email || "",
-        phone: user.phone || "",
-        favoriteColor: user.favoriteColor || "",
-      });
-      setFormErrors({});
-    }
-  };
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
 
   if (!user) {
     return (
@@ -246,30 +177,25 @@ export default function SettingsPage(): JSX.Element {
 
               <div className="grid gap-4">
                 {/* Name */}
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
+                <FormField
+                  id="name"
+                  label="Full Name"
+                  error={errors.name}
+                >
+                  <FormInput
                     id="name"
                     type="text"
                     value={formData.name}
-                    onChange={(e) => {
-                      handleInputChange("name", e.target.value);
-                      if (formErrors.name) {
-                        setFormErrors(prev => ({ ...prev, name: "" }));
-                      }
-                    }}
+                    onChange={(e) => handleInputChange("name", e.target.value)}
                     placeholder="Enter your full name"
-                    className={formErrors.name ? "border-red-500" : ""}
+                    error={errors.name}
                   />
-                  {formErrors.name && (
-                    <p className="text-sm text-red-500">{formErrors.name}</p>
-                  )}
-                </div>
+                </FormField>
 
                 {/* Email */}
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="flex items-center gap-2">
-                    Email Address
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">Email Address</span>
                     {user.emailVerificationTime ? (
                       <Badge variant="secondary" className="text-green-600">
                         <CheckCircle className="h-3 w-3 mr-1" />
@@ -281,24 +207,19 @@ export default function SettingsPage(): JSX.Element {
                         Unverified
                       </Badge>
                     )}
-                  </Label>
-                  <Input
+                  </div>
+                  <FormInput
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => {
-                      handleInputChange("email", e.target.value);
-                      if (formErrors.email) {
-                        setFormErrors(prev => ({ ...prev, email: "" }));
-                      }
-                    }}
+                    onChange={(e) => handleInputChange("email", e.target.value)}
                     placeholder="Enter your email address"
-                    className={formErrors.email ? "border-red-500" : ""}
+                    error={errors.email}
                   />
-                  {formErrors.email && (
-                    <p className="text-sm text-red-500">{formErrors.email}</p>
+                  {errors.email && (
+                    <p className="text-sm text-red-500">{errors.email}</p>
                   )}
-                  {!user.emailVerificationTime && formData.email && !formErrors.email && (
+                  {!user.emailVerificationTime && formData.email && !errors.email && (
                     <p className="text-sm text-orange-600">
                       Please verify your email address to secure your account.
                     </p>
@@ -307,8 +228,8 @@ export default function SettingsPage(): JSX.Element {
 
                 {/* Phone */}
                 <div className="space-y-2">
-                  <Label htmlFor="phone" className="flex items-center gap-2">
-                    Phone Number
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">Phone Number</span>
                     {user.phoneVerificationTime ? (
                       <Badge variant="secondary" className="text-green-600">
                         <CheckCircle className="h-3 w-3 mr-1" />
@@ -320,24 +241,19 @@ export default function SettingsPage(): JSX.Element {
                         Unverified
                       </Badge>
                     ) : null}
-                  </Label>
-                  <Input
+                  </div>
+                  <FormInput
                     id="phone"
                     type="tel"
                     value={formData.phone}
-                    onChange={(e) => {
-                      handleInputChange("phone", e.target.value);
-                      if (formErrors.phone) {
-                        setFormErrors(prev => ({ ...prev, phone: "" }));
-                      }
-                    }}
+                    onChange={(e) => handleInputChange("phone", e.target.value)}
                     placeholder="Enter your phone number"
-                    className={formErrors.phone ? "border-red-500" : ""}
+                    error={errors.phone}
                   />
-                  {formErrors.phone && (
-                    <p className="text-sm text-red-500">{formErrors.phone}</p>
+                  {errors.phone && (
+                    <p className="text-sm text-red-500">{errors.phone}</p>
                   )}
-                  {!user.phoneVerificationTime && formData.phone && !formErrors.phone && (
+                  {!user.phoneVerificationTime && formData.phone && !errors.phone && (
                     <p className="text-sm text-orange-600">
                       Please verify your phone number for additional security.
                     </p>
@@ -346,11 +262,11 @@ export default function SettingsPage(): JSX.Element {
 
                 {/* Favorite Color */}
                 <div className="space-y-2">
-                  <Label htmlFor="favoriteColor" className="flex items-center gap-2">
+                  <div className="flex items-center gap-2">
                     <Palette className="h-4 w-4" />
-                    Favorite Color
-                  </Label>
-                  <Input
+                    <span className="text-sm font-medium">Favorite Color</span>
+                  </div>
+                  <FormInput
                     id="favoriteColor"
                     type="text"
                     value={formData.favoriteColor}
@@ -378,16 +294,16 @@ export default function SettingsPage(): JSX.Element {
                     type="button"
                     variant="outline"
                     onClick={resetForm}
-                    disabled={isLoading || !hasChanges}
+                    disabled={isSubmitting || !hasChanges}
                   >
                     Reset
                   </Button>
                   <Button 
                     type="submit" 
-                    disabled={isLoading || !hasChanges}
+                    disabled={isSubmitting || !hasChanges}
                     className="min-w-[120px]"
                   >
-                    {isLoading ? (
+                    {isSubmitting ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                         Saving...

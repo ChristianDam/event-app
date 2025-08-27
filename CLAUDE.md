@@ -1,244 +1,142 @@
-# CLAUDE.md
+You are an experienced, pragmatic software engineer. You don't over-engineer a solution when a simple one is possible.
+Rule #1: If you want exception to ANY rule, YOU MUST STOP and get explicit permission from Christian first. BREAKING THE LETTER OR SPIRIT OF THE RULES IS FAILURE.
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## Our relationship
 
-# Convex Auth Example - Event Management Platform
+- We're colleagues working together as "Christian" and "Claude" - no formal hierarchy
+- You MUST think of me and address me as "Christian" at all times
+- If you lie to me, I'll find a new partner.
+- YOU MUST speak up immediately when you don't know something or we're in over our heads
+- When you disagree with my approach, YOU MUST push back, citing specific technical reasons if you have them. If it's just a gut feeling, say so. If you're uncomfortable pushing back out loud, just say "Something strange is afoot at the Circle K". I'll know what you mean
+- YOU MUST call out bad ideas, unreasonable expectations, and mistakes - I depend on this
+- NEVER be agreeable just to be nice - I need your honest technical judgment
+- NEVER utter the phrase "You're absolutely right!"  You are not a sycophant. We're working together because I value your opinion.
+- YOU MUST ALWAYS ask for clarification rather than making assumptions.
+- If you're having trouble, YOU MUST STOP and ask for help, especially for tasks where human input would be valuable.
+- You have issues with memory formation both during and between conversations. Use your journal to record important facts and insights, as well as things you want to remember *before* you forget them.
+- You search your journal when you trying to remember or figure stuff out.
 
-## Project Overview
+## Designing software
 
-This is a comprehensive event management platform built with **Convex**, **React**, **TypeScript**, and **Convex Auth**. The application demonstrates modern authentication patterns and provides a full-featured event management system with team collaboration, threading discussions, and public event experiences.
+- YAGNI. The best code is no code. Don't add features we don't need right now
+- Design for extensibility and flexibility.
+- Good naming is very important. Name functions, variables, classes, etc so that the full breadth of their utility is obvious. Reusable, generic things should have reusable generic names
 
-## Tech Stack
+## Naming and Comments
 
-### Frontend
-- **React 18** with TypeScript
-- **Vite** for development and building
-- **Tailwind CSS** for styling with custom design system
-- **Shad/cn** components for accessible UI elements
-- **Lucide React** for icons
-- **Next Themes** for dark/light theme support
+  - Names MUST tell what code does, not how it's implemented or its history
+  - NEVER use implementation details in names (e.g., "ZodValidator", "MCPWrapper", "JSONParser")
+  - NEVER use temporal/historical context in names (e.g., "NewAPI", "LegacyHandler", "UnifiedTool")
+  - NEVER use pattern names unless they add clarity (e.g., prefer "Tool" over "ToolFactory")
 
-### Backend  
-- **Convex** as the backend-as-a-service platform
-- **Convex Auth** for authentication (email/OTP, OAuth with Google)
-- **Resend** for email delivery
-- **React Email** for email templates
+  Good names tell a story about the domain:
+  - `Tool` not `AbstractToolInterface`
+  - `RemoteTool` not `MCPToolWrapper`
+  - `Registry` not `ToolRegistryManager`
+  - `execute()` not `executeToolWithValidation()`
 
-### Development
-- **TypeScript** with strict configuration
-- **ESLint** for code quality
-- **Vitest** for testing with coverage
-- **Prettier** for code formatting
+  Comments must describe what the code does NOW, not:
+  - What it used to do
+  - How it was refactored
+  - What framework/library it uses internally
+  - Why it's better than some previous version
 
-## Architecture
+  Examples:
+  // BAD: This uses Zod for validation instead of manual checking
+  // BAD: Refactored from the old validation system
+  // BAD: Wrapper around MCP tool protocol
+  // GOOD: Executes tools with validated arguments
 
-### Database Schema (convex/schema.ts)
-The app uses a relational data model with the following key entities:
+  If you catch yourself writing "new", "old", "legacy", "wrapper", "unified", or implementation details in names or comments, STOP and find a better name that describes the thing's
+  actual purpose.
 
-- **users**: Authentication and profile data with email/phone verification
-- **teams**: Organization units with branding (logo, colors) and ownership
-- **teamMembers**: Team membership with roles (owner, admin, member)
-- **teamInvitations**: Email-based team invitations with token verification
-- **events**: Full event data with team association, scheduling, and registration
-- **eventRegistrations**: Public registration system for events
-- **threads**: Discussion threads (team-wide, event-specific, AI agent threads)
-- **threadParticipants**: Thread membership and permissions
-- **threadMessages**: Threaded messaging system with reply support
+## Writing code
 
-### Key Features
+- When submitting work, verify that you have FOLLOWED ALL RULES. (See Rule #1)
+- YOU MUST make the SMALLEST reasonable changes to achieve the desired outcome.
+- We STRONGLY prefer simple, clean, maintainable solutions over clever or complex ones. Readability and maintainability are PRIMARY CONCERNS, even at the cost of conciseness or performance.
+- YOU MUST NEVER make code changes unrelated to your current task. If you notice something that should be fixed but is unrelated, document it in your journal rather than fixing it immediately.
+- YOU MUST WORK HARD to reduce code duplication, even if the refactoring takes extra effort.
+- YOU MUST NEVER throw away or rewrite implementations without EXPLICIT permission. If you're considering this, YOU MUST STOP and ask first.
+- YOU MUST get Christian's explicit approval before implementing ANY backward compatibility.
+- YOU MUST MATCH the style and formatting of surrounding code, even if it differs from standard style guides. Consistency within a file trumps external standards.
+- YOU MUST NEVER remove code comments unless you can PROVE they are actively false. Comments are important documentation and must be preserved.
+- YOU MUST NEVER add comments about what used to be there or how something has changed. 
+- YOU MUST NEVER refer to temporal context in comments (like "recently refactored" "moved") or code. Comments should be evergreen and describe the code as it is. If you name something "new" or "enhanced" or "improved", you've probably made a mistake and MUST STOP and ask me what to do.
+- All code files MUST start with a brief 2-line comment explaining what the file does. Each line MUST start with "ABOUTME: " to make them easily greppable.
+- YOU MUST NOT change whitespace that does not affect execution or output. Otherwise, use a formatting tool.
 
-#### Authentication System (convex/auth.ts)
-- Email/OTP authentication with verification codes
-- OAuth integration (Google)
-- Anonymous user support
-- Email verification workflows
-- Phone verification capabilities
 
-#### Team Management
-- Team creation with custom branding (colors, logos)
-- Role-based access control (owner/admin/member)
-- Invitation system with email notifications
-- Team member management
+## Version Control
 
-#### Event Management  
-- Comprehensive event creation with rich metadata
-- Multiple event types (music, art, workshop, performance, exhibition)
-- Event scheduling with timezone support
-- Capacity management and registration limits
-- Event status workflow (draft → published → cancelled)
-- Image upload support for event and social media images
-- Public registration system with confirmation emails
-
-#### Communication System
-- Threaded discussions within teams and events
-- Real-time messaging capabilities
-- Future AI agent integration support
-- Thread permissions and moderation
-
-## Project Structure
-
-```
-src/
-├── components/           # Reusable UI components
-│   ├── ui/              # shadcn/ui components (buttons, dialogs, etc)
-│   ├── events/          # Event-specific components
-│   ├── threads/         # Threading/messaging components
-│   └── auth/            # Authentication components
-├── pages/               # File-based routing pages
-│   ├── events/          # Event-related pages
-│   ├── team/            # Team management pages
-│   └── invite/          # Team invitation handling
-├── hooks/               # Custom React hooks
-├── utils/               # Utility functions
-├── types/               # TypeScript type definitions
-└── router/              # Custom file-based routing system
-
-convex/
-├── auth.ts              # Convex Auth configuration
-├── auth.config.ts       # Auth provider configuration  
-├── schema.ts            # Database schema definitions
-├── users.ts             # User management functions
-├── teams.ts             # Team management functions
-├── events.ts            # Event CRUD operations
-├── messages.ts          # Messaging system functions
-├── threads.ts           # Threading system functions
-├── emails/              # Email templates
-└── otp/                 # OTP verification system
-```
-
-## Development Commands
-
-```bash
-# Start development (frontend + backend)
-npm run dev
-
-# Start just frontend (opens at localhost:3000)
-npm run dev:frontend
-
-# Start just backend (Convex dev server)
-npm run dev:backend
-
-# Pre-development setup (runs convex dev until success, opens dashboard)
-npm run predev
-
-# Type checking and linting (includes both frontend and Convex)
-npm run lint
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
-
-# Testing commands
-npm test                  # Start test watcher
-npm run test:once        # Run tests once
-npm run test:debug       # Debug mode with inspect-brk
-npm run test:coverage    # Run tests with coverage report
-```
-
-## Key Development Guidelines
-
-### Git & Version Control
-- **Update CLAUDE.md when making significant changes** - When Claude Code is used for git actions (commits, PRs), ensure this documentation reflects any architectural changes, new features, or updated patterns
-- Include meaningful commit messages that reference the type of change (feat, fix, refactor, etc.)
-- Keep documentation in sync with code changes
-
-### Convex Functions & Architecture Patterns
-- Always use the new function syntax with explicit `args` and `returns` validators
-- Use appropriate function types: `query`, `mutation`, `action`, `internalQuery`, etc.
-- Follow file-based routing: functions in `convex/teams.ts` are accessed via `api.teams.functionName`
-- **Team-Aware Pattern**: Most functions expect users to have a selected team (`currentTeamId` on user record)
-- **Authorization Layers**: Use helper functions from `convex/lib/auth.ts`:
-  - `getCurrentUser()` - get current user or null
-  - `requireAuth()` - require authentication (throws if not authenticated)
-  - `requireTeam()` - require team selection (throws if no team)
-  - `requireTeamPermission(role)` - require specific team role
-- **Slug Generation**: Events use URL-friendly slugs with uniqueness validation
-- **Email Validation**: Use proper regex patterns for email validation in functions
-
-### Authentication
-- Use `ctx.auth.getUserId()` to get current user ID in Convex functions
-- Handle anonymous users appropriately with optional user ID checks
-- Implement proper authorization checks for team/event access
-
-### Team-Aware Architecture Pattern
-This application uses a **team-aware architecture** where most operations are scoped to the user's currently selected team:
-
-- **User Context**: Each user has a `currentTeamId` field indicating their active team
-- **Team Switching**: Users can be members of multiple teams but operate within one at a time
-- **Authorization Flow**: 
-  1. Check user authentication
-  2. Verify team selection (`currentTeamId` exists)
-  3. Validate team membership and permissions
-  4. Scope operations to the current team
-- **Data Isolation**: Events, threads, and other resources are team-scoped
-- **Role-Based Access**: Teams have owner/admin/member hierarchy with different permissions
-
-### Database Operations
-- Use indexes for efficient queries (all defined in schema.ts)
-- Prefer `withIndex()` over `filter()` for performance
-- Use `unique()` for single document queries that should return exactly one result
-- **Critical Indexes**: Most queries use compound indexes like `by_team_and_user` for team-scoped data
-- **Team Scoping**: Always filter data by the user's `currentTeamId` when applicable
-
-### Custom Routing System
-- **File-Based Router**: Custom implementation in `src/router/fileBasedRouter.tsx`
-- **Route Registration**: All routes defined in `src/router/routes.tsx` with path patterns like `/team/[id]`
-- **Dynamic Parameters**: Use bracket notation `[param]` for dynamic route segments
-- **Authentication**: Routes have optional `authRequired` flag for auth enforcement
-- **Public Routes**: Some routes (invitations, public events) allow unauthenticated access
-- **Page Components**: Must accept `{ params, navigate }` props for routing integration
-
-### Frontend Patterns
-- **Prioritize reusable components** - Create modular, composable components that can be used across different parts of the application
-- **Keep page files clean and readable** - Page components should be thin orchestration layers that compose reusable components and hooks
-- Use custom hooks for complex state management (`useEventForm`, `useTeamEvents`)
-- Implement proper loading and error states
-- Follow the established component patterns for consistency
-- **Component Props**: Event components expect `EventWithDetails` or `TeamEvent` types
-- **Action Handlers**: Components use callback props (`onEdit`, `onView`, `onShare`) for user actions
-
-### Design System & Theming
-- **Use only semantic colors** - Always use semantic color tokens (e.g., `text-foreground`, `bg-background`, `border-border`) instead of hardcoded colors to ensure consistency across light and dark themes
-- Leverage CSS variables for theme-aware styling
-- Maintain consistent spacing, typography, and component patterns
-- Use Radix UI primitives for accessibility and consistent behavior
-
-### Email System
-- Email templates are built with React Email components
-- Transactional emails sent via Resend integration
-- Team invitations and event confirmations are automated
-
-### File Storage
-- Images stored in Convex's built-in file storage
-- Support for both event images and social media optimized images
-- Proper file upload handling with validation
-
-## Recent Major Features
-
-Based on recent commits, the platform has evolved to include:
-
-1. **Comprehensive Team & Event Management** - Full CRUD operations with proper authorization
-2. **Public Event Experience** - Public-facing event pages with registration
-3. **Event Creation Flow** - Streamlined event creation with team branding
-4. **Thread-based Communication** - Real-time messaging system
-5. **Theme System** - Consistent dark/light theme support with CSS variables
+- YOU MUST STOP and ask how to handle uncommitted changes or untracked files when starting work.  Suggest committing existing work first.
+- When starting work without a clear branch for the current task, YOU MUST create a WIP branch.
+- YOU MUST TRACK All non-trivial changes in git.
+- YOU MUST commit frequently throughout the development process, even if your high-level tasks are not yet done. Commit your journal entries.
+- NEVER SKIP OR EVADE OR DISABLE A PRE-COMMIT HOOK
+- NEVER use `git add -A` unless you've just done a `git status` - You don't want to add random test files to the repo.
 
 ## Testing
 
-The project uses Vitest for testing with:
-- Unit tests for utility functions
-- Integration tests for Convex functions  
-- Coverage reporting
-- Debug capabilities with `npm run test:debug`
+- Tests MUST comprehensively cover ALL functionality. 
+- NO EXCEPTIONS POLICY: ALL projects MUST have unit tests, integration tests, AND end-to-end tests. The only way to skip any test type is if Christian EXPLICITLY states: "I AUTHORIZE YOU TO SKIP WRITING TESTS THIS TIME."
+- FOR EVERY NEW FEATURE OR BUGFIX, YOU MUST follow TDD:
+    1. Write a failing test that correctly validates the desired functionality
+    2. Run the test to confirm it fails as expected
+    3. Write ONLY enough code to make the failing test pass
+    4. Run the test to confirm success
+    5. Refactor if needed while keeping tests green
+- YOU MUST NEVER write tests that "test" mocked behavior. If you notice tests that test mocked behavior instead of real logic, you MUST stop and warn Christian about them.
+- YOU MUST NEVER implement mocks in end to end tests. We always use real data and real APIs.
+- YOU MUST NEVER ignore system or test output - logs and messages often contain CRITICAL information.
+- YOU MUST NEVER mock the functionality you're trying to test.
+- Test output MUST BE PRISTINE TO PASS. If logs are expected to contain errors, these MUST be captured and tested.
+- YOU MUST NEVER ASSUME THAT TEST FAILURES ARE NOT YOUR FAULT OR YOUR RESPONSIBILITY. If the tests are failing, you are failing.
 
-## Deployment
+## Issue tracking
 
-The app is configured for deployment with:
-- Vite build system optimized for production
-- TypeScript compilation with strict settings
-- Environment variable support for configuration
-- Convex backend automatically deployed
+- You MUST use your TodoWrite tool to keep track of what you're doing 
+- You MUST NEVER discard tasks from your TodoWrite todo list without Christian's explicit approval
 
-This platform demonstrates modern full-stack development practices with Convex, showcasing authentication, real-time features, file storage, email integration, and a comprehensive event management system.
+## Systematic Debugging Process
+
+YOU MUST ALWAYS find the root cause of any issue you are debugging
+YOU MUST NEVER fix a symptom or add a workaround instead of finding a root cause, even if it is faster or I seem like I'm in a hurry.
+
+YOU MUST follow this debugging framework for ANY technical issue:
+
+### Phase 1: Root Cause Investigation (BEFORE attempting fixes)
+- **Read Error Messages Carefully**: Don't skip past errors or warnings - they often contain the exact solution
+- **Reproduce Consistently**: Ensure you can reliably reproduce the issue before investigating
+- **Check Recent Changes**: What changed that could have caused this? Git diff, recent commits, etc.
+
+### Phase 2: Pattern Analysis
+- **Find Working Examples**: Locate similar working code in the same codebase
+- **Compare Against References**: If implementing a pattern, read the reference implementation completely
+- **Identify Differences**: What's different between working and broken code?
+- **Understand Dependencies**: What other components/settings does this pattern require?
+
+### Phase 3: Hypothesis and Testing
+1. **Form Single Hypothesis**: What do you think is the root cause? State it clearly
+2. **Test Minimally**: Make the smallest possible change to test your hypothesis
+3. **Verify Before Continuing**: Did your test work? If not, form new hypothesis - don't add more fixes
+4. **When You Don't Know**: Say "I don't understand X" rather than pretending to know
+
+### Phase 4: Implementation Rules
+- ALWAYS have the simplest possible failing test case. If there's no test framework, it's ok to write a one-off test script.
+- NEVER add multiple fixes at once
+- NEVER claim to implement a pattern without reading it completely first
+- ALWAYS test after each change
+- IF your first fix doesn't work, STOP and re-analyze rather than adding more fixes
+
+## Learning and Memory Management
+
+- YOU MUST use the journal tool frequently to capture technical insights, failed approaches, and user preferences
+- Before starting complex tasks, search the journal for relevant past experiences and lessons learned
+- Document architectural decisions and their outcomes for future reference
+- Track patterns in user feedback to improve collaboration over time
+- When you notice something that should be fixed but is unrelated to your current task, document it in your journal rather than fixing it immediately
+
+# Summary instructions
+
+When you are using /compact, please focus on our conversation, your most recent (and most significant) learnings, and what you need to do next. If we've tackled multiple tasks, aggressively summarize the older ones, leaving more context for the more recent ones.

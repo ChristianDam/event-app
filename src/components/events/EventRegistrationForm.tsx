@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { useMutation } from 'convex/react';
-import { api } from '../../../convex/_generated/api';
 import { EventWithDetails } from '../../types/events';
+import { useRegistrationForm } from '../../hooks/useRegistrationForm';
+import { FormField, FormInput } from '../ui/form';
 import { toast } from 'sonner';
-// import { validateEventField } from '../../utils/eventValidation'; // Reserved for future use
 
 interface EventRegistrationFormProps {
   event: EventWithDetails;
@@ -12,141 +11,53 @@ interface EventRegistrationFormProps {
   onSuccess: () => void;
 }
 
-interface RegistrationFormData {
-  attendeeName: string;
-  attendeeEmail: string;
-  attendeePhone?: string;
-}
-
-interface RegistrationFormErrors {
-  attendeeName?: string;
-  attendeeEmail?: string;
-  attendeePhone?: string;
-  general?: string;
-}
-
 export const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
   event,
   isOpen,
   onClose,
   onSuccess,
 }) => {
-  const [formData, setFormData] = useState<RegistrationFormData>({
-    attendeeName: '',
-    attendeeEmail: '',
-    attendeePhone: '',
-  });
-  const [errors, setErrors] = useState<RegistrationFormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const registerForEvent = useMutation(api.events.registerForEvent);
-
-  const handleInputChange = (field: keyof RegistrationFormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Clear field error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-    }
-  };
-
-  const validateForm = (): RegistrationFormErrors => {
-    const newErrors: RegistrationFormErrors = {};
-
-    // Name validation
-    if (!formData.attendeeName.trim()) {
-      newErrors.attendeeName = 'Name is required';
-    } else if (formData.attendeeName.trim().length < 2) {
-      newErrors.attendeeName = 'Name must be at least 2 characters long';
-    } else if (formData.attendeeName.trim().length > 100) {
-      newErrors.attendeeName = 'Name must be less than 100 characters';
-    }
-
-    // Email validation
-    if (!formData.attendeeEmail.trim()) {
-      newErrors.attendeeEmail = 'Email is required';
-    } else {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.attendeeEmail.trim())) {
-        newErrors.attendeeEmail = 'Please enter a valid email address';
-      }
-    }
-
-    // Phone validation (optional)
-    if (formData.attendeePhone && formData.attendeePhone.trim()) {
-      const phoneRegex = /^[+]?[1-9][\d]{0,15}$/;
-      if (!phoneRegex.test(formData.attendeePhone.replace(/\s/g, ''))) {
-        newErrors.attendeePhone = 'Please enter a valid phone number';
-      }
-    }
-
-    return newErrors;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (isSubmitting) return;
-
-    // Validate form
-    const formErrors = validateForm();
-    if (Object.keys(formErrors).length > 0) {
-      setErrors(formErrors);
-      return;
-    }
-
-    setIsSubmitting(true);
-    setErrors({});
-
-    try {
-      await registerForEvent({
-        eventId: event._id,
-        attendeeName: formData.attendeeName.trim(),
-        attendeeEmail: formData.attendeeEmail.toLowerCase().trim(),
-        attendeePhone: formData.attendeePhone?.trim() || undefined,
-      });
-
-      // Show success state
-      setShowSuccess(true);
+  const {
+    formData,
+    errors,
+    isValid,
+    isSubmitting,
+    handleInputChange,
+    handleSubmit,
+    resetForm,
+  } = useRegistrationForm({
+    eventId: event._id,
+    onSuccess: () => {
       toast.success('Registration successful!', {
-        description: `You're registered for ${event.title}. Check your email for confirmation.`,
+        description: 'You have been registered for this event.',
       });
-      
-      // Call success callback after a delay
+      setShowSuccess(true);
       setTimeout(() => {
         onSuccess();
-        handleClose();
+        resetForm();
+        setShowSuccess(false);
+        onClose();
       }, 2000);
-
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error('Registration failed:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Registration failed. Please try again.';
-      setErrors({ 
-        general: errorMessage
-      });
       toast.error('Registration failed', {
-        description: errorMessage,
+        description: error || 'Please check your input and try again.',
       });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    },
+  });
 
   const handleClose = () => {
-    setFormData({
-      attendeeName: '',
-      attendeeEmail: '',
-      attendeePhone: '',
-    });
-    setErrors({});
+    resetForm();
     setShowSuccess(false);
-    setIsSubmitting(false);
     onClose();
+  };
+
+  const onFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await handleSubmit();
   };
 
   if (!isOpen) return null;
@@ -196,86 +107,59 @@ export const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
             </div>
 
             {/* Form */}
-            <form onSubmit={(e) => void handleSubmit(e)} className="p-6 space-y-4">
-              {/* General Error */}
-              {errors.general && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2 text-red-800">
-                    <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className="text-sm font-medium">{errors.general}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Name Field */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Full Name *
-                </label>
-                <input
+            <form onSubmit={(e) => { void onFormSubmit(e); }} className="p-6 space-y-4">
+              <FormField
+                id="attendeeName"
+                label="Full Name"
+                required
+                error={errors.attendeeName}
+              >
+                <FormInput
+                  id="attendeeName"
                   type="text"
                   value={formData.attendeeName}
                   onChange={(e) => handleInputChange('attendeeName', e.target.value)}
                   placeholder="Enter your full name"
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:border-transparent ${
-                    errors.attendeeName 
-                      ? 'border-red-300 focus:ring-red-500' 
-                      : 'border-gray-300 focus:ring-blue-500'
-                  }`}
+                  error={errors.attendeeName}
                   disabled={isSubmitting}
-                  required
+                  className="p-3"
                 />
-                {errors.attendeeName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.attendeeName}</p>
-                )}
-              </div>
+              </FormField>
 
-              {/* Email Field */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address *
-                </label>
-                <input
+              <FormField
+                id="attendeeEmail"
+                label="Email Address"
+                required
+                error={errors.attendeeEmail}
+              >
+                <FormInput
+                  id="attendeeEmail"
                   type="email"
                   value={formData.attendeeEmail}
                   onChange={(e) => handleInputChange('attendeeEmail', e.target.value)}
                   placeholder="Enter your email address"
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:border-transparent ${
-                    errors.attendeeEmail 
-                      ? 'border-red-300 focus:ring-red-500' 
-                      : 'border-gray-300 focus:ring-blue-500'
-                  }`}
+                  error={errors.attendeeEmail}
                   disabled={isSubmitting}
-                  required
+                  className="p-3"
                 />
-                {errors.attendeeEmail && (
-                  <p className="mt-1 text-sm text-red-600">{errors.attendeeEmail}</p>
-                )}
-              </div>
+              </FormField>
 
-              {/* Phone Field (Optional) */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone Number (Optional)
-                </label>
-                <input
+              <FormField
+                id="attendeePhone"
+                label="Phone Number (Optional)"
+                error={errors.attendeePhone}
+              >
+                <FormInput
+                  id="attendeePhone"
                   type="tel"
                   value={formData.attendeePhone || ''}
                   onChange={(e) => handleInputChange('attendeePhone', e.target.value)}
                   placeholder="Enter your phone number"
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:border-transparent ${
-                    errors.attendeePhone 
-                      ? 'border-red-300 focus:ring-red-500' 
-                      : 'border-gray-300 focus:ring-blue-500'
-                  }`}
+                  error={errors.attendeePhone}
                   disabled={isSubmitting}
+                  className="p-3"
                 />
-                {errors.attendeePhone && (
-                  <p className="mt-1 text-sm text-red-600">{errors.attendeePhone}</p>
-                )}
-              </div>
+              </FormField>
 
               {/* Event Info Summary */}
               <div className="bg-gray-50 rounded-lg p-4 border">
@@ -297,7 +181,7 @@ export const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !isValid}
                 className="w-full py-3 px-4 text-white font-semibold rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: event.team.primaryColor || '#3b82f6' }}
               >
