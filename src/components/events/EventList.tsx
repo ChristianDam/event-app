@@ -1,13 +1,20 @@
-import React, { useState, useMemo } from 'react';
-import { Id } from '../../../convex/_generated/dataModel';
-import { EventStatus, EventType, eventTypeOptions, eventStatusOptions, TeamEvent } from '../../types/events';
-import { useTeamEvents } from '../../hooks/useTeamEvents';
-import { EventCard } from './EventCard';
+import type React from "react";
+import { useMemo, useState } from "react";
+import type { Id } from "../../../convex/_generated/dataModel";
+import { useTeamEvents } from "../../hooks/useTeamEvents";
+import {
+  type EventStatus,
+  type EventType,
+  eventStatusOptions,
+  eventTypeOptions,
+  type TeamEvent,
+} from "../../types/events";
+import { EventCard } from "./EventCard";
 
 interface EventListProps {
   teamId: Id<"teams">;
   navigate?: (to: string) => void;
-  view?: 'grid' | 'list';
+  view?: "grid" | "list";
   limit?: number;
   showFilters?: boolean;
   onEventEdit?: (eventId: Id<"events">) => void;
@@ -20,33 +27,35 @@ interface EventListProps {
 interface FilterState {
   status: EventStatus[];
   eventType: EventType[];
-  timeRange: 'all' | 'upcoming' | 'past';
+  timeRange: "all" | "upcoming" | "past";
   search: string;
 }
 
 export const EventList: React.FC<EventListProps> = ({
   teamId,
   navigate,
-  view = 'grid',
+  view = "grid",
   limit,
   showFilters = true,
   onEventEdit,
   onEventView,
   onEventShare,
   onEventDuplicate,
-  className = '',
+  className = "",
 }) => {
   const { events, isLoading } = useTeamEvents(teamId);
-  
+
   const [filters, setFilters] = useState<FilterState>({
     status: [],
     eventType: [],
-    timeRange: 'all',
-    search: '',
+    timeRange: "all",
+    search: "",
   });
 
-  const [sortBy, setSortBy] = useState<'startTime' | 'createdAt' | 'registrationCount'>('startTime');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [sortBy, setSortBy] = useState<
+    "startTime" | "createdAt" | "registrationCount"
+  >("startTime");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   // Filter and sort events
   const filteredEvents = useMemo(() => {
@@ -59,16 +68,19 @@ export const EventList: React.FC<EventListProps> = ({
       }
 
       // Event type filter
-      if (filters.eventType.length > 0 && !filters.eventType.includes(event.eventType)) {
+      if (
+        filters.eventType.length > 0 &&
+        !filters.eventType.includes(event.eventType)
+      ) {
         return false;
       }
 
       // Time range filter
       const now = Date.now();
-      if (filters.timeRange === 'upcoming' && event.startTime <= now) {
+      if (filters.timeRange === "upcoming" && event.startTime <= now) {
         return false;
       }
-      if (filters.timeRange === 'past' && event.startTime > now) {
+      if (filters.timeRange === "past" && event.startTime > now) {
         return false;
       }
 
@@ -91,15 +103,15 @@ export const EventList: React.FC<EventListProps> = ({
       let bValue: number;
 
       switch (sortBy) {
-        case 'startTime':
+        case "startTime":
           aValue = a.startTime;
           bValue = b.startTime;
           break;
-        case 'createdAt':
+        case "createdAt":
           aValue = a.createdAt;
           bValue = b.createdAt;
           break;
-        case 'registrationCount':
+        case "registrationCount":
           aValue = a.registrationCount;
           bValue = b.registrationCount;
           break;
@@ -108,7 +120,7 @@ export const EventList: React.FC<EventListProps> = ({
           bValue = b.startTime;
       }
 
-      return sortOrder === 'desc' ? bValue - aValue : aValue - bValue;
+      return sortOrder === "desc" ? bValue - aValue : aValue - bValue;
     });
 
     // Apply limit if specified
@@ -120,21 +132,23 @@ export const EventList: React.FC<EventListProps> = ({
   }, [events, filters, sortBy, sortOrder, limit]);
 
   const updateFilter = (key: keyof FilterState, value: any) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
   const toggleStatusFilter = (status: EventStatus) => {
-    updateFilter('status', 
-      filters.status.includes(status) 
-        ? filters.status.filter(s => s !== status)
+    updateFilter(
+      "status",
+      filters.status.includes(status)
+        ? filters.status.filter((s) => s !== status)
         : [...filters.status, status]
     );
   };
 
   const toggleEventTypeFilter = (eventType: EventType) => {
-    updateFilter('eventType',
+    updateFilter(
+      "eventType",
       filters.eventType.includes(eventType)
-        ? filters.eventType.filter(t => t !== eventType)
+        ? filters.eventType.filter((t) => t !== eventType)
         : [...filters.eventType, eventType]
     );
   };
@@ -143,20 +157,26 @@ export const EventList: React.FC<EventListProps> = ({
     setFilters({
       status: [],
       eventType: [],
-      timeRange: 'all',
-      search: '',
+      timeRange: "all",
+      search: "",
     });
   };
 
-  const hasActiveFilters = filters.status.length > 0 || filters.eventType.length > 0 || 
-    filters.timeRange !== 'all' || filters.search.trim() !== '';
+  const hasActiveFilters =
+    filters.status.length > 0 ||
+    filters.eventType.length > 0 ||
+    filters.timeRange !== "all" ||
+    filters.search.trim() !== "";
 
   if (isLoading) {
     return (
       <div className={`space-y-4 ${className}`}>
         {/* Loading skeleton */}
         {Array.from({ length: limit || 6 }).map((_, i) => (
-          <div key={i} className="bg-white rounded-lg border border-gray-200 p-6 animate-pulse">
+          <div
+            key={i}
+            className="bg-white rounded-lg border border-gray-200 p-6 animate-pulse"
+          >
             <div className="h-4 bg-gray-200 rounded w-3/4 mb-3" />
             <div className="h-3 bg-gray-200 rounded w-full mb-2" />
             <div className="h-3 bg-gray-200 rounded w-2/3 mb-4" />
@@ -179,15 +199,25 @@ export const EventList: React.FC<EventListProps> = ({
           <div className="mb-4">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <svg
+                  className="h-5 w-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
                 </svg>
               </div>
               <input
                 type="text"
                 placeholder="Search events..."
                 value={filters.search}
-                onChange={(e) => updateFilter('search', e.target.value)}
+                onChange={(e) => updateFilter("search", e.target.value)}
                 className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
@@ -199,7 +229,12 @@ export const EventList: React.FC<EventListProps> = ({
               <label className="text-sm font-medium text-gray-700">Time:</label>
               <select
                 value={filters.timeRange}
-                onChange={(e) => updateFilter('timeRange', e.target.value as FilterState['timeRange'])}
+                onChange={(e) =>
+                  updateFilter(
+                    "timeRange",
+                    e.target.value as FilterState["timeRange"]
+                  )
+                }
                 className="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="all">All Events</option>
@@ -210,16 +245,18 @@ export const EventList: React.FC<EventListProps> = ({
 
             {/* Status Filters */}
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">Status:</label>
+              <label className="text-sm font-medium text-gray-700">
+                Status:
+              </label>
               <div className="flex gap-1">
-                {eventStatusOptions.map(option => (
+                {eventStatusOptions.map((option) => (
                   <button
                     key={option.value}
                     onClick={() => toggleStatusFilter(option.value)}
                     className={`text-xs px-3 py-1 rounded-full transition-colors ${
                       filters.status.includes(option.value)
-                        ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        ? "bg-blue-100 text-blue-800 border border-blue-200"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                     }`}
                   >
                     {option.label}
@@ -232,14 +269,14 @@ export const EventList: React.FC<EventListProps> = ({
             <div className="flex items-center gap-2">
               <label className="text-sm font-medium text-gray-700">Type:</label>
               <div className="flex gap-1 flex-wrap">
-                {eventTypeOptions.map(option => (
+                {eventTypeOptions.map((option) => (
                   <button
                     key={option.value}
                     onClick={() => toggleEventTypeFilter(option.value)}
                     className={`text-xs px-3 py-1 rounded-full transition-colors flex items-center gap-1 ${
                       filters.eventType.includes(option.value)
-                        ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        ? "bg-blue-100 text-blue-800 border border-blue-200"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                     }`}
                   >
                     <span>{option.icon}</span>
@@ -262,10 +299,12 @@ export const EventList: React.FC<EventListProps> = ({
                 <option value="registrationCount">Registrations</option>
               </select>
               <button
-                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                onClick={() =>
+                  setSortOrder(sortOrder === "asc" ? "desc" : "asc")
+                }
                 className="p-1 text-gray-500 hover:text-gray-700"
               >
-                {sortOrder === 'desc' ? '↓' : '↑'}
+                {sortOrder === "desc" ? "↓" : "↑"}
               </button>
             </div>
 
@@ -285,18 +324,19 @@ export const EventList: React.FC<EventListProps> = ({
       {/* Results count */}
       <div className="flex justify-between items-center mb-4">
         <p className="text-sm text-gray-600">
-          {filteredEvents.length} event{filteredEvents.length !== 1 ? 's' : ''} found
+          {filteredEvents.length} event{filteredEvents.length !== 1 ? "s" : ""}{" "}
+          found
           {hasActiveFilters && ` (filtered from ${events.length} total)`}
         </p>
-        
+
         {!showFilters && (
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+              onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
               className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100"
-              title={`Sort ${sortOrder === 'desc' ? 'ascending' : 'descending'}`}
+              title={`Sort ${sortOrder === "desc" ? "ascending" : "descending"}`}
             >
-              {sortOrder === 'desc' ? '↓' : '↑'}
+              {sortOrder === "desc" ? "↓" : "↑"}
             </button>
           </div>
         )}
@@ -306,12 +346,13 @@ export const EventList: React.FC<EventListProps> = ({
       {filteredEvents.length === 0 ? (
         <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
           <div className="text-6xl text-gray-300 mb-4">📅</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No events found</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            No events found
+          </h3>
           <p className="text-gray-600 mb-4">
-            {hasActiveFilters 
-              ? 'Try adjusting your filters to see more events.'
-              : 'Get started by creating your first event.'
-            }
+            {hasActiveFilters
+              ? "Try adjusting your filters to see more events."
+              : "Get started by creating your first event."}
           </p>
           {hasActiveFilters && (
             <button
@@ -323,12 +364,14 @@ export const EventList: React.FC<EventListProps> = ({
           )}
         </div>
       ) : (
-        <div className={
-          view === 'grid' 
-            ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
-            : 'space-y-4'
-        }>
-          {filteredEvents.map(event => (
+        <div
+          className={
+            view === "grid"
+              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              : "space-y-4"
+          }
+        >
+          {filteredEvents.map((event) => (
             <EventCard
               key={event._id}
               event={event}
@@ -336,8 +379,10 @@ export const EventList: React.FC<EventListProps> = ({
               onEdit={onEventEdit ? () => onEventEdit(event._id) : undefined}
               onView={onEventView ? () => onEventView(event._id) : undefined}
               onShare={onEventShare ? () => onEventShare(event._id) : undefined}
-              onDuplicate={onEventDuplicate ? () => onEventDuplicate(event._id) : undefined}
-              className={view === 'list' ? 'max-w-none' : ''}
+              onDuplicate={
+                onEventDuplicate ? () => onEventDuplicate(event._id) : undefined
+              }
+              className={view === "list" ? "max-w-none" : ""}
             />
           ))}
         </div>

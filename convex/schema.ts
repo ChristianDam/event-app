@@ -1,6 +1,6 @@
+import { authTables } from "@convex-dev/auth/server";
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-import { authTables } from "@convex-dev/auth/server";
 
 export default defineSchema({
   ...authTables,
@@ -97,7 +97,11 @@ export default defineSchema({
     email: v.string(),
     token: v.string(),
     role: v.union(v.literal("admin"), v.literal("member")),
-    status: v.union(v.literal("pending"), v.literal("accepted"), v.literal("expired")),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("accepted"),
+      v.literal("expired")
+    ),
     expiresAt: v.number(),
     createdAt: v.number(),
   })

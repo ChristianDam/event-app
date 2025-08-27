@@ -1,3 +1,5 @@
+import { useAuthActions } from "@convex-dev/auth/react";
+import { useState } from "react";
 import { CodeInput } from "@/auth/CodeInput";
 import { SignInMethodDivider } from "@/auth/SignInMethodDivider";
 import { SignInWithEmailCode } from "@/auth/SignInWithEmailCode";
@@ -5,8 +7,6 @@ import { SignInWithOAuth } from "@/auth/SignInWithOAuth";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/components/ui/use-toast";
-import { useAuthActions } from "@convex-dev/auth/react";
-import { useState } from "react";
 
 export function SignInFormEmailCode() {
   const { signIn } = useAuthActions();

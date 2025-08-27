@@ -1,19 +1,19 @@
-import { useState, useEffect, useRef } from "react";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-import { Id } from "../../../convex/_generated/dataModel";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { 
-  PersonIcon, 
-  ChatBubbleIcon, 
+import {
+  ChatBubbleIcon,
   DotsVerticalIcon,
   Pencil1Icon,
+  PersonIcon,
+  Share1Icon,
   TrashIcon,
-  Share1Icon
 } from "@radix-ui/react-icons";
+import { useMutation, useQuery } from "convex/react";
+import { useEffect, useRef, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { api } from "../../../convex/_generated/api";
+import type { Id } from "../../../convex/_generated/dataModel";
 
 interface ThreadMessagesProps {
   threadId: Id<"threads">;
@@ -43,7 +43,13 @@ interface MessageProps {
   onDelete: (messageId: Id<"threadMessages">) => void;
 }
 
-function ThreadMessage({ message, currentUserId, onReply, onEdit, onDelete }: MessageProps) {
+function ThreadMessage({
+  message,
+  currentUserId,
+  onReply,
+  onEdit,
+  onDelete,
+}: MessageProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(message.content);
@@ -56,7 +62,7 @@ function ThreadMessage({ message, currentUserId, onReply, onEdit, onDelete }: Me
     const date = new Date(timestamp);
     const now = new Date();
     const diffInMinutes = (now.getTime() - date.getTime()) / (1000 * 60);
-    
+
     if (diffInMinutes < 1) {
       return "Just now";
     } else if (diffInMinutes < 60) {
@@ -75,7 +81,9 @@ function ThreadMessage({ message, currentUserId, onReply, onEdit, onDelete }: Me
     setIsEditing(false);
   };
 
-  const getAuthorDisplay = (msg: typeof message | typeof message.replies[0]) => {
+  const getAuthorDisplay = (
+    msg: typeof message | (typeof message.replies)[0]
+  ) => {
     if (msg.messageType === "system") {
       return "System";
     } else if (msg.messageType === "ai") {
@@ -87,17 +95,23 @@ function ThreadMessage({ message, currentUserId, onReply, onEdit, onDelete }: Me
 
   const getMessageTypeColor = (type: "text" | "system" | "ai") => {
     switch (type) {
-      case "system": return "bg-muted/50 text-muted-foreground border-border";
-      case "ai": return "bg-accent/50 text-accent-foreground border-border";
-      default: return "";
+      case "system":
+        return "bg-muted/50 text-muted-foreground border-border";
+      case "ai":
+        return "bg-accent/50 text-accent-foreground border-border";
+      default:
+        return "";
     }
   };
 
   return (
-    <div className={cn(
-      "group relative p-4 border-b last:border-b-0",
-      message.messageType !== "text" && getMessageTypeColor(message.messageType)
-    )}>
+    <div
+      className={cn(
+        "group relative p-4 border-b last:border-b-0",
+        message.messageType !== "text" &&
+          getMessageTypeColor(message.messageType)
+      )}
+    >
       <div className="flex items-start space-x-3">
         {/* Avatar */}
         <div className="flex-shrink-0">
@@ -126,7 +140,9 @@ function ThreadMessage({ message, currentUserId, onReply, onEdit, onDelete }: Me
               {formatTime(message.createdAt)}
             </span>
             {message.editedAt && (
-              <Badge variant="secondary" className="text-xs">edited</Badge>
+              <Badge variant="secondary" className="text-xs">
+                edited
+              </Badge>
             )}
           </div>
 
@@ -141,11 +157,17 @@ function ThreadMessage({ message, currentUserId, onReply, onEdit, onDelete }: Me
                 autoFocus
               />
               <div className="flex space-x-2">
-                <Button size="sm" onClick={handleEdit}>Save</Button>
-                <Button size="sm" variant="outline" onClick={() => {
-                  setIsEditing(false);
-                  setEditContent(message.content);
-                }}>
+                <Button size="sm" onClick={handleEdit}>
+                  Save
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setEditContent(message.content);
+                  }}
+                >
                   Cancel
                 </Button>
               </div>
@@ -160,7 +182,10 @@ function ThreadMessage({ message, currentUserId, onReply, onEdit, onDelete }: Me
           {message.replies.length > 0 && (
             <div className="mt-3 space-y-2">
               {message.replies.map((reply) => (
-                <div key={reply._id} className="flex items-start space-x-2 pl-4 border-l-2 border-muted">
+                <div
+                  key={reply._id}
+                  className="flex items-start space-x-2 pl-4 border-l-2 border-muted"
+                >
                   <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-secondary-foreground text-xs">
                     {getAuthorDisplay(reply).charAt(0).toUpperCase()}
                   </div>
@@ -209,7 +234,7 @@ function ThreadMessage({ message, currentUserId, onReply, onEdit, onDelete }: Me
                   <Share1Icon className="h-3 w-3 mr-2" />
                   Reply
                 </Button>
-                
+
                 {canEdit && (
                   <Button
                     variant="ghost"
@@ -224,14 +249,16 @@ function ThreadMessage({ message, currentUserId, onReply, onEdit, onDelete }: Me
                     Edit
                   </Button>
                 )}
-                
+
                 {canDelete && (
                   <Button
                     variant="ghost"
                     size="sm"
                     className="w-full justify-start text-left px-3 py-2 text-destructive hover:text-destructive hover:bg-destructive/10"
                     onClick={() => {
-                      if (confirm("Are you sure you want to delete this message?")) {
+                      if (
+                        confirm("Are you sure you want to delete this message?")
+                      ) {
                         onDelete(message._id);
                       }
                       setShowMenu(false);
@@ -249,10 +276,7 @@ function ThreadMessage({ message, currentUserId, onReply, onEdit, onDelete }: Me
 
       {/* Click outside to close menu */}
       {showMenu && (
-        <div 
-          className="fixed inset-0 z-5" 
-          onClick={() => setShowMenu(false)} 
-        />
+        <div className="fixed inset-0 z-5" onClick={() => setShowMenu(false)} />
       )}
     </div>
   );
@@ -263,10 +287,10 @@ export function ThreadMessages({ threadId }: ThreadMessagesProps) {
   const messagesRef = useRef<HTMLDivElement>(null);
   const user = useQuery(api.users.viewer);
   const userId = user?._id;
-  
-  const messages = useQuery(api.messages.getThreadMessages, { 
+
+  const messages = useQuery(api.messages.getThreadMessages, {
     threadId,
-    paginationOpts: { numItems: 50, cursor }
+    paginationOpts: { numItems: 50, cursor },
   });
 
   const editMessage = useMutation(api.messages.editMessage);
@@ -278,7 +302,7 @@ export function ThreadMessages({ threadId }: ThreadMessagesProps) {
     if (messagesRef.current && messages?.page) {
       const { scrollTop, scrollHeight, clientHeight } = messagesRef.current;
       const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
-      
+
       if (isNearBottom) {
         messagesRef.current.scrollTo({
           top: messagesRef.current.scrollHeight,
@@ -297,7 +321,10 @@ export function ThreadMessages({ threadId }: ThreadMessagesProps) {
     console.log("Reply to message:", messageId);
   };
 
-  const handleEdit = async (messageId: Id<"threadMessages">, content: string) => {
+  const handleEdit = async (
+    messageId: Id<"threadMessages">,
+    content: string
+  ) => {
     try {
       await editMessage({ messageId, content });
     } catch (error) {
@@ -319,7 +346,9 @@ export function ThreadMessages({ threadId }: ThreadMessagesProps) {
     return (
       <Card className="h-96">
         <CardContent className="flex items-center justify-center h-full">
-          <div className="text-center text-muted-foreground">Loading messages...</div>
+          <div className="text-center text-muted-foreground">
+            Loading messages...
+          </div>
         </CardContent>
       </Card>
     );
@@ -328,15 +357,15 @@ export function ThreadMessages({ threadId }: ThreadMessagesProps) {
   return (
     <div className="flex flex-col h-96">
       {/* Messages Container */}
-      <div 
+      <div
         ref={messagesRef}
         className="flex-1 overflow-y-auto border rounded-lg bg-background"
       >
         {/* Load More Messages */}
         {!messages.isDone && (
           <div className="text-center p-4 border-b">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               onClick={() => setCursor(messages.continueCursor)}
             >

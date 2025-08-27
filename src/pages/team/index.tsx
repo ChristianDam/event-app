@@ -1,10 +1,24 @@
+import {
+  Calendar,
+  Mail,
+  Settings,
+  Shield,
+  Trash2,
+  UserPlus,
+  Users,
+} from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Users, UserPlus, Mail, Shield, Calendar, Trash2 } from "lucide-react";
 
 interface TeamPageProps {
   params: Record<string, string>;
@@ -13,7 +27,7 @@ interface TeamPageProps {
 
 export default function TeamPage({}: TeamPageProps) {
   const [inviteEmail, setInviteEmail] = useState("");
-  
+
   // Mock data - replace with actual queries when backend is ready
   const teamSettings = {
     name: "Product Team",
@@ -31,26 +45,26 @@ export default function TeamPage({}: TeamPageProps) {
       role: "Owner",
       joinedAt: "2023-01-15",
       lastSeen: "2024-01-10",
-      isActive: true
+      isActive: true,
     },
     {
-      _id: "2", 
+      _id: "2",
       name: "Jane Smith",
       email: "jane@example.com",
       role: "Admin",
       joinedAt: "2023-02-20",
       lastSeen: "2024-01-09",
-      isActive: true
+      isActive: true,
     },
     {
       _id: "3",
       name: "Bob Wilson",
-      email: "bob@example.com", 
+      email: "bob@example.com",
       role: "Member",
       joinedAt: "2023-06-10",
       lastSeen: "2024-01-08",
-      isActive: false
-    }
+      isActive: false,
+    },
   ];
 
   const handleInviteMember = () => {
@@ -75,10 +89,14 @@ export default function TeamPage({}: TeamPageProps) {
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case "Owner": return "default";
-      case "Admin": return "secondary"; 
-      case "Member": return "outline";
-      default: return "outline";
+      case "Owner":
+        return "default";
+      case "Admin":
+        return "secondary";
+      case "Member":
+        return "outline";
+      default:
+        return "outline";
     }
   };
 
@@ -142,13 +160,16 @@ export default function TeamPage({}: TeamPageProps) {
             <CardContent>
               <div className="space-y-4">
                 {teamMembers.map((member) => (
-                  <div 
+                  <div
                     key={member._id}
                     className="flex items-center justify-between p-4 border rounded-lg"
                   >
                     <div className="flex items-center gap-4">
                       <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-medium">
-                        {member.name.split(" ").map(n => n[0]).join("")}
+                        {member.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
@@ -160,25 +181,32 @@ export default function TeamPage({}: TeamPageProps) {
                             <Badge variant="outline">Inactive</Badge>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground">{member.email}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {member.email}
+                        </p>
                         <p className="text-xs text-muted-foreground">
                           Joined {member.joinedAt} • Last seen {member.lastSeen}
                         </p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
                       {member.role !== "Owner" && (
                         <>
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleUpdateRole(member._id, 
-                              member.role === "Admin" ? "Member" : "Admin"
-                            )}
+                            onClick={() =>
+                              handleUpdateRole(
+                                member._id,
+                                member.role === "Admin" ? "Member" : "Admin"
+                              )
+                            }
                           >
                             <Shield className="mr-2 h-4 w-4" />
-                            {member.role === "Admin" ? "Make Member" : "Make Admin"}
+                            {member.role === "Admin"
+                              ? "Make Member"
+                              : "Make Admin"}
                           </Button>
                           <Button
                             variant="outline"
@@ -217,7 +245,11 @@ export default function TeamPage({}: TeamPageProps) {
               </div>
               <div>
                 <label className="text-sm font-medium">Primary Color</label>
-                <Input type="color" defaultValue={teamSettings.primaryColor} className="w-20" />
+                <Input
+                  type="color"
+                  defaultValue={teamSettings.primaryColor}
+                  className="w-20"
+                />
               </div>
               <Button>Save Changes</Button>
             </CardContent>
@@ -235,13 +267,19 @@ export default function TeamPage({}: TeamPageProps) {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="text-center p-4 border rounded-lg">
                   <Users className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                  <div className="text-2xl font-bold">{teamSettings.memberCount}</div>
-                  <div className="text-sm text-muted-foreground">Total Members</div>
+                  <div className="text-2xl font-bold">
+                    {teamSettings.memberCount}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Total Members
+                  </div>
                 </div>
                 <div className="text-center p-4 border rounded-lg">
                   <Calendar className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                   <div className="text-2xl font-bold">24</div>
-                  <div className="text-sm text-muted-foreground">Events This Month</div>
+                  <div className="text-sm text-muted-foreground">
+                    Events This Month
+                  </div>
                 </div>
                 <div className="text-center p-4 border rounded-lg">
                   <Shield className="h-8 w-8 mx-auto text-muted-foreground mb-2" />

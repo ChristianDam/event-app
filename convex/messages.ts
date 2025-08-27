@@ -1,6 +1,6 @@
-import { query, mutation, internalMutation } from "./_generated/server";
-import { v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
+import { v } from "convex/values";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { requireAuth } from "./lib/auth";
 
 // Thread Message Functions
@@ -11,26 +11,38 @@ export const getThreadMessages = query({
     paginationOpts: paginationOptsValidator,
   },
   returns: v.object({
-    page: v.array(v.object({
-      _id: v.id("threadMessages"),
-      threadId: v.id("threads"),
-      authorId: v.optional(v.id("users")),
-      content: v.string(),
-      messageType: v.union(v.literal("text"), v.literal("system"), v.literal("ai")),
-      replyToId: v.optional(v.id("threadMessages")),
-      editedAt: v.optional(v.number()),
-      createdAt: v.number(),
-      authorName: v.optional(v.string()),
-      authorEmail: v.optional(v.string()),
-      replies: v.array(v.object({
+    page: v.array(
+      v.object({
         _id: v.id("threadMessages"),
+        threadId: v.id("threads"),
         authorId: v.optional(v.id("users")),
         content: v.string(),
-        messageType: v.union(v.literal("text"), v.literal("system"), v.literal("ai")),
+        messageType: v.union(
+          v.literal("text"),
+          v.literal("system"),
+          v.literal("ai")
+        ),
+        replyToId: v.optional(v.id("threadMessages")),
+        editedAt: v.optional(v.number()),
         createdAt: v.number(),
         authorName: v.optional(v.string()),
-      })),
-    })),
+        authorEmail: v.optional(v.string()),
+        replies: v.array(
+          v.object({
+            _id: v.id("threadMessages"),
+            authorId: v.optional(v.id("users")),
+            content: v.string(),
+            messageType: v.union(
+              v.literal("text"),
+              v.literal("system"),
+              v.literal("ai")
+            ),
+            createdAt: v.number(),
+            authorName: v.optional(v.string()),
+          })
+        ),
+      })
+    ),
     isDone: v.boolean(),
     continueCursor: v.string(),
   }),
@@ -40,7 +52,9 @@ export const getThreadMessages = query({
     // Verify user is a participant in the thread
     const participation = await ctx.db
       .query("threadParticipants")
-      .withIndex("by_thread_and_user", (q) => q.eq("threadId", args.threadId).eq("userId", user._id))
+      .withIndex("by_thread_and_user", (q) =>
+        q.eq("threadId", args.threadId).eq("userId", user._id)
+      )
       .unique();
 
     if (!participation) {
@@ -50,7 +64,9 @@ export const getThreadMessages = query({
     // Get paginated messages (excluding replies, we'll fetch those separately)
     const result = await ctx.db
       .query("threadMessages")
-      .withIndex("by_thread_and_created", (q) => q.eq("threadId", args.threadId))
+      .withIndex("by_thread_and_created", (q) =>
+        q.eq("threadId", args.threadId)
+      )
       .filter((q) => q.eq(q.field("replyToId"), undefined))
       .order("desc")
       .paginate(args.paginationOpts);
@@ -63,7 +79,8 @@ export const getThreadMessages = query({
         if (message.authorId) {
           const author = await ctx.db.get(message.authorId);
           if (author) {
-            authorName = author.name ?? author.email ?? author.phone ?? "Anonymous";
+            authorName =
+              author.name ?? author.email ?? author.phone ?? "Anonymous";
             authorEmail = author.email;
           }
         } else if (message.messageType === "ai") {
@@ -86,7 +103,11 @@ export const getThreadMessages = query({
             if (reply.authorId) {
               const replyAuthor = await ctx.db.get(reply.authorId);
               if (replyAuthor) {
-                replyAuthorName = replyAuthor.name ?? replyAuthor.email ?? replyAuthor.phone ?? "Anonymous";
+                replyAuthorName =
+                  replyAuthor.name ??
+                  replyAuthor.email ??
+                  replyAuthor.phone ??
+                  "Anonymous";
               }
             } else if (reply.messageType === "ai") {
               replyAuthorName = "AI Assistant";
@@ -142,7 +163,9 @@ export const sendMessage = mutation({
     // Verify user is a participant in the thread
     const participation = await ctx.db
       .query("threadParticipants")
-      .withIndex("by_thread_and_user", (q) => q.eq("threadId", args.threadId).eq("userId", user._id))
+      .withIndex("by_thread_and_user", (q) =>
+        q.eq("threadId", args.threadId).eq("userId", user._id)
+      )
       .unique();
 
     if (!participation) {
@@ -235,7 +258,9 @@ export const deleteMessage = mutation({
     const isAuthor = message.authorId === user._id;
     const participation = await ctx.db
       .query("threadParticipants")
-      .withIndex("by_thread_and_user", (q) => q.eq("threadId", message.threadId).eq("userId", user._id))
+      .withIndex("by_thread_and_user", (q) =>
+        q.eq("threadId", message.threadId).eq("userId", user._id)
+      )
       .unique();
 
     const isThreadAdmin = participation?.role === "admin";
@@ -296,15 +321,17 @@ export const sendSystemMessage = internalMutation({
 // Legacy functions for backward compatibility (deprecated)
 export const list = query({
   args: {},
-  returns: v.array(v.object({
-    _id: v.id("threadMessages"),
-    body: v.string(),
-    userId: v.id("users"),
-    author: v.string(),
-  })),
+  returns: v.array(
+    v.object({
+      _id: v.id("threadMessages"),
+      body: v.string(),
+      userId: v.id("users"),
+      author: v.string(),
+    })
+  ),
   handler: async (ctx) => {
     await requireAuth(ctx);
-    
+
     // Return empty array for now - this function is deprecated
     // Applications should migrate to thread-based messaging
     return [];
@@ -316,8 +343,10 @@ export const send = mutation({
   returns: v.null(),
   handler: async (ctx) => {
     await requireAuth(ctx);
-    
+
     // This function is deprecated - applications should use sendMessage with threads
-    throw new Error("This function is deprecated. Please use thread-based messaging.");
+    throw new Error(
+      "This function is deprecated. Please use thread-based messaging."
+    );
   },
 });

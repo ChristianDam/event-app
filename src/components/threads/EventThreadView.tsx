@@ -1,25 +1,34 @@
-import { useState, useEffect } from "react";
-import { useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-import { Id } from "../../../convex/_generated/dataModel";
-import { ThreadMessages } from "./ThreadMessages";
-import { MessageInput } from "./MessageInput";
-import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { ChatBubbleIcon } from "@radix-ui/react-icons";
+import { useQuery } from "convex/react";
+import { useEffect, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardTitle,
+} from "@/components/ui/card";
+import { api } from "../../../convex/_generated/api";
+import type { Id } from "../../../convex/_generated/dataModel";
+import { MessageInput } from "./MessageInput";
+import { ThreadMessages } from "./ThreadMessages";
 
 interface EventThreadViewProps {
   eventId: Id<"events">;
 }
 
 export function EventThreadView({ eventId }: EventThreadViewProps) {
-  const [selectedThreadId, setSelectedThreadId] = useState<Id<"threads"> | undefined>(undefined);
-  const [replyToId, setReplyToId] = useState<Id<"threadMessages"> | undefined>();
-  
+  const [selectedThreadId, setSelectedThreadId] = useState<
+    Id<"threads"> | undefined
+  >(undefined);
+  const [replyToId, setReplyToId] = useState<
+    Id<"threadMessages"> | undefined
+  >();
+
   // Get event data and threads for this event
   const event = useQuery(api.events.getEvent, { eventId });
-  const threads = useQuery(api.threads.getThreadsForEvent, { 
+  const threads = useQuery(api.threads.getThreadsForEvent, {
     eventId,
-    paginationOpts: { numItems: 20, cursor: null }
+    paginationOpts: { numItems: 20, cursor: null },
   });
 
   // Auto-select the first thread when threads load (events typically have one discussion thread)
@@ -71,7 +80,8 @@ export function EventThreadView({ eventId }: EventThreadViewProps) {
       {/* Event Thread Title */}
       <div className="border-b border-border pb-4">
         <h3 className="text-lg font-semibold">
-          {threads.page.find(t => t._id === selectedThreadId)?.title || 'Event Discussion'}
+          {threads.page.find((t) => t._id === selectedThreadId)?.title ||
+            "Event Discussion"}
         </h3>
         <p className="text-sm text-muted-foreground">
           Coordinate with attendees and organizers about this event
@@ -82,9 +92,9 @@ export function EventThreadView({ eventId }: EventThreadViewProps) {
         <div className="space-y-4">
           {/* Messages */}
           <ThreadMessages threadId={selectedThreadId} />
-          
+
           {/* Message Input */}
-          <MessageInput 
+          <MessageInput
             threadId={selectedThreadId}
             replyToId={replyToId}
             onCancelReply={handleCancelReply}

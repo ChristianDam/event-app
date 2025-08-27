@@ -1,18 +1,22 @@
-import React from 'react';
-import { useQuery, useMutation } from 'convex/react';
-import { api } from '../../../convex/_generated/api';
-import { EventCard } from '../../components/events/EventCard';
-import { Button } from '../../components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
-import { Plus, CalendarIcon, HistoryIcon } from 'lucide-react';
-import { H2, Muted } from '@/components/typography/typography';
+import { useMutation, useQuery } from "convex/react";
+import { CalendarIcon, HistoryIcon, Plus } from "lucide-react";
+import type React from "react";
+import { H2, Muted } from "@/components/typography/typography";
+import { api } from "../../../convex/_generated/api";
+import { EventCard } from "../../components/events/EventCard";
+import { Button } from "../../components/ui/button";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../../components/ui/tabs";
 
 interface EventListPageProps {
   navigate: (to: string) => void;
 }
 
 const EventListPage: React.FC<EventListPageProps> = ({ navigate }) => {
-  
   // Use the existing getMyEvents query which is team-aware
   const events = useQuery(api.events.getMyEvents);
   const isLoading = events === undefined;
@@ -25,7 +29,7 @@ const EventListPage: React.FC<EventListPageProps> = ({ navigate }) => {
       const eventId = await createDraftEvent();
       navigate(`/events/${eventId}`);
     } catch (error) {
-      console.error('Failed to create draft event:', error);
+      console.error("Failed to create draft event:", error);
     }
   };
 
@@ -34,8 +38,12 @@ const EventListPage: React.FC<EventListPageProps> = ({ navigate }) => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <h1 className="text-2xl font-semibold text-foreground mb-2">Access Required</h1>
-          <p className="text-muted-foreground">Please sign in to view your team's events.</p>
+          <h1 className="text-2xl font-semibold text-foreground mb-2">
+            Access Required
+          </h1>
+          <p className="text-muted-foreground">
+            Please sign in to view your team's events.
+          </p>
         </div>
       </div>
     );
@@ -51,12 +59,15 @@ const EventListPage: React.FC<EventListPageProps> = ({ navigate }) => {
           </div>
           <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
         </div>
-        
+
         {/* Tab skeleton */}
         <div className="mb-6">
           <div className="flex space-x-1">
             {Array.from({ length: 2 }).map((_, i) => (
-              <div key={i} className="h-10 bg-gray-200 rounded w-24 animate-pulse"></div>
+              <div
+                key={i}
+                className="h-10 bg-gray-200 rounded w-24 animate-pulse"
+              ></div>
             ))}
           </div>
         </div>
@@ -64,7 +75,10 @@ const EventListPage: React.FC<EventListPageProps> = ({ navigate }) => {
         {/* Grid skeleton */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-lg border border-border p-6 animate-pulse">
+            <div
+              key={i}
+              className="bg-white rounded-lg border border-border p-6 animate-pulse"
+            >
               <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
               <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
               <div className="h-3 bg-gray-200 rounded w-2/3 mb-4"></div>
@@ -80,8 +94,14 @@ const EventListPage: React.FC<EventListPageProps> = ({ navigate }) => {
   }
 
   const now = Date.now();
-  const upcomingEvents = events?.filter(event => event.startTime > now).sort((a, b) => a.startTime - b.startTime) || [];
-  const pastEvents = events?.filter(event => event.startTime <= now).sort((a, b) => b.startTime - a.startTime) || [];
+  const upcomingEvents =
+    events
+      ?.filter((event) => event.startTime > now)
+      .sort((a, b) => a.startTime - b.startTime) || [];
+  const pastEvents =
+    events
+      ?.filter((event) => event.startTime <= now)
+      .sort((a, b) => b.startTime - a.startTime) || [];
 
   return (
     <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -89,15 +109,12 @@ const EventListPage: React.FC<EventListPageProps> = ({ navigate }) => {
       <div className="flex items-center justify-between mb-8">
         <div className="space-y-0">
           <H2>Events</H2>
-          <Muted className='text-muted-foreground '>
+          <Muted className="text-muted-foreground ">
             Manage and view all your team's events in one place
           </Muted>
         </div>
-        
-        <Button 
-          onClick={handleCreateEvent}
-          className="flex items-center gap-2"
-        >
+
+        <Button onClick={handleCreateEvent} className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
           Create Event
         </Button>
@@ -118,7 +135,7 @@ const EventListPage: React.FC<EventListPageProps> = ({ navigate }) => {
 
         <TabsContent value="upcoming" className="space-y-6">
           <Muted className="">
-            {`${upcomingEvents.length} upcoming event${upcomingEvents.length !== 1 ? 's' : ''} found`}
+            {`${upcomingEvents.length} upcoming event${upcomingEvents.length !== 1 ? "s" : ""} found`}
           </Muted>
 
           {upcomingEvents.length === 0 ? (
@@ -130,7 +147,7 @@ const EventListPage: React.FC<EventListPageProps> = ({ navigate }) => {
               <p className="text-muted-foreground mb-4">
                 Create your first event to get started with event management.
               </p>
-              <Button 
+              <Button
                 onClick={handleCreateEvent}
                 className="flex items-center gap-2 mx-auto"
               >
@@ -140,7 +157,7 @@ const EventListPage: React.FC<EventListPageProps> = ({ navigate }) => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {upcomingEvents.map(event => (
+              {upcomingEvents.map((event) => (
                 <EventCard
                   key={event._id}
                   event={event}
@@ -148,14 +165,16 @@ const EventListPage: React.FC<EventListPageProps> = ({ navigate }) => {
                   onEdit={() => navigate(`/events/${event._id}`)}
                   onView={() => navigate(`/events/discover/${event.slug}`)}
                   onShare={() => {
-                    if (event.status === 'published') {
-                      navigator.clipboard.writeText(`${window.location.origin}/events/discover/${event.slug}`);
+                    if (event.status === "published") {
+                      navigator.clipboard.writeText(
+                        `${window.location.origin}/events/discover/${event.slug}`
+                      );
                       // Could add toast notification here
                     }
                   }}
                   onDuplicate={() => {
                     // Could implement duplication logic
-                    console.log('Duplicate event', event._id);
+                    console.log("Duplicate event", event._id);
                   }}
                 />
               ))}
@@ -165,7 +184,8 @@ const EventListPage: React.FC<EventListPageProps> = ({ navigate }) => {
 
         <TabsContent value="past" className="space-y-6">
           <div className="text-sm text-muted-foreground">
-            {pastEvents.length} past event{pastEvents.length !== 1 ? 's' : ''} found
+            {pastEvents.length} past event{pastEvents.length !== 1 ? "s" : ""}{" "}
+            found
           </div>
 
           {pastEvents.length === 0 ? (
@@ -180,7 +200,7 @@ const EventListPage: React.FC<EventListPageProps> = ({ navigate }) => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {pastEvents.map(event => (
+              {pastEvents.map((event) => (
                 <EventCard
                   key={event._id}
                   event={event}
@@ -188,14 +208,16 @@ const EventListPage: React.FC<EventListPageProps> = ({ navigate }) => {
                   onEdit={() => navigate(`/events/${event._id}`)}
                   onView={() => navigate(`/events/discover/${event.slug}`)}
                   onShare={() => {
-                    if (event.status === 'published') {
-                      navigator.clipboard.writeText(`${window.location.origin}/events/discover/${event.slug}`);
+                    if (event.status === "published") {
+                      navigator.clipboard.writeText(
+                        `${window.location.origin}/events/discover/${event.slug}`
+                      );
                       // Could add toast notification here
                     }
                   }}
                   onDuplicate={() => {
                     // Could implement duplication logic
-                    console.log('Duplicate event', event._id);
+                    console.log("Duplicate event", event._id);
                   }}
                 />
               ))}

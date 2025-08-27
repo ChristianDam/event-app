@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useRef } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 
 export function MessageList({ children }: { children: ReactNode }) {
   const messageListRef = useRef<HTMLOListElement>(null);

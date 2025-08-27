@@ -1,11 +1,12 @@
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Input } from "@/components/ui/input";
 
 // Predefined color palette
 const PRESET_COLORS = [
@@ -29,7 +30,11 @@ interface ColorPickerProps {
   disabled?: boolean;
 }
 
-export function ColorPicker({ value = "#3b82f6", onChange, disabled }: ColorPickerProps) {
+export function ColorPicker({
+  value = "#3b82f6",
+  onChange,
+  disabled,
+}: ColorPickerProps) {
   const [open, setOpen] = useState(false);
   const [customColor, setCustomColor] = useState(value);
 
@@ -86,7 +91,7 @@ export function ColorPicker({ value = "#3b82f6", onChange, disabled }: ColorPick
               ))}
             </div>
           </div>
-          
+
           <div>
             <h4 className="text-sm font-medium mb-2">Custom Color</h4>
             <div className="flex items-center gap-2">

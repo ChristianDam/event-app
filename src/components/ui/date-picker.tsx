@@ -1,21 +1,21 @@
-import * as React from "react"
-import { Calendar as CalendarIcon } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
+import { Calendar as CalendarIcon } from "lucide-react";
+import * as React from "react";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 interface DatePickerProps {
-  date?: Date
-  onSelect: (date: Date | undefined) => void
-  placeholder?: string
-  disabled?: boolean
-  className?: string
-  includeTime?: boolean
+  date?: Date;
+  onSelect: (date: Date | undefined) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  className?: string;
+  includeTime?: boolean;
 }
 
 export function DatePicker({
@@ -26,54 +26,58 @@ export function DatePicker({
   className,
   includeTime = false,
 }: DatePickerProps) {
-  const [open, setOpen] = React.useState(false)
-  const [timeValue, setTimeValue] = React.useState<string>("")
+  const [open, setOpen] = React.useState(false);
+  const [timeValue, setTimeValue] = React.useState<string>("");
 
   // Initialize time from date when component mounts or date changes
   React.useEffect(() => {
     if (date) {
-      const hours = date.getHours().toString().padStart(2, '0')
-      const minutes = date.getMinutes().toString().padStart(2, '0')
-      setTimeValue(`${hours}:${minutes}`)
+      const hours = date.getHours().toString().padStart(2, "0");
+      const minutes = date.getMinutes().toString().padStart(2, "0");
+      setTimeValue(`${hours}:${minutes}`);
     }
-  }, [date])
+  }, [date]);
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
     if (selectedDate && includeTime && timeValue) {
       // Parse time and apply to selected date
-      const [hours, minutes] = timeValue.split(':').map(Number)
-      const newDate = new Date(selectedDate)
-      newDate.setHours(hours, minutes)
-      onSelect(newDate)
+      const [hours, minutes] = timeValue.split(":").map(Number);
+      const newDate = new Date(selectedDate);
+      newDate.setHours(hours, minutes);
+      onSelect(newDate);
     } else {
-      onSelect(selectedDate)
+      onSelect(selectedDate);
     }
-    
+
     if (!includeTime) {
-      setOpen(false)
+      setOpen(false);
     }
-  }
+  };
 
   const handleTimeChange = (time: string) => {
-    setTimeValue(time)
-    
+    setTimeValue(time);
+
     if (date && time) {
-      const [hours, minutes] = time.split(':').map(Number)
-      const newDate = new Date(date)
-      newDate.setHours(hours, minutes)
-      onSelect(newDate)
+      const [hours, minutes] = time.split(":").map(Number);
+      const newDate = new Date(date);
+      newDate.setHours(hours, minutes);
+      onSelect(newDate);
     }
-  }
+  };
 
   const formatDisplayDate = (date: Date) => {
     if (includeTime) {
-      return date.toLocaleDateString() + " " + date.toLocaleTimeString([], { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      })
+      return (
+        date.toLocaleDateString() +
+        " " +
+        date.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      );
     }
-    return date.toLocaleDateString()
-  }
+    return date.toLocaleDateString();
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -100,10 +104,13 @@ export function DatePicker({
             disabled={disabled}
             initialFocus
           />
-          
+
           {includeTime && (
             <div className="border-t pt-3">
-              <label htmlFor="time-picker" className="block text-sm font-medium text-foreground mb-2">
+              <label
+                htmlFor="time-picker"
+                className="block text-sm font-medium text-foreground mb-2"
+              >
                 Time
               </label>
               <input
@@ -134,5 +141,5 @@ export function DatePicker({
         </div>
       </PopoverContent>
     </Popover>
-  )
+  );
 }

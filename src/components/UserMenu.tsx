@@ -1,5 +1,19 @@
+import { useAuthActions } from "@convex-dev/auth/react";
+import { CheckIcon, PlusIcon } from "@radix-ui/react-icons";
+import { useMutation, useQuery } from "convex/react";
+import { type ReactNode, useCallback, useState } from "react";
+import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,23 +25,9 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { CheckIcon, PlusIcon } from "@radix-ui/react-icons";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ReactNode, useState, useCallback } from "react";
-import { useAuthActions } from "@convex-dev/auth/react";
-import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { toast } from 'sonner';
-import { Id } from "../../convex/_generated/dataModel";
+import type { Id } from "../../convex/_generated/dataModel";
 import { Small } from "./typography/typography";
 
 export function UserMenu({
@@ -50,7 +50,12 @@ export function UserMenu({
 
   const getInitials = (name?: string, email?: string) => {
     if (name) {
-      return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+      return name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
     }
     if (email) {
       return email.charAt(0).toUpperCase();
@@ -58,26 +63,31 @@ export function UserMenu({
     return "U";
   };
 
-  const handleTeamSwitch = useCallback(async (teamId: Id<"teams">) => {
-    try {
-      await setCurrentTeam({ teamId });
-      toast.success('Team switched successfully', {
-        description: `You are now working with ${allTeams?.find(t => t._id === teamId)?.name}.`,
-      });
-    } catch (error) {
-      console.error("Failed to switch teams:", error);
-      toast.error('Failed to switch teams', {
-        description: 'Please try again or check your connection.',
-      });
-    }
-  }, [setCurrentTeam, allTeams]);
+  const handleTeamSwitch = useCallback(
+    async (teamId: Id<"teams">) => {
+      try {
+        await setCurrentTeam({ teamId });
+        toast.success("Team switched successfully", {
+          description: `You are now working with ${allTeams?.find((t) => t._id === teamId)?.name}.`,
+        });
+      } catch (error) {
+        console.error("Failed to switch teams:", error);
+        toast.error("Failed to switch teams", {
+          description: "Please try again or check your connection.",
+        });
+      }
+    },
+    [setCurrentTeam, allTeams]
+  );
 
   const handleCreateTeam = useCallback(() => {
     navigate("/team/create");
   }, [navigate]);
 
   return (
-    <div className={compact ? "" : "flex items-center gap-2 text-sm font-medium"}>
+    <div
+      className={compact ? "" : "flex items-center gap-2 text-sm font-medium"}
+    >
       {!compact && children}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -91,7 +101,11 @@ export function UserMenu({
               </Avatar>
             </button>
           ) : (
-            <Button variant="secondary" size="icon" className="rounded-full p-0 h-10 w-10">
+            <Button
+              variant="secondary"
+              size="icon"
+              className="rounded-full p-0 h-10 w-10"
+            >
               <Avatar className="w-full h-full">
                 <AvatarImage src={currentUser?.image || undefined} />
                 <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-sm font-bold">
@@ -103,7 +117,9 @@ export function UserMenu({
           )}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-64">
-          <DropdownMenuLabel>{compact ? (currentUser?.name || currentUser?.email) : children}</DropdownMenuLabel>
+          <DropdownMenuLabel>
+            {compact ? currentUser?.name || currentUser?.email : children}
+          </DropdownMenuLabel>
           {favoriteColor !== undefined && (
             <DropdownMenuLabel className="flex items-center">
               Favorite color:
@@ -115,16 +131,16 @@ export function UserMenu({
               </div>
             </DropdownMenuLabel>
           )}
-          
+
           {/* Team switching section */}
           {currentTeam && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate(`/team/${currentTeam._id}`)} className="flex items-center gap-3">
-
-                  <Small>
-                    Team settings
-                  </Small>
+              <DropdownMenuItem
+                onClick={() => navigate(`/team/${currentTeam._id}`)}
+                className="flex items-center gap-3"
+              >
+                <Small>Team settings</Small>
               </DropdownMenuItem>
             </>
           )}
@@ -144,15 +160,17 @@ export function UserMenu({
                       className="flex items-center gap-3"
                     >
                       {team.logoUrl ? (
-                        <img 
+                        <img
                           src={team.logoUrl}
                           alt={`${team.name} logo`}
                           className="w-6 h-6 rounded object-cover border"
                         />
                       ) : (
-                        <div 
+                        <div
                           className="w-6 h-6 rounded flex items-center justify-center text-white text-xs font-bold"
-                          style={{ backgroundColor: team.primaryColor || "#3b82f6" }}
+                          style={{
+                            backgroundColor: team.primaryColor || "#3b82f6",
+                          }}
                         >
                           {team.name.charAt(0).toUpperCase()}
                         </div>
@@ -171,22 +189,27 @@ export function UserMenu({
                     </DropdownMenuItem>
                   ))}
                   <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleCreateTeam} className="flex items-center gap-3">
-            <div className="w-6 h-6 rounded border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
-              <PlusIcon className="h-3 w-3 text-muted-foreground" />
-            </div>
-            <Small>Create team</Small>
-          </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={handleCreateTeam}
+                    className="flex items-center gap-3"
+                  >
+                    <div className="w-6 h-6 rounded border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
+                      <PlusIcon className="h-3 w-3 text-muted-foreground" />
+                    </div>
+                    <Small>Create team</Small>
+                  </DropdownMenuItem>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
             </>
           )}
 
           {/* Create team option */}
-          
 
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => navigate('/settings')} className="flex items-center gap-3">
+          <DropdownMenuItem
+            onClick={() => navigate("/settings")}
+            className="flex items-center gap-3"
+          >
             <Small>Settings</Small>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -198,13 +221,13 @@ export function UserMenu({
           <SignOutButton />
         </DropdownMenuContent>
       </DropdownMenu>
-      
+
       {/* Error message display */}
       {errorMessage && (
         <div className="fixed top-4 right-4 bg-destructive text-destructive-foreground px-4 py-2 rounded-md shadow-lg z-50 max-w-sm">
           <div className="flex items-center justify-between">
             <span className="text-sm">{errorMessage}</span>
-            <button 
+            <button
               onClick={() => setErrorMessage(null)}
               className="ml-2 text-destructive-foreground hover:opacity-70"
             >
@@ -213,7 +236,7 @@ export function UserMenu({
           </div>
         </div>
       )}
-      
+
       {showCreateTeam && (
         <CreateTeamDialog onClose={() => setShowCreateTeam(false)} />
       )}
@@ -224,12 +247,16 @@ export function UserMenu({
 function SignOutButton() {
   const { signOut } = useAuthActions();
   return (
-    <DropdownMenuItem onClick={() => {
-      toast.success('Signed out successfully', {
-        description: 'You have been logged out.',
-      });
-      void signOut();
-    }}>Log out</DropdownMenuItem>
+    <DropdownMenuItem
+      onClick={() => {
+        toast.success("Signed out successfully", {
+          description: "You have been logged out.",
+        });
+        void signOut();
+      }}
+    >
+      Log out
+    </DropdownMenuItem>
   );
 }
 
@@ -249,14 +276,14 @@ function CreateTeamDialog({ onClose }: { onClose: () => void }) {
         name: teamName.trim(),
         description: description.trim() || undefined,
       });
-      toast.success('Team created successfully!', {
+      toast.success("Team created successfully!", {
         description: `${teamName.trim()} is ready for collaboration.`,
       });
       onClose();
     } catch (error) {
       console.error("Failed to create team:", error);
-      toast.error('Failed to create team', {
-        description: 'Please check your input and try again.',
+      toast.error("Failed to create team", {
+        description: "Please check your input and try again.",
       });
     } finally {
       setIsCreating(false);
@@ -272,7 +299,12 @@ function CreateTeamDialog({ onClose }: { onClose: () => void }) {
             Create a new team to collaborate on events with others.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            void handleSubmit(e);
+          }}
+          className="space-y-4"
+        >
           <div className="space-y-2">
             <label htmlFor="teamName" className="text-sm font-medium">
               Team Name

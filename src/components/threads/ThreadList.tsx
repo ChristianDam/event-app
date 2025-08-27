@@ -1,13 +1,9 @@
+import { ChatBubbleIcon, ClockIcon, PlusIcon } from "@radix-ui/react-icons";
+import { useMutation, useQuery } from "convex/react";
 import { useState } from "react";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-import { Id } from "../../../convex/_generated/dataModel";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -17,11 +13,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { 
-  ChatBubbleIcon, 
-  PlusIcon,
-  ClockIcon 
-} from "@radix-ui/react-icons";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { api } from "../../../convex/_generated/api";
+import type { Id } from "../../../convex/_generated/dataModel";
 
 interface ThreadListProps {
   teamId: Id<"teams">;
@@ -29,23 +25,27 @@ interface ThreadListProps {
   selectedThreadId?: Id<"threads">;
 }
 
-export function ThreadList({ teamId, onThreadSelect, selectedThreadId }: ThreadListProps) {
+export function ThreadList({
+  teamId,
+  onThreadSelect,
+  selectedThreadId,
+}: ThreadListProps) {
   const [cursor, setCursor] = useState<string | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isCreating, setIsCreating] = useState(false);
-  
-  const threads = useQuery(api.threads.getThreadsForTeam, { 
+
+  const threads = useQuery(api.threads.getThreadsForTeam, {
     teamId,
-    paginationOpts: { numItems: 20, cursor }
+    paginationOpts: { numItems: 20, cursor },
   });
 
   const createThread = useMutation(api.threads.createTeamThread);
 
   const handleCreateThread = async () => {
     if (!title.trim()) return;
-    
+
     setIsCreating(true);
     try {
       const threadId = await createThread({
@@ -53,12 +53,12 @@ export function ThreadList({ teamId, onThreadSelect, selectedThreadId }: ThreadL
         title: title.trim(),
         description: description.trim() || undefined,
       });
-      
+
       // Reset form and close dialog
       setTitle("");
       setDescription("");
       setIsCreateDialogOpen(false);
-      
+
       // Select the new thread
       onThreadSelect(threadId);
     } catch (error) {
@@ -82,7 +82,7 @@ export function ThreadList({ teamId, onThreadSelect, selectedThreadId }: ThreadL
     const date = new Date(timestamp);
     const now = new Date();
     const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-    
+
     if (diffInHours < 1) {
       return "Just now";
     } else if (diffInHours < 24) {
@@ -98,7 +98,9 @@ export function ThreadList({ teamId, onThreadSelect, selectedThreadId }: ThreadL
     return (
       <Card>
         <CardContent className="py-8">
-          <div className="text-center text-muted-foreground">Loading threads...</div>
+          <div className="text-center text-muted-foreground">
+            Loading threads...
+          </div>
         </CardContent>
       </Card>
     );
@@ -111,7 +113,7 @@ export function ThreadList({ teamId, onThreadSelect, selectedThreadId }: ThreadL
         <div>
           <h3 className="text-lg font-semibold">Discussion Threads</h3>
           <p className="text-sm text-muted-foreground">
-            {threads.page.length} thread{threads.page.length !== 1 ? 's' : ''}
+            {threads.page.length} thread{threads.page.length !== 1 ? "s" : ""}
           </p>
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
@@ -175,10 +177,10 @@ export function ThreadList({ teamId, onThreadSelect, selectedThreadId }: ThreadL
       {/* Thread List */}
       <div className="space-y-2">
         {threads.page.map((thread) => (
-          <Card 
+          <Card
             key={thread._id}
             className={`cursor-pointer transition-colors hover:bg-accent/50 ${
-              selectedThreadId === thread._id ? 'ring-2 ring-primary' : ''
+              selectedThreadId === thread._id ? "ring-2 ring-primary" : ""
             }`}
             onClick={() => onThreadSelect(thread._id)}
           >
@@ -190,12 +192,14 @@ export function ThreadList({ teamId, onThreadSelect, selectedThreadId }: ThreadL
                       <ChatBubbleIcon className="h-5 w-5 text-primary-foreground" />
                     </div>
                   </div>
-                  
+
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2 mb-1">
                       <h4 className="font-medium truncate">{thread.title}</h4>
                       {thread.threadType === "ai" && (
-                        <Badge variant="secondary" className="text-xs">AI</Badge>
+                        <Badge variant="secondary" className="text-xs">
+                          AI
+                        </Badge>
                       )}
                       {thread.unreadCount > 0 && (
                         <Badge className="text-xs px-2 py-0.5 bg-primary text-primary-foreground">
@@ -203,19 +207,20 @@ export function ThreadList({ teamId, onThreadSelect, selectedThreadId }: ThreadL
                         </Badge>
                       )}
                     </div>
-                    
+
                     {thread.description && (
                       <p className="text-sm text-muted-foreground truncate mb-1">
                         {thread.description}
                       </p>
                     )}
-                    
+
                     <div className="flex items-center space-x-4 text-xs text-muted-foreground">
                       <div className="flex items-center">
                         <ChatBubbleIcon className="h-3 w-3 mr-1" />
-                        {thread.messageCount} message{thread.messageCount !== 1 ? 's' : ''}
+                        {thread.messageCount} message
+                        {thread.messageCount !== 1 ? "s" : ""}
                       </div>
-                      
+
                       {thread.lastMessageAt && (
                         <div className="flex items-center">
                           <ClockIcon className="h-3 w-3 mr-1" />
@@ -229,7 +234,7 @@ export function ThreadList({ teamId, onThreadSelect, selectedThreadId }: ThreadL
             </CardContent>
           </Card>
         ))}
-        
+
         {threads.page.length === 0 && (
           <Card>
             <CardContent className="py-8 text-center">
@@ -248,8 +253,8 @@ export function ThreadList({ teamId, onThreadSelect, selectedThreadId }: ThreadL
         {/* Load More Button */}
         {!threads.isDone && (
           <div className="text-center py-4">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setCursor(threads.continueCursor)}
               size="sm"
             >

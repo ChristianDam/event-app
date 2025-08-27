@@ -1,21 +1,21 @@
-import { z } from 'zod';
-import { emailSchema, phoneSchema, colorSchema } from './shared';
+import { z } from "zod";
+import { colorSchema, emailSchema, phoneSchema } from "./shared";
 
 // User profile form data schema
 export const userProfileSchema = z.object({
   name: z
     .string()
     .trim()
-    .min(2, 'Name must be at least 2 characters long')
-    .max(100, 'Name must be less than 100 characters')
+    .min(2, "Name must be at least 2 characters long")
+    .max(100, "Name must be less than 100 characters")
     .optional()
-    .or(z.literal('')),
-  
-  email: emailSchema.optional().or(z.literal('')),
-  
-  phone: phoneSchema.or(z.literal('')),
-  
-  favoriteColor: colorSchema.or(z.literal(''))
+    .or(z.literal("")),
+
+  email: emailSchema.optional().or(z.literal("")),
+
+  phone: phoneSchema.or(z.literal("")),
+
+  favoriteColor: colorSchema.or(z.literal("")),
 });
 
 // Individual field schemas for partial validation
@@ -23,7 +23,7 @@ export const userFieldSchemas = {
   name: userProfileSchema.shape.name,
   email: userProfileSchema.shape.email,
   phone: userProfileSchema.shape.phone,
-  favoriteColor: userProfileSchema.shape.favoriteColor
+  favoriteColor: userProfileSchema.shape.favoriteColor,
 };
 
 // Inferred TypeScript types

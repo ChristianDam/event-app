@@ -1,12 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { Id } from '../../../convex/_generated/dataModel';
-import { useEventForm } from '../../hooks/useEventForm';
-import { useImageUpload } from '../../hooks/useImageUpload';
-import { generateEventTheme, applyTeamTheme, clearTeamTheme, Team } from '../../utils/teamBranding';
-import { eventTypeOptions } from '../../types/events';
-import { DatePicker } from '../ui/date-picker';
-import { FormField, FormInput, FormTextarea, FormError } from '../ui/form';
-import { toast } from 'sonner';
+import type React from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import type { Id } from "../../../convex/_generated/dataModel";
+import { useEventForm } from "../../hooks/useEventForm";
+import { useImageUpload } from "../../hooks/useImageUpload";
+import { eventTypeOptions } from "../../types/events";
+import {
+  applyTeamTheme,
+  clearTeamTheme,
+  generateEventTheme,
+  type Team,
+} from "../../utils/teamBranding";
+import { DatePicker } from "../ui/date-picker";
+import { FormError, FormField, FormInput, FormTextarea } from "../ui/form";
 
 interface CreateEventDialogProps {
   isOpen: boolean;
@@ -15,13 +21,29 @@ interface CreateEventDialogProps {
   onSuccess?: (eventId: Id<"events">) => void;
 }
 
-type FormStep = 'basic' | 'details' | 'image' | 'review';
+type FormStep = "basic" | "details" | "image" | "review";
 
 const STEPS: { key: FormStep; title: string; description: string }[] = [
-  { key: 'basic', title: 'Basic Info', description: 'Event title, description, and venue' },
-  { key: 'details', title: 'Date & Details', description: 'When and how your event happens' },
-  { key: 'image', title: 'Visual Identity', description: 'Add an image to make your event shine' },
-  { key: 'review', title: 'Review & Publish', description: 'Final check before creating your event' },
+  {
+    key: "basic",
+    title: "Basic Info",
+    description: "Event title, description, and venue",
+  },
+  {
+    key: "details",
+    title: "Date & Details",
+    description: "When and how your event happens",
+  },
+  {
+    key: "image",
+    title: "Visual Identity",
+    description: "Add an image to make your event shine",
+  },
+  {
+    key: "review",
+    title: "Review & Publish",
+    description: "Final check before creating your event",
+  },
 ];
 
 export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
@@ -30,7 +52,7 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
   team,
   onSuccess,
 }) => {
-  const [currentStep, setCurrentStep] = useState<FormStep>('basic');
+  const [currentStep, setCurrentStep] = useState<FormStep>("basic");
   const [showSuccess, setShowSuccess] = useState(false);
 
   const {
@@ -45,8 +67,9 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
   } = useEventForm({
     teamId: team._id,
     onSuccess: (eventId) => {
-      toast.success('Event created successfully!', {
-        description: 'Your event has been saved as a draft and is ready for review.',
+      toast.success("Event created successfully!", {
+        description:
+          "Your event has been saved as a draft and is ready for review.",
       });
       setShowSuccess(true);
       setTimeout(() => {
@@ -55,9 +78,9 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
       }, 2000);
     },
     onError: (error) => {
-      console.error('Event creation failed:', error);
-      toast.error('Failed to create event', {
-        description: error || 'Please check your input and try again.',
+      console.error("Event creation failed:", error);
+      toast.error("Failed to create event", {
+        description: error || "Please check your input and try again.",
       });
     },
   });
@@ -81,30 +104,47 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
   }, [isOpen, team]);
 
   const handleClose = () => {
-    if (isDirty && !window.confirm('You have unsaved changes. Are you sure you want to close?')) {
+    if (
+      isDirty &&
+      !window.confirm(
+        "You have unsaved changes. Are you sure you want to close?"
+      )
+    ) {
       return;
     }
-    
+
     resetForm();
     imageUpload.clearImage();
-    setCurrentStep('basic');
+    setCurrentStep("basic");
     setShowSuccess(false);
     clearTeamTheme();
     onClose();
   };
 
-  const currentStepIndex = STEPS.findIndex(step => step.key === currentStep);
+  const currentStepIndex = STEPS.findIndex((step) => step.key === currentStep);
   const canGoNext = () => {
     switch (currentStep) {
-      case 'basic':
-        return !errors.title && !errors.description && !errors.venue && 
-               formData.title && formData.description && formData.venue;
-      case 'details':
-        return !errors.startTime && !errors.endTime && !errors.eventType &&
-               formData.startTime && formData.endTime && formData.eventType;
-      case 'image':
+      case "basic":
+        return (
+          !errors.title &&
+          !errors.description &&
+          !errors.venue &&
+          formData.title &&
+          formData.description &&
+          formData.venue
+        );
+      case "details":
+        return (
+          !errors.startTime &&
+          !errors.endTime &&
+          !errors.eventType &&
+          formData.startTime &&
+          formData.endTime &&
+          formData.eventType
+        );
+      case "image":
         return true; // Image is optional
-      case 'review':
+      case "review":
         return isValid;
       default:
         return false;
@@ -138,17 +178,30 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50">
       <div className="flex min-h-full items-center justify-center p-4">
         <div className="bg-secondary rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
-          
           {/* Success State */}
           {showSuccess && (
             <div className="p-8 text-center">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
-                <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <svg
+                  className="w-8 h-8 text-green-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Event Created Successfully!</h2>
-              <p className="text-gray-600">Your event is ready and has been saved as a draft.</p>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Event Created Successfully!
+              </h2>
+              <p className="text-gray-600">
+                Your event is ready and has been saved as a draft.
+              </p>
             </div>
           )}
 
@@ -163,8 +216,18 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                     onClick={handleClose}
                     className="text-foreground transition-colors"
                   >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -174,24 +237,33 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                   {STEPS.map((step, index) => (
                     <div key={step.key} className="flex-1 flex items-center">
                       <div className="flex items-center">
-                        <div className={`
+                        <div
+                          className={`
                           w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
-                          ${index <= currentStepIndex 
-                            ? 'bg-white text-blue-600' 
-                            : 'bg-white/20 text-white/60'
+                          ${
+                            index <= currentStepIndex
+                              ? "bg-white text-blue-600"
+                              : "bg-white/20 text-white/60"
                           }
-                        `}>
+                        `}
+                        >
                           {index + 1}
                         </div>
                         <div className="ml-2 text-left">
-                          <div className="text-sm font-medium">{step.title}</div>
-                          <div className="text-xs text-foreground hidden sm:block">{step.description}</div>
+                          <div className="text-sm font-medium">
+                            {step.title}
+                          </div>
+                          <div className="text-xs text-foreground hidden sm:block">
+                            {step.description}
+                          </div>
                         </div>
                       </div>
                       {index < STEPS.length - 1 && (
-                        <div className={`
+                        <div
+                          className={`
                           flex-1 h-0.5 mx-4
-                        `} />
+                        `}
+                        />
                       )}
                     </div>
                   ))}
@@ -200,10 +272,14 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
 
               {/* Form Content */}
               <div className="p-6 min-h-[400px] overflow-y-auto">
-                <form onSubmit={(e) => { e.preventDefault(); }} className="space-y-6">
-                  
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                  }}
+                  className="space-y-6"
+                >
                   {/* Basic Info Step */}
-                  {currentStep === 'basic' && (
+                  {currentStep === "basic" && (
                     <div className="space-y-4">
                       <FormField
                         id="title"
@@ -215,7 +291,9 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                           id="title"
                           type="text"
                           value={formData.title}
-                          onChange={(e) => handleInputChange('title', e.target.value)}
+                          onChange={(e) =>
+                            handleInputChange("title", e.target.value)
+                          }
                           placeholder="Give your event a catchy name"
                           error={errors.title}
                           className="p-3"
@@ -231,7 +309,9 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                         <FormTextarea
                           id="description"
                           value={formData.description}
-                          onChange={(e) => handleInputChange('description', e.target.value)}
+                          onChange={(e) =>
+                            handleInputChange("description", e.target.value)
+                          }
                           placeholder="Tell people what makes your event special..."
                           rows={4}
                           error={errors.description}
@@ -249,7 +329,9 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                           id="venue"
                           type="text"
                           value={formData.venue}
-                          onChange={(e) => handleInputChange('venue', e.target.value)}
+                          onChange={(e) =>
+                            handleInputChange("venue", e.target.value)
+                          }
                           placeholder="Where will your event take place?"
                           error={errors.venue}
                           className="p-3"
@@ -259,7 +341,7 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                   )}
 
                   {/* Details Step */}
-                  {currentStep === 'details' && (
+                  {currentStep === "details" && (
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -268,10 +350,12 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                           </label>
                           <DatePicker
                             date={formData.startTime}
-                            onSelect={(date) => date && handleInputChange('startTime', date)}
+                            onSelect={(date) =>
+                              date && handleInputChange("startTime", date)
+                            }
                             placeholder="Select start date and time"
                             includeTime={true}
-                            className={errors.startTime ? 'border-red-500' : ''}
+                            className={errors.startTime ? "border-red-500" : ""}
                           />
                           <FormError error={errors.startTime} />
                         </div>
@@ -282,10 +366,12 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                           </label>
                           <DatePicker
                             date={formData.endTime}
-                            onSelect={(date) => date && handleInputChange('endTime', date)}
+                            onSelect={(date) =>
+                              date && handleInputChange("endTime", date)
+                            }
                             placeholder="Select end date and time"
                             includeTime={true}
-                            className={errors.endTime ? 'border-red-500' : ''}
+                            className={errors.endTime ? "border-red-500" : ""}
                           />
                           <FormError error={errors.endTime} />
                         </div>
@@ -296,22 +382,29 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                           Event Type *
                         </label>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                          {eventTypeOptions.map(option => (
+                          {eventTypeOptions.map((option) => (
                             <button
                               key={option.value}
                               type="button"
-                              onClick={() => handleInputChange('eventType', option.value)}
+                              onClick={() =>
+                                handleInputChange("eventType", option.value)
+                              }
                               className={`
                                 p-4 border rounded-lg text-left hover:border-var(--event-primary, #3b82f6) transition-colors
-                                ${formData.eventType === option.value 
-                                  ? 'border-var(--event-primary, #3b82f6) bg-var(--event-accent, #dbeafe)' 
-                                  : 'border-gray-200'
+                                ${
+                                  formData.eventType === option.value
+                                    ? "border-var(--event-primary, #3b82f6) bg-var(--event-accent, #dbeafe)"
+                                    : "border-gray-200"
                                 }
                               `}
                             >
                               <div className="text-2xl mb-1">{option.icon}</div>
-                              <div className="font-medium text-sm">{option.label}</div>
-                              <div className="text-xs text-gray-500">{option.description}</div>
+                              <div className="font-medium text-sm">
+                                {option.label}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {option.description}
+                              </div>
                             </button>
                           ))}
                         </div>
@@ -327,8 +420,15 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                           <FormInput
                             id="maxCapacity"
                             type="number"
-                            value={formData.maxCapacity || ''}
-                            onChange={(e) => handleInputChange('maxCapacity', e.target.value ? parseInt(e.target.value) : undefined)}
+                            value={formData.maxCapacity || ""}
+                            onChange={(e) =>
+                              handleInputChange(
+                                "maxCapacity",
+                                e.target.value
+                                  ? parseInt(e.target.value)
+                                  : undefined
+                              )
+                            }
                             placeholder="Leave empty for unlimited"
                             min="1"
                             error={errors.maxCapacity}
@@ -342,10 +442,16 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                           </label>
                           <DatePicker
                             date={formData.registrationDeadline}
-                            onSelect={(date) => handleInputChange('registrationDeadline', date)}
+                            onSelect={(date) =>
+                              handleInputChange("registrationDeadline", date)
+                            }
                             placeholder="Select registration deadline"
                             includeTime={true}
-                            className={errors.registrationDeadline ? 'border-red-500' : ''}
+                            className={
+                              errors.registrationDeadline
+                                ? "border-red-500"
+                                : ""
+                            }
                           />
                           <FormError error={errors.registrationDeadline} />
                         </div>
@@ -354,41 +460,62 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                   )}
 
                   {/* Image Step */}
-                  {currentStep === 'image' && (
+                  {currentStep === "image" && (
                     <div className="space-y-4">
                       <div className="text-center">
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">Add an Event Image</h3>
-                        <p className="text-gray-600 mb-6">Upload an image to make your event stand out</p>
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                          Add an Event Image
+                        </h3>
+                        <p className="text-gray-600 mb-6">
+                          Upload an image to make your event stand out
+                        </p>
 
-                        {!imageUpload.uploadedImageId && !imageUpload.isUploading && (
-                          <div
-                            className="border-2 border-dashed border-gray-300 rounded-lg p-8 hover:border-var(--event-primary, #3b82f6) transition-colors cursor-pointer"
-                            onClick={() => document.getElementById('event-image')?.click()}
-                          >
-                            <div className="text-6xl text-gray-400 mb-4">📷</div>
-                            <p className="text-gray-600">Click to upload or drag and drop</p>
-                            <p className="text-sm text-gray-500 mt-2">JPEG, PNG, or WebP up to 10MB</p>
-                          </div>
-                        )}
+                        {!imageUpload.uploadedImageId &&
+                          !imageUpload.isUploading && (
+                            <div
+                              className="border-2 border-dashed border-gray-300 rounded-lg p-8 hover:border-var(--event-primary, #3b82f6) transition-colors cursor-pointer"
+                              onClick={() =>
+                                document.getElementById("event-image")?.click()
+                              }
+                            >
+                              <div className="text-6xl text-gray-400 mb-4">
+                                📷
+                              </div>
+                              <p className="text-gray-600">
+                                Click to upload or drag and drop
+                              </p>
+                              <p className="text-sm text-gray-500 mt-2">
+                                JPEG, PNG, or WebP up to 10MB
+                              </p>
+                            </div>
+                          )}
 
                         {imageUpload.isUploading && (
                           <div className="p-8">
                             <div className="text-4xl mb-4">⏳</div>
                             <p className="text-gray-600">Uploading image...</p>
                             <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
-                              <div 
+                              <div
                                 className="bg-var(--event-primary, #3b82f6) h-2 rounded-full transition-all duration-300"
-                                style={{ width: `${imageUpload.uploadProgress}%` }}
+                                style={{
+                                  width: `${imageUpload.uploadProgress}%`,
+                                }}
                               />
                             </div>
-                            <p className="text-sm text-gray-500 mt-2">{imageUpload.uploadProgress}% complete</p>
+                            <p className="text-sm text-gray-500 mt-2">
+                              {imageUpload.uploadProgress}% complete
+                            </p>
                           </div>
                         )}
 
                         {imageUpload.uploadedImageId && (
                           <div className="p-4 border rounded-lg bg-green-50 border-green-200">
-                            <div className="text-2xl text-green-600 mb-2">✅</div>
-                            <p className="text-green-800">Image uploaded successfully!</p>
+                            <div className="text-2xl text-green-600 mb-2">
+                              ✅
+                            </div>
+                            <p className="text-green-800">
+                              Image uploaded successfully!
+                            </p>
                             <button
                               type="button"
                               onClick={imageUpload.clearImage}
@@ -427,52 +554,78 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                   )}
 
                   {/* Review Step */}
-                  {currentStep === 'review' && (
+                  {currentStep === "review" && (
                     <div className="space-y-6">
                       <div className="text-center mb-6">
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">Review Your Event</h3>
-                        <p className="text-gray-600">Make sure everything looks perfect before creating</p>
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                          Review Your Event
+                        </h3>
+                        <p className="text-gray-600">
+                          Make sure everything looks perfect before creating
+                        </p>
                       </div>
 
                       <div className="bg-gray-50 rounded-lg p-6 space-y-4">
                         <div>
-                          <h4 className="font-medium text-gray-900">{formData.title}</h4>
-                          <p className="text-gray-600 mt-1">{formData.description}</p>
+                          <h4 className="font-medium text-gray-900">
+                            {formData.title}
+                          </h4>
+                          <p className="text-gray-600 mt-1">
+                            {formData.description}
+                          </p>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                           <div>
                             <span className="text-gray-500">Venue:</span>
-                            <span className="ml-2 text-gray-900">{formData.venue}</span>
+                            <span className="ml-2 text-gray-900">
+                              {formData.venue}
+                            </span>
                           </div>
                           <div>
                             <span className="text-gray-500">Type:</span>
                             <span className="ml-2 text-gray-900">
-                              {eventTypeOptions.find(opt => opt.value === formData.eventType)?.label}
+                              {
+                                eventTypeOptions.find(
+                                  (opt) => opt.value === formData.eventType
+                                )?.label
+                              }
                             </span>
                           </div>
                           <div>
                             <span className="text-gray-500">Start:</span>
                             <span className="ml-2 text-gray-900">
-                              {formData.startTime.toLocaleDateString()} at {formData.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {formData.startTime.toLocaleDateString()} at{" "}
+                              {formData.startTime.toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
                             </span>
                           </div>
                           <div>
                             <span className="text-gray-500">End:</span>
                             <span className="ml-2 text-gray-900">
-                              {formData.endTime.toLocaleDateString()} at {formData.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {formData.endTime.toLocaleDateString()} at{" "}
+                              {formData.endTime.toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
                             </span>
                           </div>
                           {formData.maxCapacity && (
                             <div>
                               <span className="text-gray-500">Capacity:</span>
-                              <span className="ml-2 text-gray-900">{formData.maxCapacity} people</span>
+                              <span className="ml-2 text-gray-900">
+                                {formData.maxCapacity} people
+                              </span>
                             </div>
                           )}
                           {imageUpload.uploadedImageId && (
                             <div>
                               <span className="text-gray-500">Image:</span>
-                              <span className="ml-2 text-green-600">✓ Uploaded</span>
+                              <span className="ml-2 text-green-600">
+                                ✓ Uploaded
+                              </span>
                             </div>
                           )}
                         </div>
@@ -510,7 +663,7 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                       disabled={!isValid || isSubmitting}
                       className="px-6 py-2 bg-var(--event-primary, #3b82f6) text-foreground rounded-lg hover:bg-var(--event-secondary, #1e40af) disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
-                      {isSubmitting ? 'Creating...' : 'Create Event'}
+                      {isSubmitting ? "Creating..." : "Create Event"}
                     </button>
                   )}
                 </div>

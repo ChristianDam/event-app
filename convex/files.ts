@@ -1,5 +1,5 @@
-import { mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { mutation } from "./_generated/server";
 import { requireAuth } from "./lib/auth";
 
 /**
@@ -11,7 +11,7 @@ export const generateUploadUrl = mutation({
   handler: async (ctx) => {
     // Require authentication for file uploads
     await requireAuth(ctx);
-    
+
     return await ctx.storage.generateUploadUrl();
   },
 });
@@ -27,9 +27,9 @@ export const deleteFile = mutation({
   handler: async (ctx, args) => {
     // Require authentication for file deletion
     await requireAuth(ctx);
-    
+
     await ctx.storage.delete(args.storageId);
-    
+
     return null;
   },
 });

@@ -1,7 +1,7 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
 // import { internal } from "./_generated/api"; // Reserved for future use
-import { Id } from "./_generated/dataModel";
+import type { Id } from "./_generated/dataModel";
+import { mutation, query } from "./_generated/server";
 import { getCurrentUser, requireAuth, requireTeam } from "./lib/auth";
 
 /**
@@ -38,12 +38,15 @@ function generateSlug(title: string): string {
 /**
  * Generate a unique slug by appending numbers if needed
  */
-async function generateUniqueSlug(ctx: any, title: string, excludeEventId?: Id<"events">): Promise<string> {
+async function generateUniqueSlug(
+  ctx: any,
+  title: string,
+  excludeEventId?: Id<"events">
+): Promise<string> {
   const baseSlug = generateSlug(title);
   let slug = baseSlug;
   let counter = 1;
 
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     const existingEvent = await ctx.db
       .query("events")
@@ -51,7 +54,10 @@ async function generateUniqueSlug(ctx: any, title: string, excludeEventId?: Id<"
       .first();
 
     // If no existing event or it's the same event we're updating
-    if (!existingEvent || (excludeEventId && existingEvent._id === excludeEventId)) {
+    if (
+      !existingEvent ||
+      (excludeEventId && existingEvent._id === excludeEventId)
+    ) {
       return slug;
     }
 
@@ -64,10 +70,14 @@ async function generateUniqueSlug(ctx: any, title: string, excludeEventId?: Id<"
 /**
  * Check if user is a member of the team
  */
-async function checkTeamMembership(ctx: any, userId: Id<"users">, teamId: Id<"teams">) {
+async function checkTeamMembership(
+  ctx: any,
+  userId: Id<"users">,
+  teamId: Id<"teams">
+) {
   const membership = await ctx.db
     .query("teamMembers")
-    .withIndex("by_team_and_user", (q: any) => 
+    .withIndex("by_team_and_user", (q: any) =>
       q.eq("teamId", teamId).eq("userId", userId)
     )
     .first();
@@ -78,7 +88,11 @@ async function checkTeamMembership(ctx: any, userId: Id<"users">, teamId: Id<"te
 /**
  * Check if user can manage events for this team (owner, admin, or member)
  */
-async function checkEventCreatePermission(ctx: any, userId: Id<"users">, teamId: Id<"teams">) {
+async function checkEventCreatePermission(
+  ctx: any,
+  userId: Id<"users">,
+  teamId: Id<"teams">
+) {
   const membership = await checkTeamMembership(ctx, userId, teamId);
   if (!membership) {
     throw new Error("You must be a team member to create events");
@@ -116,21 +130,24 @@ async function buildEventResponse(ctx: any, event: any, userId?: Id<"users">) {
       canManage = true;
     } else {
       const membership = await checkTeamMembership(ctx, userId, event.teamId);
-      if (membership && (membership.role === "admin" || membership.role === "owner")) {
+      if (
+        membership &&
+        (membership.role === "admin" || membership.role === "owner")
+      ) {
         canManage = true;
       }
     }
   }
 
   // Generate image URLs - separate event image and banner image
-  const eventImageUrl = event.eventImageId 
-    ? (await ctx.storage.getUrl(event.eventImageId)) ?? undefined 
+  const eventImageUrl = event.eventImageId
+    ? ((await ctx.storage.getUrl(event.eventImageId)) ?? undefined)
     : undefined;
-  const bannerImageUrl = event.bannerImageId 
-    ? (await ctx.storage.getUrl(event.bannerImageId)) ?? undefined 
+  const bannerImageUrl = event.bannerImageId
+    ? ((await ctx.storage.getUrl(event.bannerImageId)) ?? undefined)
     : undefined;
-  const socialImageUrl = event.socialImageId 
-    ? (await ctx.storage.getUrl(event.socialImageId)) ?? undefined 
+  const socialImageUrl = event.socialImageId
+    ? ((await ctx.storage.getUrl(event.socialImageId)) ?? undefined)
     : undefined;
 
   return {
@@ -143,7 +160,9 @@ async function buildEventResponse(ctx: any, event: any, userId?: Id<"users">) {
       name: team.name,
       slug: team.slug,
       logo: team.logo,
-      logoUrl: team.logo ? (await ctx.storage.getUrl(team.logo)) ?? undefined : undefined,
+      logoUrl: team.logo
+        ? ((await ctx.storage.getUrl(team.logo)) ?? undefined)
+        : undefined,
       primaryColor: team.primaryColor,
     },
     organizer: {
@@ -159,7 +178,11 @@ async function buildEventResponse(ctx: any, event: any, userId?: Id<"users">) {
 /**
  * Check if user can edit/delete specific event (organizer, team admin, or owner)
  */
-async function checkEventManagePermission(ctx: any, userId: Id<"users">, eventId: Id<"events">) {
+async function checkEventManagePermission(
+  ctx: any,
+  userId: Id<"users">,
+  eventId: Id<"events">
+) {
   const event = await ctx.db.get(eventId);
   if (!event) {
     throw new Error("Event not found");
@@ -230,7 +253,9 @@ export const createEvent = mutation({
       throw new Error("Maximum capacity must be a positive number");
     }
     if (args.timezone && !isValidTimezone(args.timezone)) {
-      throw new Error("Invalid timezone. Please use a valid IANA timezone identifier");
+      throw new Error(
+        "Invalid timezone. Please use a valid IANA timezone identifier"
+      );
     }
 
     // Check permissions (user is already verified to be a team member by requireTeam)
@@ -287,7 +312,8 @@ export const createEvent = mutation({
       .collect();
 
     for (const member of teamMembers) {
-      if (member.userId !== userId) { // Skip organizer, already added
+      if (member.userId !== userId) {
+        // Skip organizer, already added
         await ctx.db.insert("threadParticipants", {
           threadId,
           userId: member.userId,
@@ -327,7 +353,7 @@ export const createDraftEvent = mutation({
     const now = Date.now();
     const tomorrow = now + 24 * 60 * 60 * 1000;
     const tomorrowPlusHour = tomorrow + 60 * 60 * 1000;
-    
+
     // Create event with minimal default values
     const title = "Untitled Event";
     const slug = await generateUniqueSlug(ctx, title);
@@ -378,7 +404,8 @@ export const createDraftEvent = mutation({
       .collect();
 
     for (const member of teamMembers) {
-      if (member.userId !== userId) { // Skip organizer, already added
+      if (member.userId !== userId) {
+        // Skip organizer, already added
         await ctx.db.insert("threadParticipants", {
           threadId,
           userId: member.userId,
@@ -413,17 +440,25 @@ export const updateEvent = mutation({
     startTime: v.optional(v.number()),
     endTime: v.optional(v.number()),
     timezone: v.optional(v.string()),
-    eventType: v.optional(v.union(
-      v.literal("music"),
-      v.literal("art"),
-      v.literal("workshop"),
-      v.literal("performance"),
-      v.literal("exhibition"),
-      v.literal("other")
-    )),
+    eventType: v.optional(
+      v.union(
+        v.literal("music"),
+        v.literal("art"),
+        v.literal("workshop"),
+        v.literal("performance"),
+        v.literal("exhibition"),
+        v.literal("other")
+      )
+    ),
     maxCapacity: v.optional(v.number()),
     registrationDeadline: v.optional(v.number()),
-    status: v.optional(v.union(v.literal("draft"), v.literal("published"), v.literal("cancelled"))),
+    status: v.optional(
+      v.union(
+        v.literal("draft"),
+        v.literal("published"),
+        v.literal("cancelled")
+      )
+    ),
     eventImageId: v.optional(v.id("_storage")), // Legacy field
     bannerImageId: v.optional(v.id("_storage")),
     socialImageId: v.optional(v.id("_storage")),
@@ -438,7 +473,11 @@ export const updateEvent = mutation({
     }
 
     // Check permissions and get event
-    const { event } = await checkEventManagePermission(ctx, user._id, args.eventId);
+    const { event } = await checkEventManagePermission(
+      ctx,
+      user._id,
+      args.eventId
+    );
 
     // Build update object
     const updates: any = {
@@ -451,7 +490,7 @@ export const updateEvent = mutation({
         throw new Error("Event title must be at least 3 characters long");
       }
       updates.title = args.title.trim();
-      
+
       // Generate new slug if title changed
       if (args.title.trim() !== event.title) {
         updates.slug = await generateUniqueSlug(ctx, args.title, args.eventId);
@@ -461,7 +500,9 @@ export const updateEvent = mutation({
     // Validate and add other updates
     if (args.description !== undefined) {
       if (args.description.trim().length < 10) {
-        throw new Error("Event description must be at least 10 characters long");
+        throw new Error(
+          "Event description must be at least 10 characters long"
+        );
       }
       updates.description = args.description.trim();
     }
@@ -490,7 +531,9 @@ export const updateEvent = mutation({
 
     if (args.timezone !== undefined) {
       if (!isValidTimezone(args.timezone)) {
-        throw new Error("Invalid timezone. Please use a valid IANA timezone identifier");
+        throw new Error(
+          "Invalid timezone. Please use a valid IANA timezone identifier"
+        );
       }
       updates.timezone = args.timezone;
     }
@@ -527,7 +570,7 @@ export const updateEvent = mutation({
     }
 
     await ctx.db.patch(args.eventId, updates);
-    
+
     // If title was updated, update the related event thread title
     if (args.title !== undefined && args.title.trim() !== event.title) {
       const eventThread = await ctx.db
@@ -535,7 +578,7 @@ export const updateEvent = mutation({
         .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
         .filter((q) => q.eq(q.field("threadType"), "event"))
         .first();
-      
+
       if (eventThread) {
         await ctx.db.patch(eventThread._id, {
           title: args.title.trim(),
@@ -543,13 +586,13 @@ export const updateEvent = mutation({
         });
       }
     }
-    
+
     // Get the updated event to return the current slug
     const updatedEvent = await ctx.db.get(args.eventId);
     if (!updatedEvent) {
       throw new Error("Failed to retrieve updated event");
     }
-    
+
     return { slug: updatedEvent.slug };
   },
 });
@@ -617,7 +660,11 @@ export const getEvent = query({
       ),
       maxCapacity: v.optional(v.float64()),
       registrationDeadline: v.optional(v.float64()),
-      status: v.union(v.literal("draft"), v.literal("published"), v.literal("cancelled")),
+      status: v.union(
+        v.literal("draft"),
+        v.literal("published"),
+        v.literal("cancelled")
+      ),
       eventImageId: v.optional(v.id("_storage")), // Legacy field
       eventImageUrl: v.optional(v.string()),
       bannerImageId: v.optional(v.id("_storage")),
@@ -657,8 +704,15 @@ export const getEvent = query({
       if (event.organizerId === user._id) {
         canManage = true;
       } else {
-        const membership = await checkTeamMembership(ctx, user._id, event.teamId);
-        if (membership && (membership.role === "admin" || membership.role === "owner")) {
+        const membership = await checkTeamMembership(
+          ctx,
+          user._id,
+          event.teamId
+        );
+        if (
+          membership &&
+          (membership.role === "admin" || membership.role === "owner")
+        ) {
           canManage = true;
         }
       }
@@ -704,7 +758,11 @@ export const getEventBySlug = query({
       ),
       maxCapacity: v.optional(v.float64()),
       registrationDeadline: v.optional(v.float64()),
-      status: v.union(v.literal("draft"), v.literal("published"), v.literal("cancelled")),
+      status: v.union(
+        v.literal("draft"),
+        v.literal("published"),
+        v.literal("cancelled")
+      ),
       eventImageId: v.optional(v.id("_storage")), // Legacy field
       eventImageUrl: v.optional(v.string()),
       bannerImageId: v.optional(v.id("_storage")),
@@ -749,8 +807,15 @@ export const getEventBySlug = query({
       if (event.organizerId === user._id) {
         canManage = true;
       } else {
-        const membership = await checkTeamMembership(ctx, user._id, event.teamId);
-        if (membership && (membership.role === "admin" || membership.role === "owner")) {
+        const membership = await checkTeamMembership(
+          ctx,
+          user._id,
+          event.teamId
+        );
+        if (
+          membership &&
+          (membership.role === "admin" || membership.role === "owner")
+        ) {
           canManage = true;
         }
       }
@@ -771,41 +836,47 @@ export const getEventBySlug = query({
  */
 export const getMyEvents = query({
   args: {},
-  returns: v.array(v.object({
-    _id: v.id("events"),
-    _creationTime: v.number(),
-    title: v.string(),
-    slug: v.string(),
-    description: v.string(),
-    venue: v.string(),
-    startTime: v.number(),
-    endTime: v.number(),
-    timezone: v.string(),
-    eventType: v.union(
-      v.literal("music"),
-      v.literal("art"),
-      v.literal("workshop"),
-      v.literal("performance"),
-      v.literal("exhibition"),
-      v.literal("other")
-    ),
-    maxCapacity: v.optional(v.number()),
-    registrationDeadline: v.optional(v.number()),
-    status: v.union(v.literal("draft"), v.literal("published"), v.literal("cancelled")),
-    bannerImageId: v.optional(v.id("_storage")),
-    bannerImageUrl: v.optional(v.string()),
-    socialImageId: v.optional(v.id("_storage")),
-    socialImageUrl: v.optional(v.string()),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-    organizer: v.object({
-      _id: v.id("users"),
-      name: v.optional(v.string()),
-      email: v.optional(v.string()),
-    }),
-    registrationCount: v.number(),
-    canManage: v.boolean(),
-  })),
+  returns: v.array(
+    v.object({
+      _id: v.id("events"),
+      _creationTime: v.number(),
+      title: v.string(),
+      slug: v.string(),
+      description: v.string(),
+      venue: v.string(),
+      startTime: v.number(),
+      endTime: v.number(),
+      timezone: v.string(),
+      eventType: v.union(
+        v.literal("music"),
+        v.literal("art"),
+        v.literal("workshop"),
+        v.literal("performance"),
+        v.literal("exhibition"),
+        v.literal("other")
+      ),
+      maxCapacity: v.optional(v.number()),
+      registrationDeadline: v.optional(v.number()),
+      status: v.union(
+        v.literal("draft"),
+        v.literal("published"),
+        v.literal("cancelled")
+      ),
+      bannerImageId: v.optional(v.id("_storage")),
+      bannerImageUrl: v.optional(v.string()),
+      socialImageId: v.optional(v.id("_storage")),
+      socialImageUrl: v.optional(v.string()),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+      organizer: v.object({
+        _id: v.id("users"),
+        name: v.optional(v.string()),
+        email: v.optional(v.string()),
+      }),
+      registrationCount: v.number(),
+      canManage: v.boolean(),
+    })
+  ),
   handler: async (ctx) => {
     const user = await requireAuth(ctx);
     if (!user) return [];
@@ -819,7 +890,7 @@ export const getMyEvents = query({
     // Get team membership for permission checking
     const membership = await ctx.db
       .query("teamMembers")
-      .withIndex("by_team_and_user", (q: any) => 
+      .withIndex("by_team_and_user", (q: any) =>
         q.eq("teamId", user.currentTeamId).eq("userId", user._id)
       )
       .first();
@@ -827,9 +898,9 @@ export const getMyEvents = query({
     if (!membership) return [];
 
     // Batch fetch all unique organizer IDs to avoid N+1 query problem
-    const organizerIds = [...new Set(events.map(event => event.organizerId))];
+    const organizerIds = [...new Set(events.map((event) => event.organizerId))];
     const organizersMap = new Map();
-    
+
     for (const organizerId of organizerIds) {
       const organizer = await ctx.db.get(organizerId);
       if (organizer) {
@@ -853,17 +924,18 @@ export const getMyEvents = query({
       if (!organizer) continue;
 
       // Check if user can manage this event
-      const canManage = event.organizerId === user._id || 
-                       membership.role === "admin" || 
-                       membership.role === "owner";
+      const canManage =
+        event.organizerId === user._id ||
+        membership.role === "admin" ||
+        membership.role === "owner";
 
       // Generate image URLs - handle legacy eventImageId
       const bannerImageId = event.bannerImageId || event.eventImageId; // Fallback to legacy field
-      const bannerImageUrl = bannerImageId 
-        ? (await ctx.storage.getUrl(bannerImageId)) ?? undefined 
+      const bannerImageUrl = bannerImageId
+        ? ((await ctx.storage.getUrl(bannerImageId)) ?? undefined)
         : undefined;
-      const socialImageUrl = event.socialImageId 
-        ? (await ctx.storage.getUrl(event.socialImageId)) ?? undefined 
+      const socialImageUrl = event.socialImageId
+        ? ((await ctx.storage.getUrl(event.socialImageId)) ?? undefined)
         : undefined;
 
       eventsWithDetails.push({
@@ -907,41 +979,47 @@ export const getTeamEvents = query({
   args: {
     teamId: v.id("teams"),
   },
-  returns: v.array(v.object({
-    _id: v.id("events"),
-    _creationTime: v.number(),
-    title: v.string(),
-    slug: v.string(),
-    description: v.string(),
-    venue: v.string(),
-    startTime: v.number(),
-    endTime: v.number(),
-    timezone: v.string(),
-    eventType: v.union(
-      v.literal("music"),
-      v.literal("art"),
-      v.literal("workshop"),
-      v.literal("performance"),
-      v.literal("exhibition"),
-      v.literal("other")
-    ),
-    maxCapacity: v.optional(v.number()),
-    registrationDeadline: v.optional(v.number()),
-    status: v.union(v.literal("draft"), v.literal("published"), v.literal("cancelled")),
-    bannerImageId: v.optional(v.id("_storage")),
-    bannerImageUrl: v.optional(v.string()),
-    socialImageId: v.optional(v.id("_storage")),
-    socialImageUrl: v.optional(v.string()),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-    organizer: v.object({
-      _id: v.id("users"),
-      name: v.optional(v.string()),
-      email: v.optional(v.string()),
-    }),
-    registrationCount: v.number(),
-    canManage: v.boolean(),
-  })),
+  returns: v.array(
+    v.object({
+      _id: v.id("events"),
+      _creationTime: v.number(),
+      title: v.string(),
+      slug: v.string(),
+      description: v.string(),
+      venue: v.string(),
+      startTime: v.number(),
+      endTime: v.number(),
+      timezone: v.string(),
+      eventType: v.union(
+        v.literal("music"),
+        v.literal("art"),
+        v.literal("workshop"),
+        v.literal("performance"),
+        v.literal("exhibition"),
+        v.literal("other")
+      ),
+      maxCapacity: v.optional(v.number()),
+      registrationDeadline: v.optional(v.number()),
+      status: v.union(
+        v.literal("draft"),
+        v.literal("published"),
+        v.literal("cancelled")
+      ),
+      bannerImageId: v.optional(v.id("_storage")),
+      bannerImageUrl: v.optional(v.string()),
+      socialImageId: v.optional(v.id("_storage")),
+      socialImageUrl: v.optional(v.string()),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+      organizer: v.object({
+        _id: v.id("users"),
+        name: v.optional(v.string()),
+        email: v.optional(v.string()),
+      }),
+      registrationCount: v.number(),
+      canManage: v.boolean(),
+    })
+  ),
   handler: async (ctx, args) => {
     const user = await requireAuth(ctx);
     if (!user?._id) {
@@ -961,9 +1039,9 @@ export const getTeamEvents = query({
       .collect();
 
     // Batch fetch all unique organizer IDs to avoid N+1 query problem
-    const organizerIds = [...new Set(events.map(event => event.organizerId))];
+    const organizerIds = [...new Set(events.map((event) => event.organizerId))];
     const organizersMap = new Map();
-    
+
     for (const organizerId of organizerIds) {
       const organizer = await ctx.db.get(organizerId);
       if (organizer) {
@@ -987,17 +1065,18 @@ export const getTeamEvents = query({
       if (!organizer) continue;
 
       // Check if user can manage this event
-      const canManage = event.organizerId === user._id || 
-                       membership.role === "admin" || 
-                       membership.role === "owner";
+      const canManage =
+        event.organizerId === user._id ||
+        membership.role === "admin" ||
+        membership.role === "owner";
 
       // Generate image URLs - handle legacy eventImageId
       const bannerImageId = event.bannerImageId || event.eventImageId; // Fallback to legacy field
-      const bannerImageUrl = bannerImageId 
-        ? (await ctx.storage.getUrl(bannerImageId)) ?? undefined 
+      const bannerImageUrl = bannerImageId
+        ? ((await ctx.storage.getUrl(bannerImageId)) ?? undefined)
         : undefined;
-      const socialImageUrl = event.socialImageId 
-        ? (await ctx.storage.getUrl(event.socialImageId)) ?? undefined 
+      const socialImageUrl = event.socialImageId
+        ? ((await ctx.storage.getUrl(event.socialImageId)) ?? undefined)
         : undefined;
 
       eventsWithDetails.push({
@@ -1113,7 +1192,10 @@ export const registerForEvent = mutation({
     }
 
     // Check registration deadline
-    if (event.registrationDeadline && event.registrationDeadline <= Date.now()) {
+    if (
+      event.registrationDeadline &&
+      event.registrationDeadline <= Date.now()
+    ) {
       throw new Error("Registration deadline has passed");
     }
 
@@ -1121,11 +1203,15 @@ export const registerForEvent = mutation({
     const existingRegistration = await ctx.db
       .query("eventRegistrations")
       .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
-      .filter((q) => q.eq(q.field("attendeeEmail"), args.attendeeEmail.toLowerCase().trim()))
+      .filter((q) =>
+        q.eq(q.field("attendeeEmail"), args.attendeeEmail.toLowerCase().trim())
+      )
       .first();
 
     if (existingRegistration) {
-      throw new Error("This email address is already registered for this event");
+      throw new Error(
+        "This email address is already registered for this event"
+      );
     }
 
     const now = Date.now();
@@ -1197,16 +1283,18 @@ export const getEventRegistrations = query({
   args: {
     eventId: v.id("events"),
   },
-  returns: v.array(v.object({
-    _id: v.id("eventRegistrations"),
-    _creationTime: v.number(),
-    eventId: v.id("events"),
-    attendeeName: v.string(),
-    attendeeEmail: v.string(),
-    attendeePhone: v.optional(v.string()),
-    registeredAt: v.number(),
-    confirmationSent: v.boolean(),
-  })),
+  returns: v.array(
+    v.object({
+      _id: v.id("eventRegistrations"),
+      _creationTime: v.number(),
+      eventId: v.id("events"),
+      attendeeName: v.string(),
+      attendeeEmail: v.string(),
+      attendeePhone: v.optional(v.string()),
+      registeredAt: v.number(),
+      confirmationSent: v.boolean(),
+    })
+  ),
   handler: async (ctx, args) => {
     const user = await requireAuth(ctx);
     if (!user?._id) {

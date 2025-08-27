@@ -1,15 +1,19 @@
-import React from 'react';
-import { EventWithDetails, TeamEvent, eventTypeOptions } from '../../types/events';
-import { EventStatusBadge } from './EventStatusBadge';
-import { CalendarHeart, MoreHorizontal, Users2 } from 'lucide-react';
-import { Card, CardContent, CardHeader } from '../ui/card';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from '../ui/dropdown-menu';
-import { H4, Muted, Small } from '../typography/typography';
+import { CalendarHeart, MoreHorizontal, Users2 } from "lucide-react";
+import type React from "react";
+import {
+  type EventWithDetails,
+  eventTypeOptions,
+  type TeamEvent,
+} from "../../types/events";
+import { H4, Muted, Small } from "../typography/typography";
+import { Card, CardContent, CardHeader } from "../ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import { EventStatusBadge } from "./EventStatusBadge";
 
 interface EventCardProps {
   event: EventWithDetails | TeamEvent;
@@ -28,46 +32,51 @@ export const EventCard: React.FC<EventCardProps> = ({
   onView,
   onShare,
   onDuplicate,
-  className = '',
+  className = "",
 }) => {
-  const eventTypeConfig = eventTypeOptions.find(option => option.value === event.eventType);
+  const eventTypeConfig = eventTypeOptions.find(
+    (option) => option.value === event.eventType
+  );
   const startDate = new Date(event.startTime);
-  
-  const isFull = event.maxCapacity && event.registrationCount >= event.maxCapacity;
+
+  const isFull =
+    event.maxCapacity && event.registrationCount >= event.maxCapacity;
 
   return (
-    <Card 
+    <Card
       className={`${className} cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.01]`}
-      onClick={()=> navigate && navigate(`/events/${event._id}`)}
+      onClick={() => navigate && navigate(`/events/${event._id}`)}
     >
       {/* Event image or placeholder - Following PRD hierarchy #1 */}
       <CardHeader className="p-0 aspect-video bg-muted rounded-t-lg flex items-center justify-center">
-        {'bannerImageUrl' in event && event.bannerImageUrl ? (
-          <img 
-            src={event.bannerImageUrl} 
+        {"bannerImageUrl" in event && event.bannerImageUrl ? (
+          <img
+            src={event.bannerImageUrl}
             alt={event.title}
             className="w-full h-full object-cover rounded-t-lg"
           />
         ) : (
           <div className="w-full h-full bg-muted rounded-t-lg flex items-center justify-center">
-            <span className="text-6xl text-muted-foreground">{eventTypeConfig?.icon || '📅'}</span>
+            <span className="text-6xl text-muted-foreground">
+              {eventTypeConfig?.icon || "📅"}
+            </span>
           </div>
         )}
       </CardHeader>
-      
+
       <CardContent>
         {/* PRD hierarchy #2: Event title and type badge */}
         <div className="mb-3">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <span className="text-lg">{eventTypeConfig?.icon || '📅'}</span>
-              <Small>{eventTypeConfig?.label || 'Event'}</Small>
+              <span className="text-lg">{eventTypeConfig?.icon || "📅"}</span>
+              <Small>{eventTypeConfig?.label || "Event"}</Small>
             </div>
-            
+
             {/* PRD hierarchy #5: Actions menu (⋯) */}
             {event.canManage && (
               <DropdownMenu>
-                <DropdownMenuTrigger 
+                <DropdownMenuTrigger
                   className="p-1 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted"
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -84,7 +93,7 @@ export const EventCard: React.FC<EventCardProps> = ({
                       Edit Event
                     </DropdownMenuItem>
                   )}
-                  {onView && event.status === 'published' && (
+                  {onView && event.status === "published" && (
                     <DropdownMenuItem
                       onClick={(e) => {
                         e.stopPropagation();
@@ -94,7 +103,7 @@ export const EventCard: React.FC<EventCardProps> = ({
                       View Public Page
                     </DropdownMenuItem>
                   )}
-                  {onShare && event.status === 'published' && (
+                  {onShare && event.status === "published" && (
                     <DropdownMenuItem
                       onClick={(e) => {
                         e.stopPropagation();
@@ -118,9 +127,7 @@ export const EventCard: React.FC<EventCardProps> = ({
               </DropdownMenu>
             )}
           </div>
-          <H4 className='line-clamp-2'>
-            {event.title}
-          </H4>
+          <H4 className="line-clamp-2">{event.title}</H4>
         </div>
 
         {/* PRD hierarchy #3: Date/time */}
@@ -128,7 +135,7 @@ export const EventCard: React.FC<EventCardProps> = ({
           <div className="flex items-center text-sm text-muted-foreground">
             <CalendarHeart className="w-4 h-4 mr-1 flex-shrink-0" />
             <Muted className="">
-              {`${startDate.toLocaleDateString()} at ${startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+              {`${startDate.toLocaleDateString()} at ${startDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
             </Muted>
           </div>
         </div>
@@ -143,11 +150,11 @@ export const EventCard: React.FC<EventCardProps> = ({
               </span>
             )}
           </div>
-          
+
           <div className="flex items-center">
             <Users2 className="text-muted-foreground w-4 h-4 mr-1 flex-shrink-0" />
             <Muted className="">
-              {`${event.registrationCount} registered${event.maxCapacity ? ` / ${event.maxCapacity}` : ''}`}
+              {`${event.registrationCount} registered${event.maxCapacity ? ` / ${event.maxCapacity}` : ""}`}
             </Muted>
           </div>
         </div>
