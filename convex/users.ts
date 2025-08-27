@@ -126,3 +126,83 @@ export const clearCurrentTeam = mutation({
     return null;
   },
 });
+
+/**
+ * Update user profile information
+ */
+export const updateProfile = mutation({
+  args: {
+    name: v.optional(v.string()),
+    email: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    favoriteColor: v.optional(v.string()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const user = await requireAuth(ctx);
+
+    // Prepare update data - only include fields that are provided
+    const updateData: any = {};
+    
+    if (args.name !== undefined) {
+      updateData.name = args.name;
+    }
+    
+    if (args.email !== undefined) {
+      // Basic email validation
+      if (args.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(args.email)) {
+        throw new Error("Invalid email format");
+      }
+      updateData.email = args.email;
+      // Reset email verification when email changes
+      if (args.email !== user.email) {
+        updateData.emailVerificationTime = undefined;
+      }
+    }
+    
+    if (args.phone !== undefined) {
+      updateData.phone = args.phone;
+      // Reset phone verification when phone changes
+      if (args.phone !== user.phone) {
+        updateData.phoneVerificationTime = undefined;
+      }
+    }
+    
+    if (args.favoriteColor !== undefined) {
+      updateData.favoriteColor = args.favoriteColor;
+    }
+
+    // Only update if there are changes to make
+    if (Object.keys(updateData).length > 0) {
+      await ctx.db.patch(user._id, updateData);
+    }
+
+    return null;
+  },
+});
+
+/**
+ * Update user avatar image
+ */
+export const updateAvatar = mutation({
+  args: {
+    imageId: v.optional(v.id("_storage")),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const user = await requireAuth(ctx);
+
+    if (args.imageId) {
+      const imageUrl = await ctx.storage.getUrl(args.imageId);
+      await ctx.db.patch(user._id, { 
+        image: imageUrl || undefined
+      });
+    } else {
+      await ctx.db.patch(user._id, { 
+        image: undefined
+      });
+    }
+
+    return null;
+  },
+});

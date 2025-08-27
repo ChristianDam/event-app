@@ -27,7 +27,6 @@ export function AppSidebar({ navigate, currentPath }: AppSidebarProps) {
   const { isAuthenticated, isLoading } = useConvexAuth();
   const { isMobile, setOpenMobile } = useSidebar();
   const currentUser = useQuery(api.users.viewer, isAuthenticated ? {} : "skip");
-  const currentTeam = useQuery(api.users.getCurrentTeam, isAuthenticated ? {} : "skip");
 
   const handleNavigation = (to: string) => (e: React.MouseEvent) => {
     e.preventDefault();
@@ -176,16 +175,13 @@ export function AppSidebar({ navigate, currentPath }: AppSidebarProps) {
       </SidebarContent>
 
       <SidebarFooter className="px-[11px] py-4 flex justify-center items-center">
-        {/* Compact User Avatar */}
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-          <UserMenu
-            favoriteColor={currentUser?.favoriteColor}
-            navigate={navigate!}
-            compact={true}
-          >
-            {(currentUser?.name || currentUser?.email)?.charAt(0).toUpperCase() || "U"}
-          </UserMenu>
-        </div>
+        <UserMenu
+          favoriteColor={currentUser?.favoriteColor}
+          navigate={navigate!}
+          compact={true}
+        >
+          {(currentUser?.name || currentUser?.email)?.charAt(0).toUpperCase() || "U"}
+        </UserMenu>
       </SidebarFooter>
     </Sidebar>
   );

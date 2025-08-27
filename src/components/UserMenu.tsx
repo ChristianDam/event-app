@@ -20,7 +20,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { PersonIcon, CheckIcon, PlusIcon } from "@radix-ui/react-icons";
+import { CheckIcon, PlusIcon } from "@radix-ui/react-icons";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ReactNode, useState, useCallback } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useQuery, useMutation } from "convex/react";
@@ -47,6 +48,16 @@ export function UserMenu({
   const [showCreateTeam, setShowCreateTeam] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const getInitials = (name?: string, email?: string) => {
+    if (name) {
+      return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+    }
+    if (email) {
+      return email.charAt(0).toUpperCase();
+    }
+    return "U";
+  };
+
   const handleTeamSwitch = useCallback(async (teamId: Id<"teams">) => {
     try {
       await setCurrentTeam({ teamId });
@@ -71,12 +82,22 @@ export function UserMenu({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           {compact ? (
-            <button className="w-8 h-8 rounded-full text-white  font-bold hover:opacity-80 transition-opacity">
-              {children}
+            <button className="w-8 h-8 rounded-full hover:opacity-80 transition-opacity">
+              <Avatar className="w-8 h-8">
+                <AvatarImage src={currentUser?.image || undefined} />
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs font-bold">
+                  {getInitials(currentUser?.name, currentUser?.email)}
+                </AvatarFallback>
+              </Avatar>
             </button>
           ) : (
-            <Button variant="secondary" size="icon" className="rounded-full">
-              <PersonIcon className="h-5 w-5" />
+            <Button variant="secondary" size="icon" className="rounded-full p-0 h-10 w-10">
+              <Avatar className="w-full h-full">
+                <AvatarImage src={currentUser?.image || undefined} />
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-sm font-bold">
+                  {getInitials(currentUser?.name, currentUser?.email)}
+                </AvatarFallback>
+              </Avatar>
               <span className="sr-only">Toggle user menu</span>
             </Button>
           )}
@@ -164,6 +185,10 @@ export function UserMenu({
           {/* Create team option */}
           
 
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => navigate('/settings')} className="flex items-center gap-3">
+            <Small>Settings</Small>
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuLabel className="flex items-center gap-2 py-0 font-normal">
             Theme

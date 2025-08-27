@@ -16,6 +16,7 @@ import type {
 import type * as auth from "../auth.js";
 import type * as emails_TeamInvitationEmail from "../emails/TeamInvitationEmail.js";
 import type * as events from "../events.js";
+import type * as files from "../files.js";
 import type * as helpers from "../helpers.js";
 import type * as http from "../http.js";
 import type * as lib_auth from "../lib/auth.js";
@@ -39,6 +40,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   "emails/TeamInvitationEmail": typeof emails_TeamInvitationEmail;
   events: typeof events;
+  files: typeof files;
   helpers: typeof helpers;
   http: typeof http;
   "lib/auth": typeof lib_auth;

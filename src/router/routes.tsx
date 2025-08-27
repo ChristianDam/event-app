@@ -4,6 +4,7 @@ import { router, RouteDefinition } from './fileBasedRouter';
 import HomePage from '../pages/index';
 import EventsPage from '../pages/events/index';
 import MessagesPage from '../pages/messages';
+import SettingsPage from '../pages/settings';
 import TeamPage from '../pages/team/index';
 import InviteTokenPage from '../pages/invite/[token]';
 import TeamIdPage from '../pages/team/[id]';
@@ -25,6 +26,11 @@ const routes: RouteDefinition[] = [
   {
     path: '/messages',
     component: MessagesPage,
+    authRequired: true,
+  },
+  {
+    path: '/settings',
+    component: SettingsPage,
     authRequired: true,
   },
   {
