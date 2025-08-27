@@ -107,7 +107,7 @@ export const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
             </div>
 
             {/* Form */}
-            <form onSubmit={onFormSubmit} className="p-6 space-y-4">
+            <form onSubmit={(e) => { void onFormSubmit(e); }} className="p-6 space-y-4">
               <FormField
                 id="attendeeName"
                 label="Full Name"

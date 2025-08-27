@@ -117,7 +117,7 @@ export const useProfileForm = ({
   }, [clearErrors]);
 
   const validateForm = useCallback(() => {
-    trigger();
+    void trigger();
     return Object.keys(formState.errors).length === 0;
   }, [trigger, formState.errors]);
 
