@@ -1,11 +1,11 @@
-import { Id } from "../../convex/_generated/dataModel";
+import type { Id } from "../../convex/_generated/dataModel";
 
-export type EventType = 
-  | "music" 
-  | "art" 
-  | "workshop" 
-  | "performance" 
-  | "exhibition" 
+export type EventType =
+  | "music"
+  | "art"
+  | "workshop"
+  | "performance"
+  | "exhibition"
   | "other";
 
 export type EventStatus = "draft" | "published" | "cancelled";
@@ -108,16 +108,61 @@ export interface EventFormErrors {
 }
 
 export const eventTypeOptions = [
-  { value: "music" as const, label: "Music", icon: "🎵", description: "Concerts, festivals, live performances" },
-  { value: "art" as const, label: "Art", icon: "🎨", description: "Galleries, exhibitions, art shows" },
-  { value: "workshop" as const, label: "Workshop", icon: "🛠️", description: "Learning sessions, tutorials" },
-  { value: "performance" as const, label: "Performance", icon: "🎭", description: "Theater, dance, spoken word" },
-  { value: "exhibition" as const, label: "Exhibition", icon: "🏛️", description: "Museums, showcases, displays" },
-  { value: "other" as const, label: "Other", icon: "📅", description: "General events and gatherings" },
+  {
+    value: "music" as const,
+    label: "Music",
+    icon: "🎵",
+    description: "Concerts, festivals, live performances",
+  },
+  {
+    value: "art" as const,
+    label: "Art",
+    icon: "🎨",
+    description: "Galleries, exhibitions, art shows",
+  },
+  {
+    value: "workshop" as const,
+    label: "Workshop",
+    icon: "🛠️",
+    description: "Learning sessions, tutorials",
+  },
+  {
+    value: "performance" as const,
+    label: "Performance",
+    icon: "🎭",
+    description: "Theater, dance, spoken word",
+  },
+  {
+    value: "exhibition" as const,
+    label: "Exhibition",
+    icon: "🏛️",
+    description: "Museums, showcases, displays",
+  },
+  {
+    value: "other" as const,
+    label: "Other",
+    icon: "📅",
+    description: "General events and gatherings",
+  },
 ] as const;
 
 export const eventStatusOptions = [
-  { value: "draft" as const, label: "Draft", color: "gray", description: "Not visible to public" },
-  { value: "published" as const, label: "Published", color: "green", description: "Live and accepting registrations" },
-  { value: "cancelled" as const, label: "Cancelled", color: "red", description: "Event has been cancelled" },
+  {
+    value: "draft" as const,
+    label: "Draft",
+    color: "gray",
+    description: "Not visible to public",
+  },
+  {
+    value: "published" as const,
+    label: "Published",
+    color: "green",
+    description: "Live and accepting registrations",
+  },
+  {
+    value: "cancelled" as const,
+    label: "Cancelled",
+    color: "red",
+    description: "Event has been cancelled",
+  },
 ] as const;

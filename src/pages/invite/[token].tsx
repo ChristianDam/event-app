@@ -1,18 +1,26 @@
+import { CheckIcon, CrossCircledIcon, PersonIcon } from "@radix-ui/react-icons";
+import {
+  Authenticated,
+  Unauthenticated,
+  useMutation,
+  useQuery,
+} from "convex/react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { SignInFormEmailCode } from "@/auth/SignInFormEmailCode";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PersonIcon, CheckIcon, CrossCircledIcon } from "@radix-ui/react-icons";
-import { useState } from "react";
-import { useQuery, useMutation, Authenticated, Unauthenticated } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { SignInFormEmailCode } from "@/auth/SignInFormEmailCode";
-import { toast } from 'sonner';
 
 interface InviteTokenPageProps {
   params: Record<string, string>;
   navigate: (to: string) => void;
 }
 
-export default function InviteTokenPage({ params, navigate }: InviteTokenPageProps) {
+export default function InviteTokenPage({
+  params,
+  navigate,
+}: InviteTokenPageProps) {
   const token = params.token;
   const invitation = useQuery(api.teams.getInvitationByToken, { token });
   const acceptInvitation = useMutation(api.teams.acceptInvitation);
@@ -24,13 +32,13 @@ export default function InviteTokenPage({ params, navigate }: InviteTokenPagePro
   const handleAcceptInvitation = async () => {
     setIsAccepting(true);
     setError(null);
-    
+
     try {
       const result = await acceptInvitation({ token });
-      
+
       if (result.success && result.teamId) {
         setAccepted(true);
-        toast.success('Successfully joined team!', {
+        toast.success("Successfully joined team!", {
           description: `Welcome to ${invitation?.teamName}! Redirecting to team page...`,
         });
         // Navigate to the team page after a short delay
@@ -40,7 +48,7 @@ export default function InviteTokenPage({ params, navigate }: InviteTokenPagePro
       } else {
         const errorMsg = result.error || "Failed to accept invitation";
         setError(errorMsg);
-        toast.error('Failed to join team', {
+        toast.error("Failed to join team", {
           description: errorMsg,
         });
       }
@@ -48,7 +56,7 @@ export default function InviteTokenPage({ params, navigate }: InviteTokenPagePro
       const errorMsg = "An unexpected error occurred";
       setError(errorMsg);
       console.error("Failed to accept invitation:", err);
-      toast.error('Unexpected error', {
+      toast.error("Unexpected error", {
         description: errorMsg,
       });
     } finally {
@@ -110,7 +118,8 @@ export default function InviteTokenPage({ params, navigate }: InviteTokenPagePro
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">
-              This invitation has expired. Please ask the team owner to send you a new invitation.
+              This invitation has expired. Please ask the team owner to send you
+              a new invitation.
             </p>
             <Button onClick={() => void navigate("/")} className="w-full">
               Go to Home
@@ -155,10 +164,11 @@ export default function InviteTokenPage({ params, navigate }: InviteTokenPagePro
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">
-              Please sign in or create an account to accept this team invitation.
+              Please sign in or create an account to accept this team
+              invitation.
             </p>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setShowSignIn(false)}
               className="w-full mb-4"
             >
@@ -190,26 +200,42 @@ export default function InviteTokenPage({ params, navigate }: InviteTokenPagePro
                 </p>
               )}
             </div>
-            
+
             <div className="border-t pt-4">
               <p className="text-sm">
                 {invitation.inviterName ? (
                   <>
-                    <strong>{invitation.inviterName}</strong> has invited you to join this team as{" "}
-                    <strong>{invitation.role === "admin" ? "an administrator" : "a member"}</strong>.
+                    <strong>{invitation.inviterName}</strong> has invited you to
+                    join this team as{" "}
+                    <strong>
+                      {invitation.role === "admin"
+                        ? "an administrator"
+                        : "a member"}
+                    </strong>
+                    .
                   </>
                 ) : (
                   <>
                     You've been invited to join this team as{" "}
-                    <strong>{invitation.role === "admin" ? "an administrator" : "a member"}</strong>.
+                    <strong>
+                      {invitation.role === "admin"
+                        ? "an administrator"
+                        : "a member"}
+                    </strong>
+                    .
                   </>
                 )}
               </p>
             </div>
 
             <div className="text-xs text-muted-foreground bg-gray-50 p-3 rounded">
-              <p><strong>Email:</strong> {invitation.email}</p>
-              <p><strong>Expires:</strong> {new Date(invitation.expiresAt).toLocaleDateString()}</p>
+              <p>
+                <strong>Email:</strong> {invitation.email}
+              </p>
+              <p>
+                <strong>Expires:</strong>{" "}
+                {new Date(invitation.expiresAt).toLocaleDateString()}
+              </p>
             </div>
 
             {error && (
@@ -227,7 +253,7 @@ export default function InviteTokenPage({ params, navigate }: InviteTokenPagePro
               >
                 Cancel
               </Button>
-              
+
               <Authenticated>
                 <Button
                   onClick={() => void handleAcceptInvitation()}
@@ -237,12 +263,9 @@ export default function InviteTokenPage({ params, navigate }: InviteTokenPagePro
                   {isAccepting ? "Joining..." : "Accept Invitation"}
                 </Button>
               </Authenticated>
-              
+
               <Unauthenticated>
-                <Button
-                  onClick={handleSignInToAccept}
-                  className="flex-1"
-                >
+                <Button onClick={handleSignInToAccept} className="flex-1">
                   Sign In to Accept
                 </Button>
               </Unauthenticated>

@@ -1,8 +1,13 @@
 import { v } from "convex/values";
-import { mutation, query, internalQuery, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { Id } from "./_generated/dataModel";
-import { requireAuth, getCurrentUser } from "./lib/auth";
+import type { Id } from "./_generated/dataModel";
+import {
+  internalMutation,
+  internalQuery,
+  mutation,
+  query,
+} from "./_generated/server";
+import { getCurrentUser, requireAuth } from "./lib/auth";
 
 /**
  * Create a new team with the authenticated user as owner
@@ -18,7 +23,7 @@ export const createTeam = mutation({
     const userId = user._id;
 
     const now = Date.now();
-    
+
     // Generate slug from name (basic implementation)
     const slug = args.name
       .toLowerCase()
@@ -32,7 +37,9 @@ export const createTeam = mutation({
       .first();
 
     if (existingTeam) {
-      throw new Error("Team name already exists. Please choose a different name.");
+      throw new Error(
+        "Team name already exists. Please choose a different name."
+      );
     }
 
     const teamId = await ctx.db.insert("teams", {
@@ -98,7 +105,7 @@ export const createDefaultTeam = internalMutation({
   returns: v.id("teams"),
   handler: async (ctx, args) => {
     const now = Date.now();
-    
+
     // Generate unique slug for "My Team"
     let slug = "my-team";
     let counter = 1;
@@ -106,7 +113,7 @@ export const createDefaultTeam = internalMutation({
       .query("teams")
       .withIndex("by_slug", (q) => q.eq("slug", slug))
       .first();
-    
+
     while (existingTeam) {
       slug = `my-team-${counter}`;
       counter++;
@@ -154,7 +161,8 @@ export const createDefaultTeam = internalMutation({
     await ctx.db.insert("threadMessages", {
       threadId,
       authorId: undefined,
-      content: "Welcome to My Team! This is your team's general discussion thread.",
+      content:
+        "Welcome to My Team! This is your team's general discussion thread.",
       messageType: "system",
       createdAt: now,
     });
@@ -173,21 +181,27 @@ export const createDefaultTeam = internalMutation({
  */
 export const getMyTeams = query({
   args: {},
-  returns: v.array(v.object({
-    _id: v.id("teams"),
-    _creationTime: v.number(),
-    name: v.string(),
-    slug: v.string(),
-    description: v.optional(v.string()),
-    ownerId: v.id("users"),
-    createdAt: v.number(),
-    logo: v.optional(v.id("_storage")),
-    logoUrl: v.optional(v.string()),
-    primaryColor: v.optional(v.string()),
-    role: v.union(v.literal("owner"), v.literal("admin"), v.literal("member")),
-    memberCount: v.number(),
-    isCurrentTeam: v.boolean(),
-  })),
+  returns: v.array(
+    v.object({
+      _id: v.id("teams"),
+      _creationTime: v.number(),
+      name: v.string(),
+      slug: v.string(),
+      description: v.optional(v.string()),
+      ownerId: v.id("users"),
+      createdAt: v.number(),
+      logo: v.optional(v.id("_storage")),
+      logoUrl: v.optional(v.string()),
+      primaryColor: v.optional(v.string()),
+      role: v.union(
+        v.literal("owner"),
+        v.literal("admin"),
+        v.literal("member")
+      ),
+      memberCount: v.number(),
+      isCurrentTeam: v.boolean(),
+    })
+  ),
   handler: async (ctx) => {
     const user = await requireAuth(ctx);
 
@@ -206,11 +220,13 @@ export const getMyTeams = query({
         .query("teamMembers")
         .withIndex("by_team", (q) => q.eq("teamId", team._id))
         .collect()
-        .then(members => members.length);
+        .then((members) => members.length);
 
       teams.push({
         ...team,
-        logoUrl: team.logo ? (await ctx.storage.getUrl(team.logo)) ?? undefined : undefined,
+        logoUrl: team.logo
+          ? ((await ctx.storage.getUrl(team.logo)) ?? undefined)
+          : undefined,
         role: membership.role,
         memberCount,
         isCurrentTeam: user.currentTeamId === team._id,
@@ -240,7 +256,11 @@ export const getTeam = query({
       logo: v.optional(v.id("_storage")),
       logoUrl: v.optional(v.string()),
       primaryColor: v.optional(v.string()),
-      userRole: v.union(v.literal("owner"), v.literal("admin"), v.literal("member")),
+      userRole: v.union(
+        v.literal("owner"),
+        v.literal("admin"),
+        v.literal("member")
+      ),
     }),
     v.null()
   ),
@@ -250,7 +270,7 @@ export const getTeam = query({
     // Check if user is a member of this team
     const membership = await ctx.db
       .query("teamMembers")
-      .withIndex("by_team_and_user", (q) => 
+      .withIndex("by_team_and_user", (q) =>
         q.eq("teamId", args.teamId).eq("userId", user._id)
       )
       .first();
@@ -266,7 +286,9 @@ export const getTeam = query({
 
     return {
       ...team,
-      logoUrl: team.logo ? (await ctx.storage.getUrl(team.logo)) ?? undefined : undefined,
+      logoUrl: team.logo
+        ? ((await ctx.storage.getUrl(team.logo)) ?? undefined)
+        : undefined,
       userRole: membership.role,
     };
   },
@@ -288,12 +310,15 @@ export const updateTeam = mutation({
     // Check if user has permission to update team
     const membership = await ctx.db
       .query("teamMembers")
-      .withIndex("by_team_and_user", (q) => 
+      .withIndex("by_team_and_user", (q) =>
         q.eq("teamId", args.teamId).eq("userId", user._id)
       )
       .first();
 
-    if (!membership || (membership.role !== "owner" && membership.role !== "admin")) {
+    if (
+      !membership ||
+      (membership.role !== "owner" && membership.role !== "admin")
+    ) {
       throw new Error("Insufficient permissions to update team");
     }
 
@@ -317,7 +342,9 @@ export const updateTeam = mutation({
         .first();
 
       if (existingTeam && existingTeam._id !== args.teamId) {
-        throw new Error("Team name already exists. Please choose a different name.");
+        throw new Error(
+          "Team name already exists. Please choose a different name."
+        );
       }
 
       updates.name = args.name;
@@ -349,12 +376,15 @@ export const updateTeamBranding = mutation({
     // Check if user has permission to update team
     const membership = await ctx.db
       .query("teamMembers")
-      .withIndex("by_team_and_user", (q) => 
+      .withIndex("by_team_and_user", (q) =>
         q.eq("teamId", args.teamId).eq("userId", user._id)
       )
       .first();
 
-    if (!membership || (membership.role !== "owner" && membership.role !== "admin")) {
+    if (
+      !membership ||
+      (membership.role !== "owner" && membership.role !== "admin")
+    ) {
       throw new Error("Insufficient permissions to update team branding");
     }
 
@@ -370,7 +400,9 @@ export const updateTeamBranding = mutation({
     if (args.primaryColor !== undefined) {
       // Validate hex color format
       if (args.primaryColor && !/^#[0-9A-Fa-f]{6}$/.test(args.primaryColor)) {
-        throw new Error("Primary color must be a valid hex color (e.g., #3b82f6)");
+        throw new Error(
+          "Primary color must be a valid hex color (e.g., #3b82f6)"
+        );
       }
       updates.primaryColor = args.primaryColor;
     }
@@ -394,12 +426,15 @@ export const generateLogoUploadUrl = mutation({
     // Check if user has permission to update team
     const membership = await ctx.db
       .query("teamMembers")
-      .withIndex("by_team_and_user", (q) => 
+      .withIndex("by_team_and_user", (q) =>
         q.eq("teamId", args.teamId).eq("userId", user._id)
       )
       .first();
 
-    if (!membership || (membership.role !== "owner" && membership.role !== "admin")) {
+    if (
+      !membership ||
+      (membership.role !== "owner" && membership.role !== "admin")
+    ) {
       throw new Error("Insufficient permissions to upload team logo");
     }
 
@@ -414,28 +449,34 @@ export const getTeamMembers = query({
   args: {
     teamId: v.id("teams"),
   },
-  returns: v.array(v.object({
-    _id: v.id("teamMembers"),
-    _creationTime: v.number(),
-    teamId: v.id("teams"),
-    userId: v.id("users"),
-    role: v.union(v.literal("owner"), v.literal("admin"), v.literal("member")),
-    joinedAt: v.number(),
-    user: v.object({
-      _id: v.id("users"),
+  returns: v.array(
+    v.object({
+      _id: v.id("teamMembers"),
       _creationTime: v.number(),
-      name: v.optional(v.string()),
-      email: v.optional(v.string()),
-      image: v.optional(v.string()),
-    }),
-  })),
+      teamId: v.id("teams"),
+      userId: v.id("users"),
+      role: v.union(
+        v.literal("owner"),
+        v.literal("admin"),
+        v.literal("member")
+      ),
+      joinedAt: v.number(),
+      user: v.object({
+        _id: v.id("users"),
+        _creationTime: v.number(),
+        name: v.optional(v.string()),
+        email: v.optional(v.string()),
+        image: v.optional(v.string()),
+      }),
+    })
+  ),
   handler: async (ctx, args) => {
     const user = await requireAuth(ctx);
 
     // Check if user is a member of this team
     const membership = await ctx.db
       .query("teamMembers")
-      .withIndex("by_team_and_user", (q) => 
+      .withIndex("by_team_and_user", (q) =>
         q.eq("teamId", args.teamId).eq("userId", user._id)
       )
       .first();
@@ -485,19 +526,22 @@ export const removeMember = mutation({
     // Check if user has permission to remove members
     const userMembership = await ctx.db
       .query("teamMembers")
-      .withIndex("by_team_and_user", (q) => 
+      .withIndex("by_team_and_user", (q) =>
         q.eq("teamId", args.teamId).eq("userId", user._id)
       )
       .first();
 
-    if (!userMembership || (userMembership.role !== "owner" && userMembership.role !== "admin")) {
+    if (
+      !userMembership ||
+      (userMembership.role !== "owner" && userMembership.role !== "admin")
+    ) {
       throw new Error("Insufficient permissions to remove team members");
     }
 
     // Find the member to remove
     const memberToRemove = await ctx.db
       .query("teamMembers")
-      .withIndex("by_team_and_user", (q) => 
+      .withIndex("by_team_and_user", (q) =>
         q.eq("teamId", args.teamId).eq("userId", args.memberUserId)
       )
       .first();
@@ -534,7 +578,7 @@ export const leaveTeam = mutation({
 
     const membership = await ctx.db
       .query("teamMembers")
-      .withIndex("by_team_and_user", (q) => 
+      .withIndex("by_team_and_user", (q) =>
         q.eq("teamId", args.teamId).eq("userId", user._id)
       )
       .first();
@@ -544,7 +588,9 @@ export const leaveTeam = mutation({
     }
 
     if (membership.role === "owner") {
-      throw new Error("Team owners cannot leave their team. Transfer ownership first or delete the team.");
+      throw new Error(
+        "Team owners cannot leave their team. Transfer ownership first or delete the team."
+      );
     }
 
     await ctx.db.delete(membership._id);
@@ -560,8 +606,9 @@ export const leaveTeam = mutation({
  * Generate a unique invitation token
  */
 function generateInvitationToken(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let token = '';
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let token = "";
   for (let i = 0; i < 32; i++) {
     token += chars.charAt(Math.floor(Math.random() * chars.length));
   }
@@ -584,12 +631,15 @@ export const inviteByEmail = mutation({
     // Check if user has permission to invite
     const membership = await ctx.db
       .query("teamMembers")
-      .withIndex("by_team_and_user", (q) => 
+      .withIndex("by_team_and_user", (q) =>
         q.eq("teamId", args.teamId).eq("userId", user._id)
       )
       .first();
 
-    if (!membership || (membership.role !== "owner" && membership.role !== "admin")) {
+    if (
+      !membership ||
+      (membership.role !== "owner" && membership.role !== "admin")
+    ) {
       throw new Error("Insufficient permissions to invite team members");
     }
 
@@ -602,7 +652,7 @@ export const inviteByEmail = mutation({
     if (existingUser) {
       const existingMembership = await ctx.db
         .query("teamMembers")
-        .withIndex("by_team_and_user", (q) => 
+        .withIndex("by_team_and_user", (q) =>
           q.eq("teamId", args.teamId).eq("userId", existingUser._id)
         )
         .first();
@@ -616,7 +666,7 @@ export const inviteByEmail = mutation({
     const existingInvitation = await ctx.db
       .query("teamInvitations")
       .withIndex("by_email", (q) => q.eq("email", args.email))
-      .filter((q) => 
+      .filter((q) =>
         q.and(
           q.eq(q.field("teamId"), args.teamId),
           q.eq(q.field("status"), "pending")
@@ -631,7 +681,7 @@ export const inviteByEmail = mutation({
     // Create invitation
     const token = generateInvitationToken();
     const now = Date.now();
-    const expiresAt = now + (7 * 24 * 60 * 60 * 1000); // 7 days
+    const expiresAt = now + 7 * 24 * 60 * 60 * 1000; // 7 days
 
     const invitationId = await ctx.db.insert("teamInvitations", {
       teamId: args.teamId,
@@ -648,7 +698,7 @@ export const inviteByEmail = mutation({
     await ctx.scheduler.runAfter(0, internal.teamEmails.sendInvitationEmail, {
       invitationId,
     });
-    
+
     console.log("📧 Team invitation created and email scheduled:", {
       invitationId,
       email: args.email,
@@ -769,7 +819,7 @@ export const acceptInvitation = mutation({
     // Check if already a member
     const existingMembership = await ctx.db
       .query("teamMembers")
-      .withIndex("by_team_and_user", (q) => 
+      .withIndex("by_team_and_user", (q) =>
         q.eq("teamId", invitation.teamId).eq("userId", user._id)
       )
       .first();
@@ -777,7 +827,7 @@ export const acceptInvitation = mutation({
     if (existingMembership) {
       // Mark invitation as accepted anyway
       await ctx.db.patch(invitation._id, { status: "accepted" });
-      
+
       const team = await ctx.db.get(invitation.teamId);
       return {
         success: true,
@@ -838,27 +888,29 @@ export const getPendingInvitations = query({
   args: {
     teamId: v.id("teams"),
   },
-  returns: v.array(v.object({
-    _id: v.id("teamInvitations"),
-    _creationTime: v.number(),
-    email: v.string(),
-    role: v.union(v.literal("admin"), v.literal("member")),
-    invitedBy: v.object({
-      _id: v.id("users"),
+  returns: v.array(
+    v.object({
+      _id: v.id("teamInvitations"),
       _creationTime: v.number(),
-      name: v.optional(v.string()),
-      email: v.optional(v.string()),
-    }),
-    createdAt: v.number(),
-    expiresAt: v.number(),
-  })),
+      email: v.string(),
+      role: v.union(v.literal("admin"), v.literal("member")),
+      invitedBy: v.object({
+        _id: v.id("users"),
+        _creationTime: v.number(),
+        name: v.optional(v.string()),
+        email: v.optional(v.string()),
+      }),
+      createdAt: v.number(),
+      expiresAt: v.number(),
+    })
+  ),
   handler: async (ctx, args) => {
     const user = await requireAuth(ctx);
 
     // Check if user is a member of this team
     const membership = await ctx.db
       .query("teamMembers")
-      .withIndex("by_team_and_user", (q) => 
+      .withIndex("by_team_and_user", (q) =>
         q.eq("teamId", args.teamId).eq("userId", user._id)
       )
       .first();
@@ -917,12 +969,15 @@ export const cancelInvitation = mutation({
     // Check if user has permission to cancel invitation
     const membership = await ctx.db
       .query("teamMembers")
-      .withIndex("by_team_and_user", (q) => 
+      .withIndex("by_team_and_user", (q) =>
         q.eq("teamId", invitation.teamId).eq("userId", user._id)
       )
       .first();
 
-    if (!membership || (membership.role !== "owner" && membership.role !== "admin")) {
+    if (
+      !membership ||
+      (membership.role !== "owner" && membership.role !== "admin")
+    ) {
       throw new Error("Insufficient permissions to cancel invitations");
     }
 

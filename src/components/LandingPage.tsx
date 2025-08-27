@@ -1,9 +1,15 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { SignInFormEmailCode } from "@/auth/SignInFormEmailCode";
-import { Users, Calendar, Shield, ArrowRight } from "lucide-react";
+import { ArrowRight, Calendar, Shield, Users } from "lucide-react";
 import { useState } from "react";
+import { SignInFormEmailCode } from "@/auth/SignInFormEmailCode";
 import { H2, Lead } from "@/components/typography/typography";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export function LandingPage() {
   const [showSignIn, setShowSignIn] = useState(false);
@@ -22,23 +28,20 @@ export function LandingPage() {
           <span className="text-blue-600">Events & Members</span>
         </h1>
         <Lead className="mb-8 max-w-2xl mx-auto">
-          Streamline your team management with our comprehensive platform for organizing events, 
-          managing members, and building stronger connections.
+          Streamline your team management with our comprehensive platform for
+          organizing events, managing members, and building stronger
+          connections.
         </Lead>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button 
-            size="lg" 
+          <Button
+            size="lg"
             onClick={() => setShowSignIn(true)}
             className="text-lg px-8 py-3"
           >
             Get Started
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
-          <Button 
-            variant="outline" 
-            size="lg"
-            className="text-lg px-8 py-3"
-          >
+          <Button variant="outline" size="lg" className="text-lg px-8 py-3">
             Learn More
           </Button>
         </div>
@@ -111,10 +114,11 @@ export function LandingPage() {
       <div className="text-center bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-12">
         <H2 className="mb-4">Ready to get started?</H2>
         <p className="text-lg text-muted-foreground mb-6">
-          Join thousands of teams already using our platform to stay organized and connected.
+          Join thousands of teams already using our platform to stay organized
+          and connected.
         </p>
-        <Button 
-          size="lg" 
+        <Button
+          size="lg"
           onClick={() => setShowSignIn(true)}
           className="text-lg px-8 py-3"
         >

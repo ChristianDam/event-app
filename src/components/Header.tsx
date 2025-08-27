@@ -1,8 +1,8 @@
-import { ReactNode } from "react";
 import { useConvexAuth, useQuery } from "convex/react";
+import type { ReactNode } from "react";
+import { H4 } from "@/components/typography/typography";
 import { Button } from "@/components/ui/button";
 import { api } from "../../convex/_generated/api";
-import { H4 } from "@/components/typography/typography";
 
 interface HeaderProps {
   menu?: ReactNode;
@@ -11,7 +11,10 @@ interface HeaderProps {
 
 export function Header({ menu, navigate }: HeaderProps) {
   const { isAuthenticated, isLoading } = useConvexAuth();
-  const userTeams = useQuery(api.teams.getMyTeams, isAuthenticated ? {} : "skip");
+  const userTeams = useQuery(
+    api.teams.getMyTeams,
+    isAuthenticated ? {} : "skip"
+  );
 
   const handleNavigation = (to: string) => (e: React.MouseEvent) => {
     e.preventDefault();
@@ -46,8 +49,16 @@ export function Header({ menu, navigate }: HeaderProps) {
                 Events
               </a>
               <a
-                href={userTeams && userTeams.length > 0 ? `/team/${userTeams[0]._id}` : "/team"}
-                onClick={handleNavigation(userTeams && userTeams.length > 0 ? `/team/${userTeams[0]._id}` : "/team")}
+                href={
+                  userTeams && userTeams.length > 0
+                    ? `/team/${userTeams[0]._id}`
+                    : "/team"
+                }
+                onClick={handleNavigation(
+                  userTeams && userTeams.length > 0
+                    ? `/team/${userTeams[0]._id}`
+                    : "/team"
+                )}
                 className="text-muted-foreground transition-colors hover:text-foreground"
               >
                 Settings
@@ -56,8 +67,8 @@ export function Header({ menu, navigate }: HeaderProps) {
           )}
           {!isLoading && !isAuthenticated && (
             <div className="flex items-center gap-4 text-sm">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={handleNavigation("/sign-in")}
               >

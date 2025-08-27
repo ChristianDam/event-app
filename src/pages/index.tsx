@@ -1,8 +1,14 @@
 import { useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Calendar, Plus, TrendingUp, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, TrendingUp, Plus } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { api } from "../../convex/_generated/api";
 
 interface HomePageProps {
   params: Record<string, string>;
@@ -27,17 +33,17 @@ export default function HomePage({ navigate }: HomePageProps) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Upcoming Events</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Upcoming Events
+            </CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">3</div>
-            <p className="text-xs text-muted-foreground">
-              +2 from last month
-            </p>
+            <p className="text-xs text-muted-foreground">+2 from last month</p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Team Members</CardTitle>
@@ -45,22 +51,20 @@ export default function HomePage({ navigate }: HomePageProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">
-              +1 new this week
-            </p>
+            <p className="text-xs text-muted-foreground">+1 new this week</p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Event Attendance</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Event Attendance
+            </CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">85%</div>
-            <p className="text-xs text-muted-foreground">
-              +5% from last month
-            </p>
+            <p className="text-xs text-muted-foreground">+5% from last month</p>
           </CardContent>
         </Card>
       </div>
@@ -79,22 +83,30 @@ export default function HomePage({ navigate }: HomePageProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">Team Building Workshop</p>
-                  <p className="text-sm text-muted-foreground">Tomorrow, 2:00 PM</p>
+                  <p className="text-sm text-muted-foreground">
+                    Tomorrow, 2:00 PM
+                  </p>
                 </div>
-                <Button variant="outline" size="sm">View</Button>
+                <Button variant="outline" size="sm">
+                  View
+                </Button>
               </div>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">Monthly All-Hands</p>
-                  <p className="text-sm text-muted-foreground">Next week, 10:00 AM</p>
+                  <p className="text-sm text-muted-foreground">
+                    Next week, 10:00 AM
+                  </p>
                 </div>
-                <Button variant="outline" size="sm">View</Button>
+                <Button variant="outline" size="sm">
+                  View
+                </Button>
               </div>
             </div>
-            <Button 
-              className="w-full mt-4" 
+            <Button
+              className="w-full mt-4"
               variant="outline"
-              onClick={() => navigate('/events')}
+              onClick={() => navigate("/events")}
             >
               View All Events
             </Button>
@@ -104,32 +116,30 @@ export default function HomePage({ navigate }: HomePageProps) {
         <Card>
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>
-              Common tasks for team management
-            </CardDescription>
+            <CardDescription>Common tasks for team management</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <Button 
-                className="w-full justify-start" 
+              <Button
+                className="w-full justify-start"
                 variant="outline"
-                onClick={() => navigate('/events')}
+                onClick={() => navigate("/events")}
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Create New Event
               </Button>
-              <Button 
-                className="w-full justify-start" 
+              <Button
+                className="w-full justify-start"
                 variant="outline"
-                onClick={() => navigate('/team')}
+                onClick={() => navigate("/team")}
               >
                 <Users className="mr-2 h-4 w-4" />
                 Manage Team
               </Button>
-              <Button 
-                className="w-full justify-start" 
+              <Button
+                className="w-full justify-start"
                 variant="outline"
-                onClick={() => navigate('/team')}
+                onClick={() => navigate("/team")}
               >
                 <TrendingUp className="mr-2 h-4 w-4" />
                 View Analytics

@@ -1,14 +1,14 @@
-import { useCallback } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from 'convex/react';
-import { api } from '../../convex/_generated/api';
-import { Id } from '../../convex/_generated/dataModel';
-import { 
-  eventRegistrationSchema, 
-  EventRegistrationData, 
-  EventRegistrationErrors 
-} from '../schemas/registrationSchema';
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "convex/react";
+import { useCallback } from "react";
+import { useForm } from "react-hook-form";
+import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
+import {
+  type EventRegistrationData,
+  type EventRegistrationErrors,
+  eventRegistrationSchema,
+} from "../schemas/registrationSchema";
 
 interface UseRegistrationFormProps {
   eventId: Id<"events">;
@@ -22,20 +22,23 @@ interface UseRegistrationFormReturn {
   isValid: boolean;
   isSubmitting: boolean;
   isDirty: boolean;
-  handleInputChange: (field: keyof EventRegistrationData, value: string) => void;
+  handleInputChange: (
+    field: keyof EventRegistrationData,
+    value: string
+  ) => void;
   handleSubmit: () => Promise<void>;
   resetForm: () => void;
   setFieldValue: (field: keyof EventRegistrationData, value: string) => void;
   clearFieldError: (field: keyof EventRegistrationData) => void;
   // React Hook Form methods
-  register: ReturnType<typeof useForm<EventRegistrationData>>['register'];
-  formState: ReturnType<typeof useForm<EventRegistrationData>>['formState'];
+  register: ReturnType<typeof useForm<EventRegistrationData>>["register"];
+  formState: ReturnType<typeof useForm<EventRegistrationData>>["formState"];
 }
 
 const defaultValues: EventRegistrationData = {
-  attendeeName: '',
-  attendeeEmail: '',
-  attendeePhone: ''
+  attendeeName: "",
+  attendeeEmail: "",
+  attendeePhone: "",
 };
 
 export const useRegistrationForm = ({
@@ -46,17 +49,17 @@ export const useRegistrationForm = ({
   const form = useForm<EventRegistrationData>({
     resolver: zodResolver(eventRegistrationSchema),
     defaultValues,
-    mode: 'onChange'
+    mode: "onChange",
   });
 
-  const { 
+  const {
     register,
     handleSubmit: rhfHandleSubmit,
     watch,
     setValue,
     formState,
     reset,
-    clearErrors
+    clearErrors,
   } = form;
 
   const registerForEvent = useMutation(api.events.registerForEvent);
@@ -74,17 +77,26 @@ export const useRegistrationForm = ({
   });
 
   // Backward compatible methods
-  const handleInputChange = useCallback((field: keyof EventRegistrationData, value: string) => {
-    setValue(field, value, { shouldDirty: true, shouldValidate: true });
-  }, [setValue]);
+  const handleInputChange = useCallback(
+    (field: keyof EventRegistrationData, value: string) => {
+      setValue(field, value, { shouldDirty: true, shouldValidate: true });
+    },
+    [setValue]
+  );
 
-  const setFieldValue = useCallback((field: keyof EventRegistrationData, value: string) => {
-    setValue(field, value, { shouldDirty: true, shouldValidate: true });
-  }, [setValue]);
+  const setFieldValue = useCallback(
+    (field: keyof EventRegistrationData, value: string) => {
+      setValue(field, value, { shouldDirty: true, shouldValidate: true });
+    },
+    [setValue]
+  );
 
-  const clearFieldError = useCallback((field: keyof EventRegistrationData) => {
-    clearErrors(field);
-  }, [clearErrors]);
+  const clearFieldError = useCallback(
+    (field: keyof EventRegistrationData) => {
+      clearErrors(field);
+    },
+    [clearErrors]
+  );
 
   const handleSubmit = useCallback(async () => {
     const onSubmit = async (data: EventRegistrationData) => {
@@ -93,12 +105,17 @@ export const useRegistrationForm = ({
           eventId,
           attendeeName: data.attendeeName.trim(),
           attendeeEmail: data.attendeeEmail.trim(),
-          attendeePhone: data.attendeePhone ? data.attendeePhone.trim() : undefined,
+          attendeePhone: data.attendeePhone
+            ? data.attendeePhone.trim()
+            : undefined,
         });
-        
+
         onSuccess?.();
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Failed to register for event';
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "Failed to register for event";
         onError?.(errorMessage);
       }
     };

@@ -1,7 +1,7 @@
-import { query, mutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
-import { requireAuth, getCurrentUserWithTeamReadOnly } from "./lib/auth";
+import { mutation, query } from "./_generated/server";
+import { getCurrentUserWithTeamReadOnly, requireAuth } from "./lib/auth";
 
 export const viewer = query({
   args: {},
@@ -28,7 +28,11 @@ export const getCurrentTeam = query({
       logo: v.optional(v.id("_storage")),
       logoUrl: v.optional(v.string()),
       primaryColor: v.optional(v.string()),
-      userRole: v.union(v.literal("owner"), v.literal("admin"), v.literal("member")),
+      userRole: v.union(
+        v.literal("owner"),
+        v.literal("admin"),
+        v.literal("member")
+      ),
     }),
     v.null()
   ),
@@ -41,7 +45,7 @@ export const getCurrentTeam = query({
     // Check if user is still a member of their selected team
     const membership = await ctx.db
       .query("teamMembers")
-      .withIndex("by_team_and_user", (q: any) => 
+      .withIndex("by_team_and_user", (q: any) =>
         q.eq("teamId", user.currentTeamId).eq("userId", user._id)
       )
       .first();
@@ -59,7 +63,9 @@ export const getCurrentTeam = query({
 
     return {
       ...team,
-      logoUrl: team.logo ? (await ctx.storage.getUrl(team.logo)) ?? undefined : undefined,
+      logoUrl: team.logo
+        ? ((await ctx.storage.getUrl(team.logo)) ?? undefined)
+        : undefined,
       userRole: membership.role,
     };
   },
@@ -90,7 +96,7 @@ export const setCurrentTeam = mutation({
     // Verify user is a member of the team they want to select
     const membership = await ctx.db
       .query("teamMembers")
-      .withIndex("by_team_and_user", (q) => 
+      .withIndex("by_team_and_user", (q) =>
         q.eq("teamId", args.teamId).eq("userId", user._id)
       )
       .first();
@@ -101,8 +107,8 @@ export const setCurrentTeam = mutation({
 
     // Only update if different from current team (optimization)
     if (user.currentTeamId !== args.teamId) {
-      await ctx.db.patch(user._id, { 
-        currentTeamId: args.teamId 
+      await ctx.db.patch(user._id, {
+        currentTeamId: args.teamId,
       });
     }
 
@@ -119,8 +125,8 @@ export const clearCurrentTeam = mutation({
   handler: async (ctx) => {
     const user = await requireAuth(ctx);
 
-    await ctx.db.patch(user._id, { 
-      currentTeamId: undefined 
+    await ctx.db.patch(user._id, {
+      currentTeamId: undefined,
     });
 
     return null;
@@ -143,11 +149,11 @@ export const updateProfile = mutation({
 
     // Prepare update data - only include fields that are provided
     const updateData: any = {};
-    
+
     if (args.name !== undefined) {
       updateData.name = args.name;
     }
-    
+
     if (args.email !== undefined) {
       // Basic email validation
       if (args.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(args.email)) {
@@ -159,7 +165,7 @@ export const updateProfile = mutation({
         updateData.emailVerificationTime = undefined;
       }
     }
-    
+
     if (args.phone !== undefined) {
       updateData.phone = args.phone;
       // Reset phone verification when phone changes
@@ -167,7 +173,7 @@ export const updateProfile = mutation({
         updateData.phoneVerificationTime = undefined;
       }
     }
-    
+
     if (args.favoriteColor !== undefined) {
       updateData.favoriteColor = args.favoriteColor;
     }
@@ -194,12 +200,12 @@ export const updateAvatar = mutation({
 
     if (args.imageId) {
       const imageUrl = await ctx.storage.getUrl(args.imageId);
-      await ctx.db.patch(user._id, { 
-        image: imageUrl || undefined
+      await ctx.db.patch(user._id, {
+        image: imageUrl || undefined,
       });
     } else {
-      await ctx.db.patch(user._id, { 
-        image: undefined
+      await ctx.db.patch(user._id, {
+        image: undefined,
       });
     }
 

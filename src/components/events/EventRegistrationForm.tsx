@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { EventWithDetails } from '../../types/events';
-import { useRegistrationForm } from '../../hooks/useRegistrationForm';
-import { FormField, FormInput } from '../ui/form';
-import { toast } from 'sonner';
+import type React from "react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { useRegistrationForm } from "../../hooks/useRegistrationForm";
+import type { EventWithDetails } from "../../types/events";
+import { FormField, FormInput } from "../ui/form";
 
 interface EventRegistrationFormProps {
   event: EventWithDetails;
@@ -30,8 +31,8 @@ export const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
   } = useRegistrationForm({
     eventId: event._id,
     onSuccess: () => {
-      toast.success('Registration successful!', {
-        description: 'You have been registered for this event.',
+      toast.success("Registration successful!", {
+        description: "You have been registered for this event.",
       });
       setShowSuccess(true);
       setTimeout(() => {
@@ -42,9 +43,9 @@ export const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
       }, 2000);
     },
     onError: (error) => {
-      console.error('Registration failed:', error);
-      toast.error('Registration failed', {
-        description: error || 'Please check your input and try again.',
+      console.error("Registration failed:", error);
+      toast.error("Registration failed", {
+        description: error || "Please check your input and try again.",
       });
     },
   });
@@ -65,18 +66,30 @@ export const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden">
-        
         {/* Success State */}
         {showSuccess && (
           <div className="p-8 text-center">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
-              <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              <svg
+                className="w-8 h-8 text-green-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Registration Successful!</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Registration Successful!
+            </h2>
             <p className="text-gray-600">
-              You're all set for {event.title}. We'll send you a confirmation email shortly.
+              You're all set for {event.title}. We'll send you a confirmation
+              email shortly.
             </p>
           </div>
         )}
@@ -85,9 +98,9 @@ export const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
         {!showSuccess && (
           <>
             {/* Header */}
-            <div 
+            <div
               className="px-6 py-4 border-b text-white"
-              style={{ backgroundColor: event.team.primaryColor || '#3b82f6' }}
+              style={{ backgroundColor: event.team.primaryColor || "#3b82f6" }}
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -99,15 +112,30 @@ export const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
                   className="text-white/80 hover:text-white transition-colors"
                   disabled={isSubmitting}
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </div>
             </div>
 
             {/* Form */}
-            <form onSubmit={(e) => { void onFormSubmit(e); }} className="p-6 space-y-4">
+            <form
+              onSubmit={(e) => {
+                void onFormSubmit(e);
+              }}
+              className="p-6 space-y-4"
+            >
               <FormField
                 id="attendeeName"
                 label="Full Name"
@@ -118,7 +146,9 @@ export const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
                   id="attendeeName"
                   type="text"
                   value={formData.attendeeName}
-                  onChange={(e) => handleInputChange('attendeeName', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("attendeeName", e.target.value)
+                  }
                   placeholder="Enter your full name"
                   error={errors.attendeeName}
                   disabled={isSubmitting}
@@ -136,7 +166,9 @@ export const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
                   id="attendeeEmail"
                   type="email"
                   value={formData.attendeeEmail}
-                  onChange={(e) => handleInputChange('attendeeEmail', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("attendeeEmail", e.target.value)
+                  }
                   placeholder="Enter your email address"
                   error={errors.attendeeEmail}
                   disabled={isSubmitting}
@@ -152,8 +184,10 @@ export const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
                 <FormInput
                   id="attendeePhone"
                   type="tel"
-                  value={formData.attendeePhone || ''}
-                  onChange={(e) => handleInputChange('attendeePhone', e.target.value)}
+                  value={formData.attendeePhone || ""}
+                  onChange={(e) =>
+                    handleInputChange("attendeePhone", e.target.value)
+                  }
                   placeholder="Enter your phone number"
                   error={errors.attendeePhone}
                   disabled={isSubmitting}
@@ -163,10 +197,18 @@ export const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
 
               {/* Event Info Summary */}
               <div className="bg-gray-50 rounded-lg p-4 border">
-                <h3 className="font-medium text-gray-900 mb-2">Event Details</h3>
+                <h3 className="font-medium text-gray-900 mb-2">
+                  Event Details
+                </h3>
                 <div className="space-y-1 text-sm text-gray-600">
                   <div>📅 {new Date(event.startTime).toLocaleDateString()}</div>
-                  <div>🕒 {new Date(event.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                  <div>
+                    🕒{" "}
+                    {new Date(event.startTime).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </div>
                   <div>📍 {event.venue}</div>
                   <div>🎫 Free Registration</div>
                 </div>
@@ -174,8 +216,9 @@ export const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
 
               {/* Terms */}
               <div className="text-xs text-gray-500">
-                By registering, you agree to receive event updates and confirmations via email.
-                Your information will only be used for this event and will not be shared with third parties.
+                By registering, you agree to receive event updates and
+                confirmations via email. Your information will only be used for
+                this event and will not be shared with third parties.
               </div>
 
               {/* Submit Button */}
@@ -183,17 +226,29 @@ export const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
                 type="submit"
                 disabled={isSubmitting || !isValid}
                 className="w-full py-3 px-4 text-white font-semibold rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ backgroundColor: event.team.primaryColor || '#3b82f6' }}
+                style={{
+                  backgroundColor: event.team.primaryColor || "#3b82f6",
+                }}
               >
                 {isSubmitting ? (
                   <div className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    <svg
+                      className="animate-spin w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
                     </svg>
                     <span>Registering...</span>
                   </div>
                 ) : (
-                  'Complete Registration'
+                  "Complete Registration"
                 )}
               </button>
 

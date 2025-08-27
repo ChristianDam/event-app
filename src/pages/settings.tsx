@@ -1,15 +1,28 @@
+import { useMutation, useQuery } from "convex/react";
+import {
+  Camera,
+  CheckCircle,
+  Loader2,
+  Palette,
+  User,
+  XCircle,
+} from "lucide-react";
 import { useState } from "react";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { User, Palette, Camera, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { FormField, FormInput } from "@/components/ui/form";
+import { Separator } from "@/components/ui/separator";
+import { api } from "../../convex/_generated/api";
 import { useProfileForm } from "../hooks/useProfileForm";
-import { toast } from "sonner";
 
 export default function SettingsPage(): JSX.Element {
   const user = useQuery(api.users.viewer);
@@ -27,15 +40,17 @@ export default function SettingsPage(): JSX.Element {
     handleSubmit,
     resetForm,
   } = useProfileForm({
-    initialData: user ? {
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      favoriteColor: user.favoriteColor
-    } : undefined,
+    initialData: user
+      ? {
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          favoriteColor: user.favoriteColor,
+        }
+      : undefined,
     onSuccess: () => {
       toast.success("Profile updated successfully!", {
-        description: "Your changes have been saved."
+        description: "Your changes have been saved.",
       });
     },
     onError: (error) => {
@@ -48,12 +63,13 @@ export default function SettingsPage(): JSX.Element {
     if (!file) return;
 
     // Validate file
-    if (!file.type.startsWith('image/')) {
+    if (!file.type.startsWith("image/")) {
       toast.error("Please select an image file");
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+    if (file.size > 5 * 1024 * 1024) {
+      // 5MB limit
       toast.error("File size must be less than 5MB");
       return;
     }
@@ -62,23 +78,23 @@ export default function SettingsPage(): JSX.Element {
     try {
       // Get upload URL
       const uploadUrl = await generateUploadUrl();
-      
+
       // Upload file
       const result = await fetch(uploadUrl, {
         method: "POST",
         headers: { "Content-Type": file.type },
         body: file,
       });
-      
+
       if (!result.ok) {
         throw new Error("Failed to upload file");
       }
-      
+
       const { storageId } = await result.json();
-      
+
       // Update user avatar
       await updateAvatar({ imageId: storageId });
-      
+
       toast.success("Avatar updated successfully!");
     } catch (error) {
       console.error("Avatar upload error:", error);
@@ -89,8 +105,6 @@ export default function SettingsPage(): JSX.Element {
       e.target.value = "";
     }
   };
-
-
 
   if (!user) {
     return (
@@ -109,7 +123,12 @@ export default function SettingsPage(): JSX.Element {
 
   const getInitials = (name?: string) => {
     if (!name) return "U";
-    return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   return (
@@ -134,7 +153,12 @@ export default function SettingsPage(): JSX.Element {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-6">
+            <form
+              onSubmit={(e) => {
+                void handleSubmit(e);
+              }}
+              className="space-y-6"
+            >
               {/* Avatar Section */}
               <div className="flex items-center gap-4">
                 <Avatar className="h-20 w-20">
@@ -148,14 +172,16 @@ export default function SettingsPage(): JSX.Element {
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={(e) => { void handleAvatarUpload(e); }}
+                      onChange={(e) => {
+                        void handleAvatarUpload(e);
+                      }}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                       id="avatar-upload"
                       disabled={avatarLoading}
                     />
-                    <Button 
-                      type="button" 
-                      variant="outline" 
+                    <Button
+                      type="button"
+                      variant="outline"
                       className="mb-2"
                       disabled={avatarLoading}
                     >
@@ -177,11 +203,7 @@ export default function SettingsPage(): JSX.Element {
 
               <div className="grid gap-4">
                 {/* Name */}
-                <FormField
-                  id="name"
-                  label="Full Name"
-                  error={errors.name}
-                >
+                <FormField id="name" label="Full Name" error={errors.name}>
                   <FormInput
                     id="name"
                     type="text"
@@ -219,11 +241,13 @@ export default function SettingsPage(): JSX.Element {
                   {errors.email && (
                     <p className="text-sm text-red-500">{errors.email}</p>
                   )}
-                  {!user.emailVerificationTime && formData.email && !errors.email && (
-                    <p className="text-sm text-orange-600">
-                      Please verify your email address to secure your account.
-                    </p>
-                  )}
+                  {!user.emailVerificationTime &&
+                    formData.email &&
+                    !errors.email && (
+                      <p className="text-sm text-orange-600">
+                        Please verify your email address to secure your account.
+                      </p>
+                    )}
                 </div>
 
                 {/* Phone */}
@@ -253,11 +277,13 @@ export default function SettingsPage(): JSX.Element {
                   {errors.phone && (
                     <p className="text-sm text-red-500">{errors.phone}</p>
                   )}
-                  {!user.phoneVerificationTime && formData.phone && !errors.phone && (
-                    <p className="text-sm text-orange-600">
-                      Please verify your phone number for additional security.
-                    </p>
-                  )}
+                  {!user.phoneVerificationTime &&
+                    formData.phone &&
+                    !errors.phone && (
+                      <p className="text-sm text-orange-600">
+                        Please verify your phone number for additional security.
+                      </p>
+                    )}
                 </div>
 
                 {/* Favorite Color */}
@@ -270,7 +296,9 @@ export default function SettingsPage(): JSX.Element {
                     id="favoriteColor"
                     type="text"
                     value={formData.favoriteColor}
-                    onChange={(e) => handleInputChange("favoriteColor", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("favoriteColor", e.target.value)
+                    }
                     placeholder="Enter your favorite color"
                   />
                   <p className="text-sm text-muted-foreground">
@@ -298,8 +326,8 @@ export default function SettingsPage(): JSX.Element {
                   >
                     Reset
                   </Button>
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     disabled={isSubmitting || !hasChanges}
                     className="min-w-[120px]"
                   >

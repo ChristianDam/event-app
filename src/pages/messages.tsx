@@ -1,8 +1,13 @@
-import { useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import { ThreadView } from "@/components/threads/ThreadView";
-import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { ChatBubbleIcon } from "@radix-ui/react-icons";
+import { useQuery } from "convex/react";
+import { ThreadView } from "@/components/threads/ThreadView";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardTitle,
+} from "@/components/ui/card";
+import { api } from "../../convex/_generated/api";
 
 export default function MessagesPage(): JSX.Element {
   const currentUser = useQuery(api.users.viewer);

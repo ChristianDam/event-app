@@ -1,6 +1,6 @@
 import { authTables } from "@convex-dev/auth/server";
-import { internalMutation } from "./_generated/server";
 import { v } from "convex/values";
+import { internalMutation } from "./_generated/server";
 
 // Deletes all auth-related data.
 // Just for demoing purposes, feel free to delete.

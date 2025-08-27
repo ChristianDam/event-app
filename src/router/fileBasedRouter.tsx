@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from "react";
 
 // Page component type
 export type PageComponent = React.ComponentType<{
@@ -39,15 +39,18 @@ export class FileBasedRouter {
   }
 
   // Match a path pattern against a pathname
-  private matchPath(pattern: string, pathname: string): Record<string, string> | null {
+  private matchPath(
+    pattern: string,
+    pathname: string
+  ): Record<string, string> | null {
     // Convert pattern like '/team/[id]' to regex
     const paramNames: string[] = [];
     const regexPattern = pattern
       .replace(/\[([^\]]+)\]/g, (_, paramName) => {
         paramNames.push(paramName);
-        return '([^/]+)';
+        return "([^/]+)";
       })
-      .replace(/\//g, '\\/');
+      .replace(/\//g, "\\/");
 
     const regex = new RegExp(`^${regexPattern}$`);
     const match = pathname.match(regex);

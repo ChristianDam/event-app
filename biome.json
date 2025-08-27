@@ -1,8 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.8.3/schema.json",
-  "organizeImports": {
-    "enabled": true
-  },
+  "$schema": "https://biomejs.dev/schemas/2.2.2/schema.json",
   "linter": {
     "enabled": true,
     "rules": {
@@ -40,21 +37,6 @@
     }
   },
   "files": {
-    "include": [
-      "src/**/*",
-      "convex/**/*",
-      "*.ts",
-      "*.tsx",
-      "*.js",
-      "*.jsx"
-    ],
-    "ignore": [
-      "node_modules",
-      "dist",
-      "convex/_generated",
-      "postcss.config.js",
-      "tailwind.config.js",
-      "vite.config.ts"
-    ]
+    "includes": ["src/**/*", "convex/**/*", "*.ts", "*.tsx", "*.js", "*.jsx"]
   }
 }

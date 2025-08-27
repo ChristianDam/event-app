@@ -1,9 +1,13 @@
-import { ReactNode } from "react";
-import { Footer } from "./components/Footer";
-import { Toaster } from "./components/ui/sonner";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "./components/ui/sidebar";
-import { AppSidebar } from "./components/AppSidebar";
 import { useConvexAuth } from "convex/react";
+import type { ReactNode } from "react";
+import { AppSidebar } from "./components/AppSidebar";
+import { Footer } from "./components/Footer";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "./components/ui/sidebar";
+import { Toaster } from "./components/ui/sonner";
 export function Layout({
   children,
   navigate,
@@ -25,7 +29,6 @@ export function Layout({
               <SidebarTrigger className="-ml-1" aria-label="Toggle sidebar" />
             </header>
             <main className="flex-1 overflow-auto">{children}</main>
-            
           </SidebarInset>
         ) : (
           <main className="flex grow flex-col">
