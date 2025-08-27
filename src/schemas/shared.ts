@@ -1,0 +1,1 @@
+// Shared validation utilities and common patterns - to be implemented

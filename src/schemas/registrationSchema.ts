@@ -1,0 +1,1 @@
+// Event registration validation schemas - to be implemented
