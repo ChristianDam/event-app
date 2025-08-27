@@ -53,12 +53,18 @@ describe("eventValidation utilities", () => {
       });
 
       it("should return error for title with invalid characters", () => {
-        const result = validateEventField("title", "Event <script>alert('xss')</script>");
+        const result = validateEventField(
+          "title",
+          "Event <script>alert('xss')</script>"
+        );
         expect(result).toBe("Title contains invalid characters");
       });
 
       it("should allow valid special characters", () => {
-        const result = validateEventField("title", "Music & Art Festival - 2024 (Winter)!");
+        const result = validateEventField(
+          "title",
+          "Music & Art Festival - 2024 (Winter)!"
+        );
         expect(result).toBeNull();
       });
 
@@ -75,7 +81,10 @@ describe("eventValidation utilities", () => {
 
     describe("description validation", () => {
       it("should return null for valid description", () => {
-        const result = validateEventField("description", "This is a great event with lots of activities.");
+        const result = validateEventField(
+          "description",
+          "This is a great event with lots of activities."
+        );
         expect(result).toBeNull();
       });
 
@@ -96,7 +105,10 @@ describe("eventValidation utilities", () => {
       });
 
       it("should trim whitespace from description", () => {
-        const result = validateEventField("description", "  Valid description with enough characters  ");
+        const result = validateEventField(
+          "description",
+          "  Valid description with enough characters  "
+        );
         expect(result).toBeNull();
       });
     });
@@ -156,11 +168,15 @@ describe("eventValidation utilities", () => {
       it("should return error for start time too far in advance", () => {
         const tooFar = new Date(mockDate.getTime() + 400 * 24 * 60 * 60 * 1000); // 400 days from now
         const result = validateEventField("startTime", tooFar);
-        expect(result).toBe("Event cannot be scheduled more than 365 days in advance");
+        expect(result).toBe(
+          "Event cannot be scheduled more than 365 days in advance"
+        );
       });
 
       it("should allow start time exactly 365 days in advance", () => {
-        const maxAdvance = new Date(mockDate.getTime() + 365 * 24 * 60 * 60 * 1000);
+        const maxAdvance = new Date(
+          mockDate.getTime() + 365 * 24 * 60 * 60 * 1000
+        );
         const result = validateEventField("startTime", maxAdvance);
         expect(result).toBeNull();
       });
@@ -216,7 +232,14 @@ describe("eventValidation utilities", () => {
       });
 
       it("should validate all valid event types", () => {
-        const validTypes = ["music", "art", "workshop", "performance", "exhibition", "other"];
+        const validTypes = [
+          "music",
+          "art",
+          "workshop",
+          "performance",
+          "exhibition",
+          "other",
+        ];
         validTypes.forEach((type) => {
           const result = validateEventField("eventType", type);
           expect(result).toBeNull();
@@ -271,32 +294,56 @@ describe("eventValidation utilities", () => {
       const formData = { startTime } as EventFormData;
 
       it("should return null for undefined deadline (optional)", () => {
-        const result = validateEventField("registrationDeadline", undefined, formData);
+        const result = validateEventField(
+          "registrationDeadline",
+          undefined,
+          formData
+        );
         expect(result).toBeNull();
       });
 
       it("should return null for valid deadline", () => {
         const deadline = new Date(mockDate.getTime() + 5 * 24 * 60 * 60 * 1000); // 5 days from now
-        const result = validateEventField("registrationDeadline", deadline, formData);
+        const result = validateEventField(
+          "registrationDeadline",
+          deadline,
+          formData
+        );
         expect(result).toBeNull();
       });
 
       it("should return error for deadline after start time", () => {
         const deadline = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hour after start
-        const result = validateEventField("registrationDeadline", deadline, formData);
-        expect(result).toBe("Registration deadline must be before the event starts");
+        const result = validateEventField(
+          "registrationDeadline",
+          deadline,
+          formData
+        );
+        expect(result).toBe(
+          "Registration deadline must be before the event starts"
+        );
       });
 
       it("should return error for deadline in the past", () => {
         const pastDeadline = new Date(mockDate.getTime() - 60 * 60 * 1000); // 1 hour ago
-        const result = validateEventField("registrationDeadline", pastDeadline, formData);
+        const result = validateEventField(
+          "registrationDeadline",
+          pastDeadline,
+          formData
+        );
         expect(result).toBe("Registration deadline must be in the future");
       });
 
       it("should return error for deadline equal to start time", () => {
         const deadline = new Date(startTime.getTime());
-        const result = validateEventField("registrationDeadline", deadline, formData);
-        expect(result).toBe("Registration deadline must be before the event starts");
+        const result = validateEventField(
+          "registrationDeadline",
+          deadline,
+          formData
+        );
+        expect(result).toBe(
+          "Registration deadline must be before the event starts"
+        );
       });
     });
 
@@ -321,7 +368,9 @@ describe("eventValidation utilities", () => {
       });
 
       it("should return error for invalid file type", () => {
-        const file = new File([""], "document.pdf", { type: "application/pdf" });
+        const file = new File([""], "document.pdf", {
+          type: "application/pdf",
+        });
         Object.defineProperty(file, "size", { value: 1024 }); // 1KB
         const result = validateEventField("eventImage", file);
         expect(result).toBe("Image must be JPEG, PNG, or WebP format");
@@ -340,7 +389,10 @@ describe("eventValidation utilities", () => {
 
     describe("unknown field", () => {
       it("should return null for unknown field", () => {
-        const result = validateEventField("unknownField" as keyof EventFormData, "value");
+        const result = validateEventField(
+          "unknownField" as keyof EventFormData,
+          "value"
+        );
         expect(result).toBeNull();
       });
     });
@@ -352,7 +404,9 @@ describe("eventValidation utilities", () => {
       description: "An amazing music festival with great artists.",
       venue: "Central Park",
       startTime: new Date(mockDate.getTime() + 7 * 24 * 60 * 60 * 1000),
-      endTime: new Date(mockDate.getTime() + 7 * 24 * 60 * 60 * 1000 + 6 * 60 * 60 * 1000),
+      endTime: new Date(
+        mockDate.getTime() + 7 * 24 * 60 * 60 * 1000 + 6 * 60 * 60 * 1000
+      ),
       timezone: "UTC",
       eventType: "music",
       maxCapacity: 1000,
@@ -402,7 +456,9 @@ describe("eventValidation utilities", () => {
       description: "An amazing music festival with great artists.",
       venue: "Central Park",
       startTime: new Date(mockDate.getTime() + 7 * 24 * 60 * 60 * 1000),
-      endTime: new Date(mockDate.getTime() + 7 * 24 * 60 * 60 * 1000 + 6 * 60 * 60 * 1000),
+      endTime: new Date(
+        mockDate.getTime() + 7 * 24 * 60 * 60 * 1000 + 6 * 60 * 60 * 1000
+      ),
       timezone: "UTC",
       eventType: "music",
       maxCapacity: 1000,
@@ -455,7 +511,8 @@ describe("eventValidation utilities", () => {
     });
 
     it("should preserve safe content", () => {
-      const input = "This is a normal event description with numbers 123 and symbols @#$%";
+      const input =
+        "This is a normal event description with numbers 123 and symbols @#$%";
       const result = sanitizeEventInput(input);
       expect(result).toBe(input.trim());
     });
@@ -494,9 +551,12 @@ describe("eventValidation utilities", () => {
     });
 
     it("should limit length to 60 characters", () => {
-      const longTitle = "This is a very long event title that exceeds the sixty character limit for URL slugs";
+      const longTitle =
+        "This is a very long event title that exceeds the sixty character limit for URL slugs";
       const result = generateEventSlug(longTitle);
-      expect(result).toBe("this-is-a-very-long-event-title-that-exceeds-the-sixty");
+      expect(result).toBe(
+        "this-is-a-very-long-event-title-that-exceeds-the-sixty"
+      );
       expect(result.length).toBeLessThanOrEqual(60);
     });
 

@@ -34,9 +34,9 @@ describe("utils", () => {
 
     it("should handle objects with conditional classes", () => {
       const result = cn({
-        "class1": true,
-        "class2": false,
-        "class3": true,
+        class1: true,
+        class2: false,
+        class3: true,
       });
       expect(result).toBe("class1 class3");
     });
@@ -52,7 +52,9 @@ describe("utils", () => {
         undefined,
         "final-class"
       );
-      expect(result).toBe("base-class conditional-true array-class1 array-class2 final-class");
+      expect(result).toBe(
+        "base-class conditional-true array-class1 array-class2 final-class"
+      );
     });
 
     it("should handle empty inputs", () => {
@@ -78,7 +80,11 @@ describe("utils", () => {
     });
 
     it("should handle Tailwind state classes", () => {
-      const result = cn("bg-blue-500", "hover:bg-blue-600", "focus:bg-blue-700");
+      const result = cn(
+        "bg-blue-500",
+        "hover:bg-blue-600",
+        "focus:bg-blue-700"
+      );
       expect(result).toBe("bg-blue-500 hover:bg-blue-600 focus:bg-blue-700");
     });
 
@@ -98,12 +104,23 @@ describe("utils", () => {
     });
 
     it("should handle mixed Tailwind and custom classes", () => {
-      const result = cn("custom-class", "bg-blue-500", "another-custom", "bg-red-500");
+      const result = cn(
+        "custom-class",
+        "bg-blue-500",
+        "another-custom",
+        "bg-red-500"
+      );
       expect(result).toBe("custom-class another-custom bg-red-500");
     });
 
     it("should preserve non-conflicting classes", () => {
-      const result = cn("flex", "items-center", "justify-between", "p-4", "bg-white");
+      const result = cn(
+        "flex",
+        "items-center",
+        "justify-between",
+        "p-4",
+        "bg-white"
+      );
       expect(result).toBe("flex items-center justify-between p-4 bg-white");
     });
 

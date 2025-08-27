@@ -67,7 +67,9 @@ describe("shared schemas", () => {
         emailSchema.parse("invalid-email");
       } catch (error) {
         if (error instanceof z.ZodError) {
-          expect(error.issues[0].message).toBe("Please enter a valid email address");
+          expect(error.issues[0].message).toBe(
+            "Please enter a valid email address"
+          );
         }
       }
     });
@@ -116,7 +118,9 @@ describe("shared schemas", () => {
         phoneSchema.parse("invalid");
       } catch (error) {
         if (error instanceof z.ZodError) {
-          expect(error.issues[0].message).toBe("Please enter a valid phone number");
+          expect(error.issues[0].message).toBe(
+            "Please enter a valid phone number"
+          );
         }
       }
     });
@@ -125,21 +129,21 @@ describe("shared schemas", () => {
   describe("createStringSchema", () => {
     it("should create schema with minimum length", () => {
       const schema = createStringSchema({ min: 5 });
-      
+
       expect(() => schema.parse("hello")).not.toThrow();
       expect(() => schema.parse("hi")).toThrow();
     });
 
     it("should create schema with maximum length", () => {
       const schema = createStringSchema({ max: 10 });
-      
+
       expect(() => schema.parse("short")).not.toThrow();
       expect(() => schema.parse("this is too long")).toThrow();
     });
 
     it("should create schema with min and max length", () => {
       const schema = createStringSchema({ min: 3, max: 10 });
-      
+
       expect(() => schema.parse("good")).not.toThrow();
       expect(() => schema.parse("hi")).toThrow();
       expect(() => schema.parse("way too long string")).toThrow();
@@ -150,7 +154,7 @@ describe("shared schemas", () => {
         pattern: /^[a-zA-Z]+$/,
         patternMessage: "Only letters allowed",
       });
-      
+
       expect(() => schema.parse("hello")).not.toThrow();
       expect(() => schema.parse("hello123")).toThrow();
     });
@@ -166,7 +170,7 @@ describe("shared schemas", () => {
         pattern: /^[0-9]+$/,
         patternMessage: "Only numbers allowed",
       });
-      
+
       try {
         schema.parse("abc");
       } catch (error) {
@@ -183,7 +187,7 @@ describe("shared schemas", () => {
         pattern: /^[a-zA-Z0-9]+$/,
         patternMessage: "Only alphanumeric characters",
       });
-      
+
       expect(() => schema.parse("test123")).not.toThrow();
       expect(() => schema.parse("hi")).toThrow(); // Too short
       expect(() => schema.parse("toolongstring")).toThrow(); // Too long
@@ -274,7 +278,7 @@ describe("shared schemas", () => {
       const schema = createFileSchema({ maxSize: 1024 * 1024 }); // 1MB
       const file = new File(["content"], "test.jpg", { type: "image/jpeg" });
       Object.defineProperty(file, "size", { value: 500 * 1024 }); // 500KB
-      
+
       expect(() => schema.parse(file)).not.toThrow();
     });
 
@@ -282,23 +286,31 @@ describe("shared schemas", () => {
       const schema = createFileSchema({ maxSize: 1024 * 1024 }); // 1MB
       const file = new File(["content"], "large.jpg", { type: "image/jpeg" });
       Object.defineProperty(file, "size", { value: 2 * 1024 * 1024 }); // 2MB
-      
+
       expect(() => schema.parse(file)).toThrow();
     });
 
     it("should validate allowed file types", () => {
-      const schema = createFileSchema({ allowedTypes: ["image/jpeg", "image/png"] });
-      const jpegFile = new File(["content"], "test.jpg", { type: "image/jpeg" });
+      const schema = createFileSchema({
+        allowedTypes: ["image/jpeg", "image/png"],
+      });
+      const jpegFile = new File(["content"], "test.jpg", {
+        type: "image/jpeg",
+      });
       const pngFile = new File(["content"], "test.png", { type: "image/png" });
-      
+
       expect(() => schema.parse(jpegFile)).not.toThrow();
       expect(() => schema.parse(pngFile)).not.toThrow();
     });
 
     it("should reject disallowed file types", () => {
-      const schema = createFileSchema({ allowedTypes: ["image/jpeg", "image/png"] });
-      const pdfFile = new File(["content"], "document.pdf", { type: "application/pdf" });
-      
+      const schema = createFileSchema({
+        allowedTypes: ["image/jpeg", "image/png"],
+      });
+      const pdfFile = new File(["content"], "document.pdf", {
+        type: "application/pdf",
+      });
+
       expect(() => schema.parse(pdfFile)).toThrow();
     });
 
@@ -307,17 +319,25 @@ describe("shared schemas", () => {
         maxSize: 1024 * 1024,
         allowedTypes: ["image/jpeg"],
       });
-      
-      const validFile = new File(["content"], "test.jpg", { type: "image/jpeg" });
+
+      const validFile = new File(["content"], "test.jpg", {
+        type: "image/jpeg",
+      });
       Object.defineProperty(validFile, "size", { value: 500 * 1024 });
       expect(() => schema.parse(validFile)).not.toThrow();
-      
-      const invalidTypeFile = new File(["content"], "test.png", { type: "image/png" });
+
+      const invalidTypeFile = new File(["content"], "test.png", {
+        type: "image/png",
+      });
       Object.defineProperty(invalidTypeFile, "size", { value: 500 * 1024 });
       expect(() => schema.parse(invalidTypeFile)).toThrow();
-      
-      const invalidSizeFile = new File(["content"], "large.jpg", { type: "image/jpeg" });
-      Object.defineProperty(invalidSizeFile, "size", { value: 2 * 1024 * 1024 });
+
+      const invalidSizeFile = new File(["content"], "large.jpg", {
+        type: "image/jpeg",
+      });
+      Object.defineProperty(invalidSizeFile, "size", {
+        value: 2 * 1024 * 1024,
+      });
       expect(() => schema.parse(invalidSizeFile)).toThrow();
     });
 
@@ -354,33 +374,41 @@ describe("shared schemas", () => {
     it("should validate dates within the max advance limit", () => {
       const schema = createMaxAdvanceDateSchema(30); // 30 days
       const validDate = new Date(mockDate.getTime() + 20 * 24 * 60 * 60 * 1000); // 20 days from now
-      
+
       expect(() => schema.parse(validDate)).not.toThrow();
     });
 
     it("should reject dates beyond the max advance limit", () => {
       const schema = createMaxAdvanceDateSchema(30); // 30 days
-      const tooFarDate = new Date(mockDate.getTime() + 40 * 24 * 60 * 60 * 1000); // 40 days from now
-      
+      const tooFarDate = new Date(
+        mockDate.getTime() + 40 * 24 * 60 * 60 * 1000
+      ); // 40 days from now
+
       expect(() => schema.parse(tooFarDate)).toThrow();
     });
 
     it("should accept dates exactly at the max advance limit", () => {
       const schema = createMaxAdvanceDateSchema(30);
-      const exactlyMaxDate = new Date(mockDate.getTime() + 30 * 24 * 60 * 60 * 1000);
-      
+      const exactlyMaxDate = new Date(
+        mockDate.getTime() + 30 * 24 * 60 * 60 * 1000
+      );
+
       expect(() => schema.parse(exactlyMaxDate)).not.toThrow();
     });
 
     it("should provide custom error message with day count", () => {
       const schema = createMaxAdvanceDateSchema(365);
-      const tooFarDate = new Date(mockDate.getTime() + 400 * 24 * 60 * 60 * 1000);
-      
+      const tooFarDate = new Date(
+        mockDate.getTime() + 400 * 24 * 60 * 60 * 1000
+      );
+
       try {
         schema.parse(tooFarDate);
       } catch (error) {
         if (error instanceof z.ZodError) {
-          expect(error.issues[0].message).toBe("Date cannot be more than 365 days in advance");
+          expect(error.issues[0].message).toBe(
+            "Date cannot be more than 365 days in advance"
+          );
         }
       }
     });
@@ -389,7 +417,7 @@ describe("shared schemas", () => {
   describe("capacitySchema", () => {
     it("should validate valid capacities", () => {
       const validCapacities = [1, 50, 100, 1000, 10000];
-      
+
       validCapacities.forEach((capacity) => {
         expect(() => capacitySchema.parse(capacity)).not.toThrow();
       });
@@ -397,7 +425,7 @@ describe("shared schemas", () => {
 
     it("should reject non-integer values", () => {
       const invalidCapacities = [1.5, 50.7, 0.1];
-      
+
       invalidCapacities.forEach((capacity) => {
         expect(() => capacitySchema.parse(capacity)).toThrow();
       });
@@ -423,7 +451,9 @@ describe("shared schemas", () => {
         capacitySchema.parse(1.5);
       } catch (error) {
         if (error instanceof z.ZodError) {
-          expect(error.issues[0].message).toBe("Capacity must be a whole number");
+          expect(error.issues[0].message).toBe(
+            "Capacity must be a whole number"
+          );
         }
       }
 
@@ -489,7 +519,8 @@ describe("shared schemas", () => {
     });
 
     it("should handle multiple occurrences", () => {
-      const input = "javascript: test javascript: another onclick= bad onload= worse";
+      const input =
+        "javascript: test javascript: another onclick= bad onload= worse";
       const result = sanitizeString(input);
       expect(result).toBe("test  another  bad  worse");
     });
@@ -522,7 +553,8 @@ describe("shared schemas", () => {
     });
 
     it("should limit length to 60 characters", () => {
-      const longTitle = "This is a very long event title that definitely exceeds the sixty character limit";
+      const longTitle =
+        "This is a very long event title that definitely exceeds the sixty character limit";
       const result = generateSlug(longTitle);
       expect(result.length).toBeLessThanOrEqual(60);
       // Just verify it's truncated, don't care about exact string

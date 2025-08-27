@@ -30,7 +30,7 @@ describe("dateTime utilities", () => {
     it("should format timestamp to localized date string", () => {
       const timestamp = new Date("2024-01-15T15:30:00").getTime();
       const result = formatDate(timestamp);
-      
+
       // Since this uses toLocaleDateString(), result will be locale-dependent
       // We just verify it returns a string and contains expected date parts
       expect(typeof result).toBe("string");
@@ -42,7 +42,7 @@ describe("dateTime utilities", () => {
     it("should format timestamp to 24-hour time format", () => {
       const timestamp = new Date("2024-01-15T15:30:00").getTime();
       const result = formatTime(timestamp);
-      
+
       expect(typeof result).toBe("string");
       // Should contain colon for time separator
       expect(result).toMatch(/\d+:\d+/);
@@ -51,7 +51,7 @@ describe("dateTime utilities", () => {
     it("should pad minutes with leading zero", () => {
       const timestamp = new Date("2024-01-15T15:05:00").getTime();
       const result = formatTime(timestamp);
-      
+
       expect(result).toMatch(/05/);
     });
   });
@@ -60,7 +60,7 @@ describe("dateTime utilities", () => {
     it("should combine date and time with 'at' separator", () => {
       const timestamp = new Date("2024-01-15T15:30:00").getTime();
       const result = formatDateTime(timestamp);
-      
+
       expect(typeof result).toBe("string");
       expect(result).toContain(" at ");
     });
@@ -110,7 +110,7 @@ describe("dateTime utilities", () => {
     it("should fall back to formatDate for times more than 7 days away", () => {
       const timestamp = mockDate.getTime() - 10 * 24 * 60 * 60 * 1000; // 10 days ago
       const result = formatRelativeTime(timestamp);
-      
+
       // Should be same as formatDate
       expect(result).toBe(formatDate(timestamp));
     });
@@ -171,7 +171,7 @@ describe("dateTime utilities", () => {
       const now = mockDate.getTime();
       const startTime = now + 60000; // 1 minute from now
       const endTime = now + 120000; // 2 minutes from now
-      
+
       expect(getEventStatus(startTime, endTime)).toBe("upcoming");
     });
 
@@ -179,7 +179,7 @@ describe("dateTime utilities", () => {
       const now = mockDate.getTime();
       const startTime = now - 30000; // 30 seconds ago
       const endTime = now + 30000; // 30 seconds from now
-      
+
       expect(getEventStatus(startTime, endTime)).toBe("ongoing");
     });
 
@@ -187,7 +187,7 @@ describe("dateTime utilities", () => {
       const now = mockDate.getTime();
       const startTime = now;
       const endTime = now + 60000; // 1 minute from now
-      
+
       expect(getEventStatus(startTime, endTime)).toBe("ongoing");
     });
 
@@ -195,7 +195,7 @@ describe("dateTime utilities", () => {
       const now = mockDate.getTime();
       const startTime = now - 60000; // 1 minute ago
       const endTime = now;
-      
+
       expect(getEventStatus(startTime, endTime)).toBe("ongoing");
     });
 
@@ -203,7 +203,7 @@ describe("dateTime utilities", () => {
       const now = mockDate.getTime();
       const startTime = now - 120000; // 2 minutes ago
       const endTime = now - 60000; // 1 minute ago
-      
+
       expect(getEventStatus(startTime, endTime)).toBe("past");
     });
 
@@ -211,7 +211,7 @@ describe("dateTime utilities", () => {
       const now = mockDate.getTime();
       const startTime = now - 60000; // 1 minute ago
       const endTime = now - 60000; // same time
-      
+
       expect(getEventStatus(startTime, endTime)).toBe("past");
     });
   });

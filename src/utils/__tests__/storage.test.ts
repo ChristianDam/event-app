@@ -1,9 +1,9 @@
 // ABOUTME: Unit tests for storage utility functions
 // ABOUTME: Tests storage URL generation with different environments and configurations
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { getStorageUrl, getStorageUrlWithFallback } from "../storage";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Id } from "../../../convex/_generated/dataModel";
+import { getStorageUrl, getStorageUrlWithFallback } from "../storage";
 
 // Mock environment variables
 const originalEnv = import.meta.env;
@@ -37,9 +37,9 @@ describe("storage utilities", () => {
     it("should generate storage URL using current origin in development", () => {
       import.meta.env.PROD = false;
       const fileId = "storage_id_123" as Id<"_storage">;
-      
+
       const result = getStorageUrl(fileId);
-      
+
       expect(result).toBe("http://localhost:3000/api/storage/storage_id_123");
     });
 
@@ -57,26 +57,28 @@ describe("storage utilities", () => {
     it("should handle file IDs with special characters", () => {
       import.meta.env.PROD = false;
       const fileId = "storage-id_with-special.chars" as Id<"_storage">;
-      
+
       const result = getStorageUrl(fileId);
-      
-      expect(result).toBe("http://localhost:3000/api/storage/storage-id_with-special.chars");
+
+      expect(result).toBe(
+        "http://localhost:3000/api/storage/storage-id_with-special.chars"
+      );
     });
 
     it("should work with different localhost ports", () => {
       import.meta.env.PROD = false;
-      
+
       Object.defineProperty(window, "location", {
         value: {
           origin: "http://localhost:5173",
         },
         configurable: true,
       });
-      
+
       const fileId = "test_file_id" as Id<"_storage">;
-      
+
       const result = getStorageUrl(fileId);
-      
+
       expect(result).toBe("http://localhost:5173/api/storage/test_file_id");
     });
   });
@@ -89,54 +91,54 @@ describe("storage utilities", () => {
     it("should return storage URL when fileId is provided", () => {
       const fileId = "valid_file_id" as Id<"_storage">;
       const fallback = "https://example.com/default-image.png";
-      
+
       const result = getStorageUrlWithFallback(fileId, fallback);
-      
+
       expect(result).toBe("http://localhost:3000/api/storage/valid_file_id");
     });
 
     it("should return fallback when fileId is undefined", () => {
       const fileId = undefined;
       const fallback = "https://example.com/default-image.png";
-      
+
       const result = getStorageUrlWithFallback(fileId, fallback);
-      
+
       expect(result).toBe("https://example.com/default-image.png");
     });
 
     it("should return undefined when both fileId and fallback are undefined", () => {
       const fileId = undefined;
       const fallback = undefined;
-      
+
       const result = getStorageUrlWithFallback(fileId, fallback);
-      
+
       expect(result).toBeUndefined();
     });
 
     it("should return storage URL when fileId is provided even if fallback is undefined", () => {
       const fileId = "another_file_id" as Id<"_storage">;
       const fallback = undefined;
-      
+
       const result = getStorageUrlWithFallback(fileId, fallback);
-      
+
       expect(result).toBe("http://localhost:3000/api/storage/another_file_id");
     });
 
     it("should handle empty string fileId as falsy", () => {
       const fileId = "" as Id<"_storage">;
       const fallback = "https://example.com/default.jpg";
-      
+
       const result = getStorageUrlWithFallback(fileId as any, fallback);
-      
+
       expect(result).toBe("https://example.com/default.jpg");
     });
 
     it("should preserve fallback URL format exactly", () => {
       const fileId = undefined;
       const fallback = "/relative/path/image.png";
-      
+
       const result = getStorageUrlWithFallback(fileId, fallback);
-      
+
       expect(result).toBe("/relative/path/image.png");
     });
 
@@ -164,9 +166,10 @@ describe("storage utilities", () => {
     });
 
     it("should work with very long file IDs", () => {
-      const longFileId = "storage_".repeat(20) + "very_long_id_123456789" as Id<"_storage">;
+      const longFileId = ("storage_".repeat(20) +
+        "very_long_id_123456789") as Id<"_storage">;
       const result = getStorageUrl(longFileId);
-      
+
       expect(result).toContain(longFileId);
       expect(result).toMatch(/^http:\/\/localhost:3000\/api\/storage\//);
     });

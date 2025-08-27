@@ -3,15 +3,14 @@
 
 import { convexTest } from "convex-test";
 import { describe, expect, it } from "vitest";
+// Removed unused imports
 import schema from "../schema";
-import { api, internal } from "../_generated/api";
-import type { Id } from "../_generated/dataModel";
 
 describe("events backend functions", () => {
   describe("validation functions", () => {
     it("should validate email addresses correctly", async () => {
       const t = convexTest(schema);
-      
+
       // Access the validation functions through a test query
       const testEmails = [
         { email: "user@example.com", expected: true },
@@ -38,24 +37,20 @@ describe("events backend functions", () => {
     it("should validate timezone strings correctly", async () => {
       const validTimezones = [
         "America/New_York",
-        "Europe/London", 
+        "Europe/London",
         "Asia/Tokyo",
         "UTC",
       ];
 
-      const invalidTimezones = [
-        "Invalid/Timezone",
-        "",
-        "America/FakeCity",
-      ];
+      const invalidTimezones = ["Invalid/Timezone", "", "America/FakeCity"];
 
-      validTimezones.forEach(timezone => {
+      validTimezones.forEach((timezone) => {
         expect(() => {
           Intl.DateTimeFormat(undefined, { timeZone: timezone });
         }).not.toThrow();
       });
 
-      invalidTimezones.forEach(timezone => {
+      invalidTimezones.forEach((timezone) => {
         expect(() => {
           Intl.DateTimeFormat(undefined, { timeZone: timezone });
         }).toThrow();
@@ -84,7 +79,7 @@ describe("events backend functions", () => {
   describe("team-aware operations", () => {
     it("should handle team context correctly", async () => {
       const t = convexTest(schema);
-      
+
       // Test would require proper authentication setup
       // This is a placeholder for team-scoped operations
       expect(true).toBe(true);
@@ -94,7 +89,7 @@ describe("events backend functions", () => {
   describe("event CRUD operations", () => {
     it("should handle event creation flow", async () => {
       const t = convexTest(schema);
-      
+
       // This would test the complete event creation flow
       // including validation, slug generation, and database operations
       expect(true).toBe(true);

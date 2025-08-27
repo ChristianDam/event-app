@@ -38,7 +38,13 @@ describe("teamBranding utilities", () => {
 
   describe("isValidHexColor", () => {
     it("should return true for valid hex colors", () => {
-      const validColors = ["#000000", "#ffffff", "#123abc", "#ABCDEF", "#f0F0f0"];
+      const validColors = [
+        "#000000",
+        "#ffffff",
+        "#123abc",
+        "#ABCDEF",
+        "#f0F0f0",
+      ];
       validColors.forEach((color) => {
         expect(isValidHexColor(color)).toBe(true);
       });
@@ -123,7 +129,9 @@ describe("teamBranding utilities", () => {
       expect(theme.text).toBe("#1f2937");
       expect(theme.background).toBe("#f8fafc");
       expect(theme.shadow).toBe("rgba(59, 130, 246, 0.1)");
-      expect(theme.gradient).toBe("linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)");
+      expect(theme.gradient).toBe(
+        "linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)"
+      );
     });
 
     it("should generate theme from primary color", () => {
@@ -160,7 +168,12 @@ describe("teamBranding utilities", () => {
       const theme = generateEventTheme(team);
 
       // All colors should be different
-      const colors = [theme.primary, theme.secondary, theme.accent, theme.background];
+      const colors = [
+        theme.primary,
+        theme.secondary,
+        theme.accent,
+        theme.background,
+      ];
       const uniqueColors = new Set(colors);
       expect(uniqueColors.size).toBe(4);
 
@@ -247,7 +260,9 @@ describe("teamBranding utilities", () => {
 
       const theme = generateEventTheme(team);
 
-      expect(theme.gradient).toMatch(/^linear-gradient\(135deg, #[a-f0-9]{6} 0%, #[a-f0-9]{6} 100%\)$/i);
+      expect(theme.gradient).toMatch(
+        /^linear-gradient\(135deg, #[a-f0-9]{6} 0%, #[a-f0-9]{6} 100%\)$/i
+      );
     });
   });
 
@@ -265,13 +280,34 @@ describe("teamBranding utilities", () => {
 
       applyTeamTheme(theme);
 
-      expect(mockDocumentElement.style.setProperty).toHaveBeenCalledWith("--event-primary", "#ff6b35");
-      expect(mockDocumentElement.style.setProperty).toHaveBeenCalledWith("--event-secondary", "#cc542a");
-      expect(mockDocumentElement.style.setProperty).toHaveBeenCalledWith("--event-accent", "#ffcdb3");
-      expect(mockDocumentElement.style.setProperty).toHaveBeenCalledWith("--event-text", "#1f2937");
-      expect(mockDocumentElement.style.setProperty).toHaveBeenCalledWith("--event-background", "#fff5f2");
-      expect(mockDocumentElement.style.setProperty).toHaveBeenCalledWith("--event-shadow", "rgba(255, 107, 53, 0.15)");
-      expect(mockDocumentElement.style.setProperty).toHaveBeenCalledWith("--event-gradient", "linear-gradient(135deg, #ff6b35 0%, #cc542a 100%)");
+      expect(mockDocumentElement.style.setProperty).toHaveBeenCalledWith(
+        "--event-primary",
+        "#ff6b35"
+      );
+      expect(mockDocumentElement.style.setProperty).toHaveBeenCalledWith(
+        "--event-secondary",
+        "#cc542a"
+      );
+      expect(mockDocumentElement.style.setProperty).toHaveBeenCalledWith(
+        "--event-accent",
+        "#ffcdb3"
+      );
+      expect(mockDocumentElement.style.setProperty).toHaveBeenCalledWith(
+        "--event-text",
+        "#1f2937"
+      );
+      expect(mockDocumentElement.style.setProperty).toHaveBeenCalledWith(
+        "--event-background",
+        "#fff5f2"
+      );
+      expect(mockDocumentElement.style.setProperty).toHaveBeenCalledWith(
+        "--event-shadow",
+        "rgba(255, 107, 53, 0.15)"
+      );
+      expect(mockDocumentElement.style.setProperty).toHaveBeenCalledWith(
+        "--event-gradient",
+        "linear-gradient(135deg, #ff6b35 0%, #cc542a 100%)"
+      );
 
       expect(mockDocumentElement.style.setProperty).toHaveBeenCalledTimes(7);
     });
@@ -281,13 +317,27 @@ describe("teamBranding utilities", () => {
     it("should remove CSS custom properties", () => {
       clearTeamTheme();
 
-      expect(mockDocumentElement.style.removeProperty).toHaveBeenCalledWith("--event-primary");
-      expect(mockDocumentElement.style.removeProperty).toHaveBeenCalledWith("--event-secondary");
-      expect(mockDocumentElement.style.removeProperty).toHaveBeenCalledWith("--event-accent");
-      expect(mockDocumentElement.style.removeProperty).toHaveBeenCalledWith("--event-text");
-      expect(mockDocumentElement.style.removeProperty).toHaveBeenCalledWith("--event-background");
-      expect(mockDocumentElement.style.removeProperty).toHaveBeenCalledWith("--event-shadow");
-      expect(mockDocumentElement.style.removeProperty).toHaveBeenCalledWith("--event-gradient");
+      expect(mockDocumentElement.style.removeProperty).toHaveBeenCalledWith(
+        "--event-primary"
+      );
+      expect(mockDocumentElement.style.removeProperty).toHaveBeenCalledWith(
+        "--event-secondary"
+      );
+      expect(mockDocumentElement.style.removeProperty).toHaveBeenCalledWith(
+        "--event-accent"
+      );
+      expect(mockDocumentElement.style.removeProperty).toHaveBeenCalledWith(
+        "--event-text"
+      );
+      expect(mockDocumentElement.style.removeProperty).toHaveBeenCalledWith(
+        "--event-background"
+      );
+      expect(mockDocumentElement.style.removeProperty).toHaveBeenCalledWith(
+        "--event-shadow"
+      );
+      expect(mockDocumentElement.style.removeProperty).toHaveBeenCalledWith(
+        "--event-gradient"
+      );
 
       expect(mockDocumentElement.style.removeProperty).toHaveBeenCalledTimes(7);
     });
