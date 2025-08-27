@@ -1,9 +1,11 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
-import { EventFormData, EventFormErrors, EventType } from '../types/events';
-import { validateEventField, validateEventForm, sanitizeEventInput } from '../utils/eventValidation';
+import { eventFormSchema, EventFormData, EventFormErrors } from '../schemas/eventSchema';
+import { sanitizeString } from '../schemas/shared';
 
 interface UseEventFormProps {
   teamId: Id<"teams">;
@@ -21,9 +23,15 @@ interface UseEventFormReturn {
   handleInputChange: (field: keyof EventFormData, value: any) => void;
   handleSubmit: () => Promise<void>;
   resetForm: () => void;
-  validateField: (field: keyof EventFormData) => string | null;
+  validateField: (field: keyof EventFormData) => Promise<string | null>;
   setFieldValue: (field: keyof EventFormData, value: any) => void;
   clearFieldError: (field: keyof EventFormData) => void;
+  // React Hook Form specific methods
+  register: ReturnType<typeof useForm<EventFormData>>['register'];
+  watch: ReturnType<typeof useForm<EventFormData>>['watch'];
+  setValue: ReturnType<typeof useForm<EventFormData>>['setValue'];
+  getFieldState: ReturnType<typeof useForm<EventFormData>>['getFieldState'];
+  formState: ReturnType<typeof useForm<EventFormData>>['formState'];
 }
 
 const createInitialFormData = (initialData?: Partial<EventFormData>): EventFormData => {
@@ -38,7 +46,7 @@ const createInitialFormData = (initialData?: Partial<EventFormData>): EventFormD
     startTime: defaultStartTime,
     endTime: defaultEndTime,
     timezone: 'Europe/Copenhagen',
-    eventType: 'other' as EventType,
+    eventType: 'other',
     maxCapacity: undefined,
     registrationDeadline: undefined,
     eventImage: undefined,
@@ -52,164 +60,154 @@ export const useEventForm = ({
   onSuccess,
   onError,
 }: UseEventFormProps): UseEventFormReturn => {
-  const [formData, setFormData] = useState<EventFormData>(() => createInitialFormData(initialData));
-  const [errors, setErrors] = useState<EventFormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDirty, setIsDirty] = useState(false);
+  const defaultValues = useMemo(() => createInitialFormData(initialData), [initialData]);
+  
+  const form = useForm<EventFormData>({
+    resolver: zodResolver(eventFormSchema),
+    defaultValues,
+    mode: 'onChange'
+  });
+
+  const { 
+    register,
+    handleSubmit: rhfHandleSubmit,
+    watch,
+    setValue,
+    getFieldState,
+    formState,
+    reset,
+    clearErrors,
+    trigger
+  } = form;
 
   const createEvent = useMutation(api.events.createEvent);
 
-  // Memoized validation state
-  const isValid = useMemo(() => {
-    const requiredFields: (keyof EventFormData)[] = ['title', 'description', 'venue', 'startTime', 'endTime', 'eventType'];
-    
-    // Check if all required fields are filled
-    const allRequiredFieldsFilled = requiredFields.every(field => {
-      const value = formData[field];
-      return value !== undefined && value !== null && value !== '';
-    });
+  // Watch form values for backward compatibility
+  const watchedValues = watch();
 
-    if (!allRequiredFieldsFilled) return false;
+  // Auto-adjust end time when start time changes
+  useEffect(() => {
+    const subscription = watch((value, { name }) => {
+      if (name === 'startTime' && value.startTime) {
+        const startTime = new Date(value.startTime);
+        const currentEndTime = value.endTime ? new Date(value.endTime) : undefined;
+        const currentStartTime = watchedValues.startTime ? new Date(watchedValues.startTime) : undefined;
 
-    // Check if there are any validation errors
-    const currentErrors = validateEventForm(formData);
-    return Object.keys(currentErrors).length === 0;
-  }, [formData]);
-
-  const handleInputChange = useCallback((field: keyof EventFormData, value: any) => {
-    setIsDirty(true);
-    
-    setFormData(prev => {
-      const newData = { ...prev, [field]: value };
-      
-      // Auto-adjust end time when start time changes
-      if (field === 'startTime' && value instanceof Date) {
-        const currentEndTime = prev.endTime;
-        const currentStartTime = prev.startTime;
-        
-        // If end time was auto-set (2 hours after start), update it
-        if (currentEndTime.getTime() === currentStartTime.getTime() + 2 * 60 * 60 * 1000) {
-          newData.endTime = new Date(value.getTime() + 2 * 60 * 60 * 1000);
-        }
-        // If end time is before new start time, adjust it
-        else if (currentEndTime.getTime() <= value.getTime()) {
-          newData.endTime = new Date(value.getTime() + 60 * 60 * 1000); // 1 hour after
+        if (currentStartTime && currentEndTime) {
+          // If end time was auto-set (2 hours after start), update it
+          if (currentEndTime.getTime() === currentStartTime.getTime() + 2 * 60 * 60 * 1000) {
+            setValue('endTime', new Date(startTime.getTime() + 2 * 60 * 60 * 1000));
+          }
+          // If end time is before new start time, adjust it
+          else if (currentEndTime.getTime() <= startTime.getTime()) {
+            setValue('endTime', new Date(startTime.getTime() + 60 * 60 * 1000));
+          }
         }
       }
-      
-      return newData;
     });
+    
+    return () => subscription.unsubscribe();
+  }, [watch, setValue, watchedValues.startTime]);
 
-    // Clear field error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-    }
+  // Transform React Hook Form errors to legacy format
+  const errors: EventFormErrors = useMemo(() => {
+    const rhfErrors = formState.errors;
+    const transformedErrors: EventFormErrors = {};
+    
+    Object.keys(rhfErrors).forEach((field) => {
+      const fieldError = rhfErrors[field as keyof EventFormData];
+      if (fieldError?.message) {
+        transformedErrors[field as keyof EventFormData] = fieldError.message;
+      }
+    });
+    
+    return transformedErrors;
+  }, [formState.errors]);
 
-    // Validate field in real-time for immediate feedback
-    setTimeout(() => {
-      setFormData(currentData => {
-        const error = validateEventField(field, currentData[field], currentData);
-        if (error) {
-          setErrors(prev => ({ ...prev, [field]: error }));
-        }
-        return currentData;
-      });
-    }, 300); // Debounce validation
-  }, [errors]);
+  // Backward compatible methods
+  const handleInputChange = useCallback((field: keyof EventFormData, value: any) => {
+    setValue(field, value, { shouldDirty: true, shouldValidate: true });
+  }, [setValue]);
 
   const setFieldValue = useCallback((field: keyof EventFormData, value: any) => {
-    handleInputChange(field, value);
-  }, [handleInputChange]);
+    setValue(field, value, { shouldDirty: true, shouldValidate: true });
+  }, [setValue]);
 
   const clearFieldError = useCallback((field: keyof EventFormData) => {
-    setErrors(prev => {
-      const newErrors = { ...prev };
-      delete newErrors[field];
-      return newErrors;
-    });
-  }, []);
+    clearErrors(field);
+  }, [clearErrors]);
 
-  const validateField = useCallback((field: keyof EventFormData): string | null => {
-    return validateEventField(field, formData[field], formData);
-  }, [formData]);
+  const validateField = useCallback(async (field: keyof EventFormData): Promise<string | null> => {
+    const result = await trigger(field);
+    if (!result) {
+      const fieldError = formState.errors[field];
+      return fieldError?.message || 'Validation failed';
+    }
+    return null;
+  }, [trigger, formState.errors]);
 
   const handleSubmit = useCallback(async () => {
-    if (isSubmitting) return;
+    const onSubmit = async (data: EventFormData) => {
+      try {
+        // Sanitize text inputs
+        const sanitizedData = {
+          ...data,
+          title: sanitizeString(data.title),
+          description: sanitizeString(data.description),
+          venue: sanitizeString(data.venue),
+        };
 
-    setIsSubmitting(true);
+        // Prepare data for Convex mutation
+        const eventData = {
+          title: sanitizedData.title,
+          description: sanitizedData.description,
+          venue: sanitizedData.venue,
+          startTime: sanitizedData.startTime.getTime(),
+          endTime: sanitizedData.endTime.getTime(),
+          timezone: sanitizedData.timezone,
+          teamId,
+          eventType: sanitizedData.eventType,
+          maxCapacity: sanitizedData.maxCapacity,
+          registrationDeadline: sanitizedData.registrationDeadline?.getTime(),
+          bannerImageId: undefined, // This will be set by the image upload component
+          socialImageId: undefined,
+          status: 'draft' as const,
+        };
 
-    try {
-      // Validate entire form
-      const formErrors = validateEventForm(formData);
-      
-      if (Object.keys(formErrors).length > 0) {
-        setErrors(formErrors);
-        throw new Error('Please fix the errors in the form');
+        const eventId = await createEvent(eventData);
+        
+        onSuccess?.(eventId);
+
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to create event';
+        onError?.(errorMessage);
       }
+    };
 
-      // Sanitize text inputs
-      const sanitizedData = {
-        ...formData,
-        title: sanitizeEventInput(formData.title),
-        description: sanitizeEventInput(formData.description),
-        venue: sanitizeEventInput(formData.venue),
-      };
-
-      // Prepare data for Convex mutation
-      const eventData = {
-        title: sanitizedData.title,
-        description: sanitizedData.description,
-        venue: sanitizedData.venue,
-        startTime: sanitizedData.startTime.getTime(),
-        endTime: sanitizedData.endTime.getTime(),
-        timezone: sanitizedData.timezone,
-        teamId,
-        eventType: sanitizedData.eventType,
-        maxCapacity: sanitizedData.maxCapacity,
-        registrationDeadline: sanitizedData.registrationDeadline?.getTime(),
-        bannerImageId: undefined, // This will be set by the image upload component
-        socialImageId: undefined,
-        status: 'draft' as const,
-      };
-
-      const eventId = await createEvent(eventData);
-
-      // Reset form state
-      setErrors({});
-      setIsDirty(false);
-      
-      onSuccess?.(eventId);
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create event';
-      onError?.(errorMessage);
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [formData, teamId, isSubmitting, createEvent, onSuccess, onError]);
+    await rhfHandleSubmit(onSubmit)();
+  }, [rhfHandleSubmit, teamId, createEvent, onSuccess, onError]);
 
   const resetForm = useCallback(() => {
-    setFormData(createInitialFormData(initialData));
-    setErrors({});
-    setIsDirty(false);
-    setIsSubmitting(false);
-  }, [initialData]);
+    reset(createInitialFormData(initialData));
+  }, [reset, initialData]);
 
   return {
-    formData,
+    formData: watchedValues,
     errors,
-    isValid,
-    isSubmitting,
-    isDirty,
+    isValid: formState.isValid,
+    isSubmitting: formState.isSubmitting,
+    isDirty: formState.isDirty,
     handleInputChange,
     handleSubmit,
     resetForm,
     validateField,
     setFieldValue,
     clearFieldError,
+    // React Hook Form methods
+    register,
+    watch,
+    setValue,
+    getFieldState,
+    formState,
   };
 };

@@ -16,7 +16,7 @@ export const eventTypeSchema = z.enum([
   'exhibition',
   'other'
 ], {
-  errorMap: () => ({ message: 'Please select a valid event type' })
+  message: 'Please select a valid event type'
 });
 
 // Event status enumeration
