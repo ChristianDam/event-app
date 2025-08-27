@@ -47,7 +47,6 @@ async function generateUniqueSlug(
   let slug = baseSlug;
   let counter = 1;
 
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     const existingEvent = await ctx.db
       .query("events")
