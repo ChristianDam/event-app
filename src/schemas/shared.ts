@@ -1,10 +1,9 @@
 import { z } from 'zod';
 
-// Email validation with proper regex
+// Email validation - Zod's .email() already handles format validation
 export const emailSchema = z
   .string()
-  .email('Please enter a valid email address')
-  .regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Please enter a valid email address');
+  .email('Please enter a valid email address');
 
 // Phone number validation (international format)
 export const phoneSchema = z
