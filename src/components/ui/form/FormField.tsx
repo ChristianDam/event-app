@@ -1,5 +1,4 @@
 import React from 'react';
-import { FieldError } from 'react-hook-form';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -8,7 +7,7 @@ import { cn } from '@/lib/utils';
 interface FormFieldProps {
   id: string;
   label: string;
-  error?: FieldError;
+  error?: { message: string } | string;
   description?: string;
   required?: boolean;
   children?: React.ReactNode;
@@ -35,14 +34,16 @@ export function FormField({
         <p className="text-sm text-muted-foreground">{description}</p>
       )}
       {error && (
-        <p className="text-sm text-destructive">{error.message}</p>
+        <p className="text-sm text-destructive">
+          {typeof error === 'string' ? error : error.message}
+        </p>
       )}
     </div>
   );
 }
 
 interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  error?: FieldError;
+  error?: { message: string } | string;
 }
 
 export function FormInput({ error, className, ...props }: FormInputProps) {
@@ -58,7 +59,7 @@ export function FormInput({ error, className, ...props }: FormInputProps) {
 }
 
 interface FormTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
-  error?: FieldError;
+  error?: { message: string } | string;
 }
 
 export function FormTextarea({ error, className, ...props }: FormTextareaProps) {

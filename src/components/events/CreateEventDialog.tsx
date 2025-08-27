@@ -5,6 +5,7 @@ import { useImageUpload } from '../../hooks/useImageUpload';
 import { generateEventTheme, applyTeamTheme, clearTeamTheme, Team } from '../../utils/teamBranding';
 import { eventTypeOptions } from '../../types/events';
 import { DatePicker } from '../ui/date-picker';
+import { FormField, FormInput, FormTextarea, FormError } from '../ui/form';
 import { toast } from 'sonner';
 
 interface CreateEventDialogProps {
@@ -204,56 +205,56 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                   {/* Basic Info Step */}
                   {currentStep === 'basic' && (
                     <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-foreground mb-2">
-                          Event Title *
-                        </label>
-                        <input
+                      <FormField
+                        id="title"
+                        label="Event Title"
+                        required
+                        error={errors.title}
+                      >
+                        <FormInput
+                          id="title"
                           type="text"
                           value={formData.title}
                           onChange={(e) => handleInputChange('title', e.target.value)}
                           placeholder="Give your event a catchy name"
-                          className={`
-                            w-full p-3 border rounded-lg focus:ring-2 focus:ring-var(--event-primary, #3b82f6) focus:border-transparent
-                            ${errors.title ? 'border-red-300' : 'border-gray-300'}
-                          `}
+                          error={errors.title}
+                          className="p-3"
                         />
-                        {errors.title && <p className="mt-1 text-sm text-red-600">{errors.title}</p>}
-                      </div>
+                      </FormField>
 
-                      <div>
-                        <label className="block text-sm font-medium text-foreground mb-2">
-                          Event Description *
-                        </label>
-                        <textarea
+                      <FormField
+                        id="description"
+                        label="Event Description"
+                        required
+                        error={errors.description}
+                      >
+                        <FormTextarea
+                          id="description"
                           value={formData.description}
                           onChange={(e) => handleInputChange('description', e.target.value)}
                           placeholder="Tell people what makes your event special..."
                           rows={4}
-                          className={`
-                            w-full p-3 border rounded-lg focus:ring-2 focus:ring-var(--event-primary, #3b82f6) focus:border-transparent
-                            ${errors.description ? 'border-red-300' : 'border-gray-300'}
-                          `}
+                          error={errors.description}
+                          className="p-3"
                         />
-                        {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description}</p>}
-                      </div>
+                      </FormField>
 
-                      <div>
-                        <label className="block text-sm font-medium text-foreground mb-2">
-                          Venue *
-                        </label>
-                        <input
+                      <FormField
+                        id="venue"
+                        label="Venue"
+                        required
+                        error={errors.venue}
+                      >
+                        <FormInput
+                          id="venue"
                           type="text"
                           value={formData.venue}
                           onChange={(e) => handleInputChange('venue', e.target.value)}
                           placeholder="Where will your event take place?"
-                          className={`
-                            w-full p-3 border rounded-lg focus:ring-2 focus:ring-var(--event-primary, #3b82f6) focus:border-transparent
-                            ${errors.venue ? 'border-red-300' : 'border-gray-300'}
-                          `}
+                          error={errors.venue}
+                          className="p-3"
                         />
-                        {errors.venue && <p className="mt-1 text-sm text-red-600">{errors.venue}</p>}
-                      </div>
+                      </FormField>
                     </div>
                   )}
 
@@ -272,7 +273,7 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                             includeTime={true}
                             className={errors.startTime ? 'border-red-500' : ''}
                           />
-                          {errors.startTime && <p className="mt-1 text-sm text-red-600">{errors.startTime}</p>}
+                          <FormError error={errors.startTime} />
                         </div>
 
                         <div>
@@ -286,7 +287,7 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                             includeTime={true}
                             className={errors.endTime ? 'border-red-500' : ''}
                           />
-                          {errors.endTime && <p className="mt-1 text-sm text-red-600">{errors.endTime}</p>}
+                          <FormError error={errors.endTime} />
                         </div>
                       </div>
 
@@ -314,27 +315,26 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                             </button>
                           ))}
                         </div>
-                        {errors.eventType && <p className="mt-1 text-sm text-red-600">{errors.eventType}</p>}
+                        <FormError error={errors.eventType} />
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-foreground mb-2">
-                            Maximum Capacity (Optional)
-                          </label>
-                          <input
+                        <FormField
+                          id="maxCapacity"
+                          label="Maximum Capacity (Optional)"
+                          error={errors.maxCapacity}
+                        >
+                          <FormInput
+                            id="maxCapacity"
                             type="number"
                             value={formData.maxCapacity || ''}
                             onChange={(e) => handleInputChange('maxCapacity', e.target.value ? parseInt(e.target.value) : undefined)}
                             placeholder="Leave empty for unlimited"
                             min="1"
-                            className={`
-                              w-full p-3 border rounded-lg focus:ring-2 focus:ring-var(--event-primary, #3b82f6) focus:border-transparent
-                              ${errors.maxCapacity ? 'border-red-300' : 'border-gray-300'}
-                            `}
+                            error={errors.maxCapacity}
+                            className="p-3"
                           />
-                          {errors.maxCapacity && <p className="mt-1 text-sm text-red-600">{errors.maxCapacity}</p>}
-                        </div>
+                        </FormField>
 
                         <div>
                           <label className="block text-sm font-medium text-foreground mb-2">
@@ -347,7 +347,7 @@ export const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                             includeTime={true}
                             className={errors.registrationDeadline ? 'border-red-500' : ''}
                           />
-                          {errors.registrationDeadline && <p className="mt-1 text-sm text-red-600">{errors.registrationDeadline}</p>}
+                          <FormError error={errors.registrationDeadline} />
                         </div>
                       </div>
                     </div>
