@@ -174,7 +174,6 @@ const EventListPage: React.FC<EventListPageProps> = ({ navigate }) => {
                   }}
                   onDuplicate={() => {
                     // Could implement duplication logic
-                    console.log("Duplicate event", event._id);
                   }}
                 />
               ))}
@@ -217,7 +216,6 @@ const EventListPage: React.FC<EventListPageProps> = ({ navigate }) => {
                   }}
                   onDuplicate={() => {
                     // Could implement duplication logic
-                    console.log("Duplicate event", event._id);
                   }}
                 />
               ))}

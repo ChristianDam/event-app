@@ -47,11 +47,6 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
         // await ctx.scheduler.runAfter(0, internal.teams.createDefaultTeam, {
         //   userId,
         // });
-        console.log(
-          "🆕 New user created:",
-          userId,
-          "- default team creation pending"
-        );
 
         return userId;
       }

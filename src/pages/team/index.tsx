@@ -70,7 +70,6 @@ export default function TeamPage({}: TeamPageProps) {
   const handleInviteMember = () => {
     if (inviteEmail) {
       // sendInvitation({ email: inviteEmail });
-      console.log("Invite member:", inviteEmail);
       setInviteEmail("");
     }
   };
@@ -78,13 +77,11 @@ export default function TeamPage({}: TeamPageProps) {
   const handleRemoveMember = (memberId: string) => {
     if (confirm("Are you sure you want to remove this member?")) {
       // removeMember({ memberId });
-      console.log("Remove member:", memberId);
     }
   };
 
   const handleUpdateRole = (memberId: string, newRole: string) => {
     // updateMemberRole({ memberId, role: newRole });
-    console.log("Update role:", memberId, newRole);
   };
 
   const getRoleColor = (role: string) => {
