@@ -44,7 +44,7 @@ export const isUpcoming = (timestamp: number): boolean => {
 };
 
 export const isPast = (timestamp: number): boolean => {
-  return timestamp < Date.now();
+  return timestamp <= Date.now();
 };
 
 export const isToday = (timestamp: number): boolean => {

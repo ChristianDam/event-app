@@ -18,7 +18,6 @@ export const sendInvitationEmail = internalAction({
     });
 
     if (!invitation) {
-      console.error("Invitation not found:", args.invitationId);
       return null;
     }
 
@@ -30,22 +29,7 @@ export const sendInvitationEmail = internalAction({
       process.env.AUTH_EMAIL && !process.env.AUTH_EMAIL.includes("resend.dev");
 
     if (isDevelopment && !hasVerifiedDomain) {
-      // Development mode: Log invitation details instead of sending actual email
-      console.log(
-        "🔧 DEVELOPMENT MODE - Email not sent, but invitation created:"
-      );
-      console.log("📧 Invitation Details:", {
-        email: invitation.email,
-        teamName: invitation.teamName,
-        inviterName: invitation.inviterName,
-        role: invitation.role,
-        inviteUrl,
-        token: invitation.token,
-      });
-      console.log(`📧 To test the invitation, visit: ${inviteUrl}`);
-      console.log(
-        "📧 To enable actual email sending, verify a domain at resend.com/domains"
-      );
+      // Development mode: Skip email sending but invitation is created
       return null;
     }
 
@@ -71,16 +55,9 @@ export const sendInvitationEmail = internalAction({
       });
 
       if (error) {
-        console.error("Failed to send invitation email:", error);
         throw new Error(`Email sending failed: ${JSON.stringify(error)}`);
       }
-
-      console.log(
-        "📧 Team invitation email sent successfully to:",
-        invitation.email
-      );
     } catch (error) {
-      console.error("Error sending invitation email:", error);
       throw error;
     }
 

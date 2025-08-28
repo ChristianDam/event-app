@@ -80,7 +80,7 @@ const hslToHex = (h: number, s: number, l: number): string => {
     return p;
   };
 
-  let r, g, b;
+  let r: number, g: number, b: number;
 
   if (s === 0) {
     r = g = b = l; // Achromatic
@@ -94,7 +94,7 @@ const hslToHex = (h: number, s: number, l: number): string => {
 
   const toHex = (c: number): string => {
     const hex = Math.round(c * 255).toString(16);
-    return hex.length === 1 ? "0" + hex : hex;
+    return hex.length === 1 ? `0${hex}` : hex;
   };
 
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
@@ -210,13 +210,18 @@ export const isValidHexColor = (hex: string): boolean => {
 export const getColorName = (hex: string): string => {
   const [h, s, l] = hexToHsl(hex);
 
+  // Check for very low/high lightness first
   if (l < 20) return "Very Dark";
-  if (l < 40) return "Dark";
   if (l > 80) return "Light";
-  if (l > 60) return "Bright";
 
+  // Check for low saturation (gray colors) before other checks
   if (s < 20) return "Gray";
 
+  // Check for dark/bright after gray check
+  if (l < 40) return "Dark";
+  if (l > 60) return "Bright";
+
+  // Check hue for saturated colors
   if (h < 30 || h >= 330) return "Red";
   if (h < 90) return "Yellow";
   if (h < 150) return "Green";

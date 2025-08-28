@@ -699,12 +699,6 @@ export const inviteByEmail = mutation({
       invitationId,
     });
 
-    console.log("📧 Team invitation created and email scheduled:", {
-      invitationId,
-      email: args.email,
-      role: args.role,
-    });
-
     return invitationId;
   },
 });

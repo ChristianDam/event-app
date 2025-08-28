@@ -317,8 +317,7 @@ export function ThreadMessages({ threadId }: ThreadMessagesProps) {
 
   const handleReply = (messageId: Id<"threadMessages">) => {
     // This would trigger the message input to show in reply mode
-    // For now, we'll just log it
-    console.log("Reply to message:", messageId);
+    // For now, this is a placeholder
   };
 
   const handleEdit = async (
