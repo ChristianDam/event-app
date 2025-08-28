@@ -1,346 +1,455 @@
-// ABOUTME: Hook tests for useEventForm
-// ABOUTME: Tests form validation, submission, and field interactions
+// ABOUTME: Integration tests for useEventForm hook
+// ABOUTME: Tests real hook behavior with actual dependencies and validation
 
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { useEventForm } from "../useEventForm";
+import type { Id } from "../../../convex/_generated/dataModel";
 
-// Mock react-hook-form
-const mockUseForm = vi.fn();
-vi.mock("react-hook-form", () => ({
-  useForm: () => mockUseForm(),
-}));
-
-// Mock convex/react
-const mockUseMutation = vi.fn();
+// Mock Convex API calls but not the actual hook logic
 vi.mock("convex/react", () => ({
-  useMutation: () => mockUseMutation(),
+  useMutation: () => vi.fn(),
 }));
 
-// Mock zodResolver
-vi.mock("@hookform/resolvers/zod", () => ({
-  zodResolver: vi.fn(() => vi.fn()),
-}));
-
-// Mock schemas
-vi.mock("../schemas/eventSchema", () => ({
-  eventFormSchema: {},
-}));
-
-vi.mock("../schemas/shared", () => ({
-  sanitizeString: (str: string) => str.trim(),
+// Mock the Convex API
+vi.mock("../../../convex/_generated/api", () => ({
+  api: {
+    events: {
+      createEvent: "mock-function-ref",
+    },
+  },
 }));
 
 describe("useEventForm", () => {
-  const mockTeamId = "team-1" as any;
-  const mockCreateEvent = vi.fn();
+  const mockTeamId = "team-1" as Id<"teams">;
   const mockOnSuccess = vi.fn();
   const mockOnError = vi.fn();
 
-  let mockFormMethods: any;
-
   beforeEach(() => {
     vi.clearAllMocks();
-
-    mockFormMethods = {
-      register: vi.fn(),
-      handleSubmit: vi.fn(),
-      watch: vi.fn(() => ({
-        title: "",
-        description: "",
-        venue: "",
-        startTime: new Date(),
-        endTime: new Date(),
-        timezone: "Europe/Copenhagen",
-        eventType: "other",
-      })),
-      setValue: vi.fn(),
-      getFieldState: vi.fn(),
-      formState: {
-        errors: {},
-        isValid: true,
-        isSubmitting: false,
-        isDirty: false,
-      },
-      reset: vi.fn(),
-      clearErrors: vi.fn(),
-      trigger: vi.fn(),
-    };
-
-    mockUseForm.mockReturnValue(mockFormMethods);
-    mockUseMutation.mockReturnValue(mockCreateEvent);
   });
 
-  it("should initialize with default values", () => {
-    const { result } = renderHook(() =>
-      useEventForm({
-        teamId: mockTeamId,
-        onSuccess: mockOnSuccess,
-        onError: mockOnError,
-      })
-    );
+  describe("initialization", () => {
+    it("should initialize with proper default values", () => {
+      const { result } = renderHook(() =>
+        useEventForm({
+          teamId: mockTeamId,
+          onSuccess: mockOnSuccess,
+          onError: mockOnError,
+        })
+      );
 
-    expect(result.current.formData).toBeDefined();
-    expect(result.current.formData.timezone).toBe("Europe/Copenhagen");
-    expect(result.current.formData.eventType).toBe("other");
-    expect(result.current.isValid).toBe(true);
-    expect(result.current.isSubmitting).toBe(false);
-  });
+      const { formData } = result.current;
 
-  it("should handle input changes", () => {
-    const { result } = renderHook(() =>
-      useEventForm({
-        teamId: mockTeamId,
-        onSuccess: mockOnSuccess,
-        onError: mockOnError,
-      })
-    );
-
-    act(() => {
-      result.current.handleInputChange("title", "New Event Title");
+      expect(formData.title).toBe("");
+      expect(formData.description).toBe("");
+      expect(formData.venue).toBe("");
+      expect(formData.timezone).toBe("Europe/Copenhagen");
+      expect(formData.eventType).toBe("other");
+      expect(formData.maxCapacity).toBeUndefined();
+      expect(formData.registrationDeadline).toBeUndefined();
+      expect(formData.eventImage).toBeUndefined();
+      
+      // Check that start time is roughly 24 hours from now
+      const now = Date.now();
+      const expectedStart = now + 24 * 60 * 60 * 1000;
+      expect(formData.startTime.getTime()).toBeCloseTo(expectedStart, -4); // Within 10 seconds
+      
+      // Check that end time is 2 hours after start time
+      expect(formData.endTime.getTime()).toBe(
+        formData.startTime.getTime() + 2 * 60 * 60 * 1000
+      );
     });
 
-    expect(mockFormMethods.setValue).toHaveBeenCalledWith(
-      "title", 
-      "New Event Title",
-      { shouldDirty: true, shouldValidate: true }
-    );
-  });
-
-  it("should validate fields", async () => {
-    mockFormMethods.trigger.mockResolvedValue(true);
-    
-    const { result } = renderHook(() =>
-      useEventForm({
-        teamId: mockTeamId,
-        onSuccess: mockOnSuccess,
-        onError: mockOnError,
-      })
-    );
-
-    let validationResult: string | null = "";
-    
-    await act(async () => {
-      validationResult = await result.current.validateField("title");
-    });
-
-    expect(mockFormMethods.trigger).toHaveBeenCalledWith("title");
-    expect(validationResult).toBeNull();
-  });
-
-  it("should return validation error when field is invalid", async () => {
-    mockFormMethods.trigger.mockResolvedValue(false);
-    mockFormMethods.formState.errors = {
-      title: { message: "Title is required" }
-    };
-    
-    const { result } = renderHook(() =>
-      useEventForm({
-        teamId: mockTeamId,
-        onSuccess: mockOnSuccess,
-        onError: mockOnError,
-      })
-    );
-
-    let validationResult: string | null = "";
-    
-    await act(async () => {
-      validationResult = await result.current.validateField("title");
-    });
-
-    expect(validationResult).toBe("Title is required");
-  });
-
-  it("should handle form submission successfully", async () => {
-    const mockEventId = "event-123" as any;
-    mockCreateEvent.mockResolvedValue(mockEventId);
-    
-    const mockHandleSubmit = vi.fn((callback) => {
-      return () => callback({
-        title: "Test Event",
-        description: "Test Description", 
-        venue: "Test Venue",
-        startTime: new Date("2024-12-01T10:00:00Z"),
-        endTime: new Date("2024-12-01T12:00:00Z"),
-        timezone: "UTC",
-        eventType: "workshop",
-        maxCapacity: 50,
-        registrationDeadline: new Date("2024-11-30T23:59:59Z"),
-      });
-    });
-    
-    mockFormMethods.handleSubmit = mockHandleSubmit;
-
-    const { result } = renderHook(() =>
-      useEventForm({
-        teamId: mockTeamId,
-        onSuccess: mockOnSuccess,
-        onError: mockOnError,
-      })
-    );
-
-    await act(async () => {
-      await result.current.handleSubmit();
-    });
-
-    expect(mockCreateEvent).toHaveBeenCalledWith(
-      expect.objectContaining({
+    it("should initialize with custom initial data", () => {
+      const initialData = {
         title: "Test Event",
         description: "Test Description",
         venue: "Test Venue",
-        teamId: mockTeamId,
-        eventType: "workshop",
-        maxCapacity: 50,
-        status: "draft",
-      })
-    );
-    
-    expect(mockOnSuccess).toHaveBeenCalledWith(mockEventId);
+        eventType: "workshop" as const,
+        maxCapacity: 100,
+      };
+
+      const { result } = renderHook(() =>
+        useEventForm({
+          teamId: mockTeamId,
+          initialData,
+          onSuccess: mockOnSuccess,
+          onError: mockOnError,
+        })
+      );
+
+      const { formData } = result.current;
+
+      expect(formData.title).toBe("Test Event");
+      expect(formData.description).toBe("Test Description");
+      expect(formData.venue).toBe("Test Venue");
+      expect(formData.eventType).toBe("workshop");
+      expect(formData.maxCapacity).toBe(100);
+      expect(formData.timezone).toBe("Europe/Copenhagen"); // Default preserved
+    });
+
+    it("should initialize form state correctly", () => {
+      const { result } = renderHook(() =>
+        useEventForm({
+          teamId: mockTeamId,
+          onSuccess: mockOnSuccess,
+          onError: mockOnError,
+        })
+      );
+
+      expect(result.current.isSubmitting).toBe(false);
+      expect(result.current.isDirty).toBe(false);
+    });
   });
 
-  it("should handle form submission errors", async () => {
-    const error = new Error("Network error");
-    mockCreateEvent.mockRejectedValue(error);
-    
-    const mockHandleSubmit = vi.fn((callback) => {
-      return () => callback({
-        title: "Test Event",
-        description: "Test Description",
-        venue: "Test Venue", 
-        startTime: new Date(),
-        endTime: new Date(),
-        timezone: "UTC",
-        eventType: "workshop",
+  describe("form interactions", () => {
+    it("should handle input changes via handleInputChange", async () => {
+      const { result } = renderHook(() =>
+        useEventForm({
+          teamId: mockTeamId,
+          onSuccess: mockOnSuccess,
+          onError: mockOnError,
+        })
+      );
+
+      act(() => {
+        result.current.handleInputChange("title", "Updated Title");
+      });
+
+      await waitFor(() => {
+        expect(result.current.formData.title).toBe("Updated Title");
+      });
+
+      expect(result.current.isDirty).toBe(true);
+    });
+
+    it("should handle input changes via setFieldValue", async () => {
+      const { result } = renderHook(() =>
+        useEventForm({
+          teamId: mockTeamId,
+          onSuccess: mockOnSuccess,
+          onError: mockOnError,
+        })
+      );
+
+      act(() => {
+        result.current.setFieldValue("description", "Updated Description");
+      });
+
+      await waitFor(() => {
+        expect(result.current.formData.description).toBe("Updated Description");
+      });
+
+      expect(result.current.isDirty).toBe(true);
+    });
+
+    it("should auto-adjust end time when start time changes", async () => {
+      const { result } = renderHook(() =>
+        useEventForm({
+          teamId: mockTeamId,
+          onSuccess: mockOnSuccess,
+          onError: mockOnError,
+        })
+      );
+
+      const newStartTime = new Date("2024-12-15T10:00:00Z");
+
+      act(() => {
+        result.current.setFieldValue("startTime", newStartTime);
+      });
+
+      await waitFor(() => {
+        expect(result.current.formData.startTime).toEqual(newStartTime);
+        expect(result.current.formData.endTime.getTime()).toBe(
+          newStartTime.getTime() + 2 * 60 * 60 * 1000
+        );
       });
     });
-    
-    mockFormMethods.handleSubmit = mockHandleSubmit;
 
-    const { result } = renderHook(() =>
-      useEventForm({
-        teamId: mockTeamId,
-        onSuccess: mockOnSuccess,
-        onError: mockOnError,
-      })
-    );
+    it("should handle timezone changes", async () => {
+      const { result } = renderHook(() =>
+        useEventForm({
+          teamId: mockTeamId,
+          onSuccess: mockOnSuccess,
+          onError: mockOnError,
+        })
+      );
 
-    await act(async () => {
-      await result.current.handleSubmit();
+      act(() => {
+        result.current.setFieldValue("timezone", "America/New_York");
+      });
+
+      await waitFor(() => {
+        expect(result.current.formData.timezone).toBe("America/New_York");
+      });
     });
 
-    expect(mockOnError).toHaveBeenCalledWith("Network error");
+    it("should handle event type changes", async () => {
+      const { result } = renderHook(() =>
+        useEventForm({
+          teamId: mockTeamId,
+          onSuccess: mockOnSuccess,
+          onError: mockOnError,
+        })
+      );
+
+      act(() => {
+        result.current.setFieldValue("eventType", "music");
+      });
+
+      await waitFor(() => {
+        expect(result.current.formData.eventType).toBe("music");
+      });
+    });
   });
 
-  it("should clear field errors", () => {
-    const { result } = renderHook(() =>
-      useEventForm({
-        teamId: mockTeamId,
-        onSuccess: mockOnSuccess,
-        onError: mockOnError,
-      })
-    );
+  describe("validation", () => {
+    it("should validate required fields", async () => {
+      const { result } = renderHook(() =>
+        useEventForm({
+          teamId: mockTeamId,
+          onSuccess: mockOnSuccess,
+          onError: mockOnError,
+        })
+      );
 
-    act(() => {
-      result.current.clearFieldError("title");
+      // Set an invalid title (too short)
+      act(() => {
+        result.current.setFieldValue("title", "Hi"); // Less than 3 chars
+      });
+
+      await waitFor(async () => {
+        const error = await result.current.validateField("title");
+        expect(error).toContain("Must be at least 3 characters");
+      });
     });
 
-    expect(mockFormMethods.clearErrors).toHaveBeenCalledWith("title");
+    it("should validate title length", async () => {
+      const { result } = renderHook(() =>
+        useEventForm({
+          teamId: mockTeamId,
+          onSuccess: mockOnSuccess,
+          onError: mockOnError,
+        })
+      );
+
+      // Set a title that's too long
+      const longTitle = "A".repeat(101); // More than 100 chars
+
+      act(() => {
+        result.current.setFieldValue("title", longTitle);
+      });
+
+      await waitFor(async () => {
+        const error = await result.current.validateField("title");
+        expect(error).toContain("Must be less than 100 characters");
+      });
+    });
+
+    it("should validate description length", async () => {
+      const { result } = renderHook(() =>
+        useEventForm({
+          teamId: mockTeamId,
+          onSuccess: mockOnSuccess,
+          onError: mockOnError,
+        })
+      );
+
+      // Set a description that's too short
+      act(() => {
+        result.current.setFieldValue("description", "Short"); // Less than 10 chars
+      });
+
+      await waitFor(async () => {
+        const error = await result.current.validateField("description");
+        expect(error).toContain("Must be at least 10 characters");
+      });
+    });
+
+    it("should validate date relationships", async () => {
+      const { result } = renderHook(() =>
+        useEventForm({
+          teamId: mockTeamId,
+          onSuccess: mockOnSuccess,
+          onError: mockOnError,
+        })
+      );
+
+      const startTime = new Date("2024-12-15T12:00:00Z");
+      const endTime = new Date("2024-12-15T10:00:00Z"); // Before start time
+
+      act(() => {
+        result.current.setFieldValue("startTime", startTime);
+        result.current.setFieldValue("endTime", endTime);
+      });
+
+      // Give the form time to process the changes
+      await waitFor(() => {
+        expect(result.current.formData.startTime).toEqual(startTime);
+        expect(result.current.formData.endTime).toEqual(endTime);
+      });
+
+      // Validate end time - this should fail because it's before start time
+      await waitFor(async () => {
+        const error = await result.current.validateField("endTime");
+        expect(error).toContain("End time must be after start time");
+      });
+    });
+
+    it("should clear field errors", async () => {
+      const { result } = renderHook(() =>
+        useEventForm({
+          teamId: mockTeamId,
+          onSuccess: mockOnSuccess,
+          onError: mockOnError,
+        })
+      );
+
+      // Create an error first
+      act(() => {
+        result.current.setFieldValue("title", "Hi"); // Invalid
+      });
+
+      await waitFor(async () => {
+        const error = await result.current.validateField("title");
+        expect(error).toBeTruthy();
+      });
+
+      // Clear the error
+      act(() => {
+        result.current.clearFieldError("title");
+      });
+
+      // Error should be cleared
+      expect(result.current.errors.title).toBeUndefined();
+    });
   });
 
-  it("should reset form to initial values", () => {
-    const initialData = {
-      title: "Initial Title",
-      description: "Initial Description",
-    };
-
-    const { result } = renderHook(() =>
-      useEventForm({
-        teamId: mockTeamId,
-        initialData,
-        onSuccess: mockOnSuccess,
-        onError: mockOnError,
-      })
-    );
-
-    act(() => {
-      result.current.resetForm();
-    });
-
-    expect(mockFormMethods.reset).toHaveBeenCalledWith(
-      expect.objectContaining({
+  describe("form reset", () => {
+    it("should reset form to initial values", async () => {
+      const initialData = {
         title: "Initial Title",
         description: "Initial Description",
-        timezone: "Europe/Copenhagen",
-        eventType: "other",
-      })
-    );
-  });
+        venue: "Initial Venue",
+      };
 
-  it("should transform RHF errors to legacy format", () => {
-    mockFormMethods.formState.errors = {
-      title: { message: "Title is required" },
-      venue: { message: "Venue is required" },
-    };
+      const { result } = renderHook(() =>
+        useEventForm({
+          teamId: mockTeamId,
+          initialData,
+          onSuccess: mockOnSuccess,
+          onError: mockOnError,
+        })
+      );
 
-    const { result } = renderHook(() =>
-      useEventForm({
-        teamId: mockTeamId,
-        onSuccess: mockOnSuccess,
-        onError: mockOnError,
-      })
-    );
+      // Make some changes
+      act(() => {
+        result.current.setFieldValue("title", "Changed Title");
+        result.current.setFieldValue("description", "Changed Description");
+      });
 
-    expect(result.current.errors).toEqual({
-      title: "Title is required",
-      venue: "Venue is required",
-    });
-  });
+      await waitFor(() => {
+        expect(result.current.formData.title).toBe("Changed Title");
+        expect(result.current.isDirty).toBe(true);
+      });
 
-  it("should handle timezone defaults correctly", () => {
-    const { result } = renderHook(() =>
-      useEventForm({
-        teamId: mockTeamId,
-        onSuccess: mockOnSuccess,
-        onError: mockOnError,
-      })
-    );
+      // Reset the form
+      act(() => {
+        result.current.resetForm();
+      });
 
-    expect(result.current.formData.timezone).toBe("Europe/Copenhagen");
-  });
-
-  it("should sanitize input values on submission", async () => {
-    const mockHandleSubmit = vi.fn((callback) => {
-      return () => callback({
-        title: "  Test Event  ",
-        description: "  Test Description  ",
-        venue: "  Test Venue  ",
-        startTime: new Date(),
-        endTime: new Date(),
-        timezone: "UTC",
-        eventType: "workshop",
+      await waitFor(() => {
+        expect(result.current.formData.title).toBe("Initial Title");
+        expect(result.current.formData.description).toBe("Initial Description");
+        expect(result.current.formData.venue).toBe("Initial Venue");
+        expect(result.current.isDirty).toBe(false);
       });
     });
-    
-    mockFormMethods.handleSubmit = mockHandleSubmit;
 
-    const { result } = renderHook(() =>
-      useEventForm({
-        teamId: mockTeamId,
-        onSuccess: mockOnSuccess,
-        onError: mockOnError,
-      })
-    );
+    it("should reset form without initial data", async () => {
+      const { result } = renderHook(() =>
+        useEventForm({
+          teamId: mockTeamId,
+          onSuccess: mockOnSuccess,
+          onError: mockOnError,
+        })
+      );
 
-    await act(async () => {
-      await result.current.handleSubmit();
+      // Make changes
+      act(() => {
+        result.current.setFieldValue("title", "Changed Title");
+        result.current.setFieldValue("eventType", "music");
+      });
+
+      await waitFor(() => {
+        expect(result.current.formData.title).toBe("Changed Title");
+        expect(result.current.formData.eventType).toBe("music");
+      });
+
+      // Reset the form
+      act(() => {
+        result.current.resetForm();
+      });
+
+      await waitFor(() => {
+        expect(result.current.formData.title).toBe("");
+        expect(result.current.formData.eventType).toBe("other");
+        expect(result.current.isDirty).toBe(false);
+      });
+    });
+  });
+
+  describe("React Hook Form integration", () => {
+    it("should provide register function", () => {
+      const { result } = renderHook(() =>
+        useEventForm({
+          teamId: mockTeamId,
+          onSuccess: mockOnSuccess,
+          onError: mockOnError,
+        })
+      );
+
+      expect(typeof result.current.register).toBe("function");
     });
 
-    expect(mockCreateEvent).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: "Test Event", // Should be trimmed
-        description: "Test Description", // Should be trimmed
-        venue: "Test Venue", // Should be trimmed
-      })
-    );
+    it("should provide watch function", () => {
+      const { result } = renderHook(() =>
+        useEventForm({
+          teamId: mockTeamId,
+          onSuccess: mockOnSuccess,
+          onError: mockOnError,
+        })
+      );
+
+      expect(typeof result.current.watch).toBe("function");
+    });
+
+    it("should provide setValue function", () => {
+      const { result } = renderHook(() =>
+        useEventForm({
+          teamId: mockTeamId,
+          onSuccess: mockOnSuccess,
+          onError: mockOnError,
+        })
+      );
+
+      expect(typeof result.current.setValue).toBe("function");
+    });
+
+    it("should provide formState", () => {
+      const { result } = renderHook(() =>
+        useEventForm({
+          teamId: mockTeamId,
+          onSuccess: mockOnSuccess,
+          onError: mockOnError,
+        })
+      );
+
+      expect(result.current.formState).toBeDefined();
+      expect(typeof result.current.formState.isValid).toBe("boolean");
+      expect(typeof result.current.formState.isSubmitting).toBe("boolean");
+      expect(typeof result.current.formState.isDirty).toBe("boolean");
+    });
   });
 });

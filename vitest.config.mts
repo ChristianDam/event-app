@@ -34,7 +34,7 @@ export default defineConfig({
     ],
     // Fallback environment for tests that don't match patterns above
     environment: "jsdom",
-    setupFiles: [],
+    setupFiles: ["./src/test-setup.ts"],
     server: { 
       deps: { 
         inline: ["convex-test"] 

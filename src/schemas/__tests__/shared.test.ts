@@ -2,7 +2,6 @@
 // ABOUTME: Tests essential validation logic for forms and data integrity
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { z } from "zod";
 import {
   emailSchema,
   phoneSchema,
