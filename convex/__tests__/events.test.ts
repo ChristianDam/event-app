@@ -9,7 +9,7 @@ import schema from "../schema";
 describe("events backend functions", () => {
   describe("validation functions", () => {
     it("should validate email addresses correctly", async () => {
-      const t = convexTest(schema);
+      const _t = convexTest(schema);
 
       // Access the validation functions through a test query
       const testEmails = [
@@ -78,7 +78,7 @@ describe("events backend functions", () => {
 
   describe("team-aware operations", () => {
     it("should handle team context correctly", async () => {
-      const t = convexTest(schema);
+      const _t = convexTest(schema);
 
       // Test would require proper authentication setup
       // This is a placeholder for team-scoped operations
@@ -88,7 +88,7 @@ describe("events backend functions", () => {
 
   describe("event CRUD operations", () => {
     it("should handle event creation flow", async () => {
-      const t = convexTest(schema);
+      const _t = convexTest(schema);
 
       // This would test the complete event creation flow
       // including validation, slug generation, and database operations

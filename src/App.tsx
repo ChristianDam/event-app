@@ -79,23 +79,21 @@ function AppContent() {
 
   return (
     <Layout navigate={navigate} currentPath={location.pathname}>
-      <>
-        {!requiresAuth ? (
-          // Public pages (like invitations)
-          renderContent()
-        ) : (
-          <>
-            <Authenticated>{renderContent()}</Authenticated>
-            <Unauthenticated>
-              {location.pathname === "/" ? (
-                <LandingPage />
-              ) : (
-                <SignInFormEmailCode />
-              )}
-            </Unauthenticated>
-          </>
-        )}
-      </>
+      {!requiresAuth ? (
+        // Public pages (like invitations)
+        renderContent()
+      ) : (
+        <>
+          <Authenticated>{renderContent()}</Authenticated>
+          <Unauthenticated>
+            {location.pathname === "/" ? (
+              <LandingPage />
+            ) : (
+              <SignInFormEmailCode />
+            )}
+          </Unauthenticated>
+        </>
+      )}
     </Layout>
   );
 }

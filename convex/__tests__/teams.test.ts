@@ -3,12 +3,12 @@
 
 import { convexTest } from "convex-test";
 import { describe, expect, it } from "vitest";
-import { api } from "../_generated/api";
+// Removed unused import
 import schema from "../schema";
 
 describe("teams backend", () => {
   it("should create team with proper slug generation", async () => {
-    const t = convexTest(schema);
+    const _t = convexTest(schema);
 
     // Test slug generation logic directly (same as in teams.ts)
     const testName = "My Awesome Team!";
