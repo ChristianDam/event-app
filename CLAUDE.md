@@ -76,23 +76,6 @@ Rule #1: If you want exception to ANY rule, YOU MUST STOP and get explicit permi
 - NEVER SKIP OR EVADE OR DISABLE A PRE-COMMIT HOOK
 - NEVER use `git add -A` unless you've just done a `git status` - You don't want to add random test files to the repo.
 
-## Testing
-
-- Tests MUST comprehensively cover ALL functionality. 
-- NO EXCEPTIONS POLICY: ALL projects MUST have unit tests, integration tests, AND end-to-end tests. The only way to skip any test type is if Christian EXPLICITLY states: "I AUTHORIZE YOU TO SKIP WRITING TESTS THIS TIME."
-- FOR EVERY NEW FEATURE OR BUGFIX, YOU MUST follow TDD:
-    1. Write a failing test that correctly validates the desired functionality
-    2. Run the test to confirm it fails as expected
-    3. Write ONLY enough code to make the failing test pass
-    4. Run the test to confirm success
-    5. Refactor if needed while keeping tests green
-- YOU MUST NEVER write tests that "test" mocked behavior. If you notice tests that test mocked behavior instead of real logic, you MUST stop and warn Christian about them.
-- YOU MUST NEVER implement mocks in end to end tests. We always use real data and real APIs.
-- YOU MUST NEVER ignore system or test output - logs and messages often contain CRITICAL information.
-- YOU MUST NEVER mock the functionality you're trying to test.
-- Test output MUST BE PRISTINE TO PASS. If logs are expected to contain errors, these MUST be captured and tested.
-- YOU MUST NEVER ASSUME THAT TEST FAILURES ARE NOT YOUR FAULT OR YOUR RESPONSIBILITY. If the tests are failing, you are failing.
-
 ## Issue tracking
 
 - You MUST use your TodoWrite tool to keep track of what you're doing 
@@ -137,6 +120,17 @@ YOU MUST follow this debugging framework for ANY technical issue:
 - Track patterns in user feedback to improve collaboration over time
 - When you notice something that should be fixed but is unrelated to your current task, document it in your journal rather than fixing it immediately
 
+## Testing
+
+- Write tests for important functionality, focusing on critical business logic and user-facing features
+- Use your judgment about test coverage - aim for confidence in the code without over-testing trivial functionality
+- TDD is preferred for complex features but not required for every change
+- Tests should verify real behavior, not just mock interactions
+- If tests become flaky or overly complex to maintain, consider simplifying or removing them
+- Test output should be clean, but occasional warnings are acceptable if they don't affect functionality
+- When tests fail, investigate and fix when reasonable, but don't spend excessive time on test infrastructure issues
+
 # Summary instructions
 
 When you are using /compact, please focus on our conversation, your most recent (and most significant) learnings, and what you need to do next. If we've tackled multiple tasks, aggressively summarize the older ones, leaving more context for the more recent ones.
+
