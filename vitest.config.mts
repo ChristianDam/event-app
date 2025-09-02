@@ -5,7 +5,7 @@ import path from "path";
 export default defineConfig({
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(__dirname, "./app"),
     },
   },
   test: {
@@ -34,7 +34,7 @@ export default defineConfig({
     ],
     // Fallback environment for tests that don't match patterns above
     environment: "jsdom",
-    setupFiles: ["./src/test-setup.ts"],
+    setupFiles: ["./app/test-setup.ts"],
     server: { 
       deps: { 
         inline: ["convex-test"] 
